@@ -1,0 +1,2898 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numbers - Invoice Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        :root {
+            --primary-green: #00FF00;
+            --green-hover: #00DD00;
+            --green-light: rgba(0, 255, 0, 0.1);
+            --green-border: rgba(0, 255, 0, 0.3);
+            --bg-primary: #0A0A0A;
+            --bg-secondary: #141414;
+            --bg-card: #1A1A1A;
+            --bg-hover: #252525;
+            --border-color: #2A2A2A;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A0;
+            --text-tertiary: #707070;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        ::selection {
+            background: rgba(0, 255, 0, 0.3);
+            color: var(--text-primary);
+        }
+
+        ::-moz-selection {
+            background: rgba(0, 255, 0, 0.3);
+            color: var(--text-primary);
+        }
+
+        body {
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            width: 100%;
+            background: transparent;
+        }
+
+        .header {
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, rgba(20, 20, 20, 0.95) 100%);
+            color: var(--text-primary);
+            padding: 24px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary-green);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 900;
+            color: #000000;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-icon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.2) 100%);
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -1px;
+        }
+
+        .header-left p {
+            font-size: 14px;
+            opacity: 0.7;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        .company-switcher {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .settings-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--primary-green);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.15);
+            transform: rotate(90deg);
+        }
+
+        .settings-btn svg {
+            display: block;
+        }
+
+        .company-selector {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 18px;
+            border-radius: 12px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        .company-selector:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--primary-green);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .company-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+            min-width: 280px;
+            z-index: 1000;
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+        }
+
+        .company-dropdown.active {
+            display: block;
+            animation: dropdownFade 0.2s ease-out;
+        }
+
+        @keyframes dropdownFade {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .company-option {
+            padding: 14px 20px;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+        }
+
+        .company-option:last-child {
+            border-bottom: none;
+        }
+
+        .company-option:hover {
+            background: linear-gradient(90deg, rgba(0, 255, 0, 0.15) 0%, rgba(0, 255, 0, 0.05) 100%);
+            border-left: 3px solid rgba(0, 255, 0, 0.5);
+            padding-left: 21px;
+            transform: translateX(2px);
+            cursor: pointer;
+        }
+
+        .company-option.active {
+            background: linear-gradient(90deg, var(--green-light) 0%, rgba(0, 255, 0, 0.05) 100%);
+            color: var(--primary-green);
+            font-weight: 600;
+            border-left: 3px solid var(--primary-green);
+        }
+
+        .company-option.active:hover {
+            background: linear-gradient(90deg, rgba(0, 255, 0, 0.2) 0%, rgba(0, 255, 0, 0.08) 100%);
+            border-left: 3px solid var(--primary-green);
+        }
+
+        .company-option.new {
+            color: var(--primary-green);
+            font-weight: 600;
+        }
+
+        .nav {
+            display: flex;
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, rgba(20, 20, 20, 0.95) 100%);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+            position: sticky;
+            top: 73px;
+            z-index: 90;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn {
+            padding: 18px 28px;
+            background: none;
+            border: none;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-secondary);
+            white-space: nowrap;
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-green), transparent);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        .nav-btn:hover::before {
+            width: 80%;
+        }
+
+        .nav-btn.active {
+            color: var(--primary-green);
+            background: transparent;
+        }
+
+        .nav-btn.active::before {
+            width: 100%;
+            background: var(--primary-green);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .content {
+            padding: 32px 48px;
+            min-height: 500px;
+            width: 100%;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--border-color) 0%, rgba(42, 42, 42, 0.5) 100%);
+            border-radius: 10px;
+            border: 2px solid var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(0, 255, 0, 0.3) 0%, var(--border-color) 100%);
+        }
+
+        .card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(26, 26, 26, 0.8) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(0, 255, 0, 0.1);
+            transform: translateY(-2px);
+            border-color: rgba(0, 255, 0, 0.2);
+        }
+
+        .card h2 {
+            color: var(--text-primary);
+            margin-bottom: 28px;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Manrope', sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .form-group input:hover,
+        .form-group textarea:hover,
+        .form-group select:hover {
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 4px var(--green-light), 0 0 20px rgba(0, 255, 0, 0.15);
+            background: rgba(0, 255, 0, 0.02);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-right: 8px;
+            margin-bottom: 8px;
+            font-family: 'Manrope', sans-serif;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-green) 0%, #00DD00 100%);
+            color: #000000;
+            border: 1px solid var(--primary-green);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #00DD00 0%, #00CC00 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 255, 0, 0.4), 0 0 40px rgba(0, 255, 0, 0.2);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger);
+            color: #FFFFFF;
+        }
+
+        .btn-success {
+            background: var(--primary-green);
+            color: #000000;
+            border: 1px solid var(--primary-green);
+        }
+
+        .btn-success:hover {
+            background: var(--green-hover);
+            border-color: var(--green-hover);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: transparent;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(20, 20, 20, 0.8) 100%);
+            color: var(--text-secondary);
+            padding: 16px 20px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        tr {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        tr:hover {
+            background: linear-gradient(90deg, var(--bg-hover) 0%, rgba(37, 37, 37, 0.5) 100%);
+            transform: scale(1.001);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(26, 26, 26, 0.6) 100%);
+            color: var(--text-primary);
+            padding: 28px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-green), transparent);
+            opacity: 0.5;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(0, 255, 0, 0.1);
+            border-color: rgba(0, 255, 0, 0.3);
+        }
+
+        .stat-card h3 {
+            font-size: 11px;
+            margin-bottom: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            background: linear-gradient(135deg, var(--primary-green) 0%, #00DD00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin-top: 20px;
+        }
+
+        .invoice-items {
+            margin-top: 20px;
+        }
+
+        .invoice-item {
+            display: grid;
+            grid-template-columns: 3fr 1fr 50px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: end;
+        }
+
+        .expense-item {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr 50px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: end;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btns button {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(8px);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(26, 26, 26, 0.95) 100%);
+            padding: 36px;
+            border-radius: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+            position: relative;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 0, 0.3), transparent);
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px) scale(0.95);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h2 {
+            margin-bottom: 24px;
+            font-size: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-bar select,
+        .filter-bar input {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .alert {
+            padding: 18px 24px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            animation: slideInLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .alert::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: var(--warning);
+        }
+
+        .alert-warning::before {
+            background: var(--warning);
+            box-shadow: 0 0 10px var(--warning);
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, var(--green-light) 0%, rgba(0, 255, 0, 0.05) 100%);
+            border-color: rgba(0, 255, 0, 0.3);
+            color: var(--primary-green);
+        }
+
+        .alert-info::before {
+            background: var(--primary-green);
+            box-shadow: 0 0 10px var(--primary-green);
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .reminder-badge {
+            background: linear-gradient(135deg, var(--danger) 0%, #DC2626 100%);
+            color: #FFFFFF;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 800;
+            margin-left: 8px;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .invoice-item,
+            .expense-item,
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-icon">N</div>
+                <div>
+                    <h1>Numbers</h1>
+                </div>
+            </div>
+            <div class="company-switcher">
+                <div class="company-selector" onclick="toggleCompanyDropdown()">
+                    <span id="selectedCompany">Seleziona Azienda</span>
+                    <span>▼</span>
+                </div>
+                <button class="settings-btn" onclick="openCompanySettings()" title="Impostazioni Azienda">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16.1667 12.5C16.0557 12.7513 16.0227 13.0301 16.0717 13.3006C16.1207 13.5711 16.2495 13.8203 16.4417 14.0167L16.4917 14.0667C16.6445 14.2194 16.7657 14.4009 16.8485 14.6007C16.9313 14.8006 16.9742 15.0148 16.9742 15.2312C16.9742 15.4477 16.9313 15.6619 16.8485 15.8618C16.7657 16.0616 16.6445 16.2431 16.4917 16.3958C16.339 16.5486 16.1575 16.6698 15.9576 16.7526C15.7578 16.8354 15.5436 16.8783 15.3271 16.8783C15.1107 16.8783 14.8965 16.8354 14.6966 16.7526C14.4968 16.6698 14.3153 16.5486 14.1625 16.3958L14.1125 16.3458C13.9161 16.1536 13.6669 16.0248 13.3964 15.9758C13.1259 15.9268 12.8471 15.9598 12.5958 16.0708C12.3492 16.1768 12.1377 16.3517 11.9868 16.5746C11.8359 16.7975 11.7519 17.0592 11.7458 17.3283V17.5C11.7458 17.9421 11.5702 18.3659 11.2577 18.6785C10.9451 18.9911 10.5213 19.1667 10.0792 19.1667C9.63706 19.1667 9.21323 18.9911 8.90066 18.6785C8.5881 18.3659 8.4125 17.9421 8.4125 17.5V17.425C8.39977 17.1462 8.30458 16.8773 8.13925 16.6534C7.97392 16.4295 7.74598 16.26 7.48333 16.1667C7.23201 16.0557 6.95324 16.0227 6.68271 16.0717C6.41219 16.1207 6.16298 16.2495 5.96667 16.4417L5.91667 16.4917C5.76391 16.6445 5.58244 16.7657 5.38257 16.8485C5.18271 16.9313 4.96854 16.9742 4.75208 16.9742C4.53563 16.9742 4.32146 16.9313 4.12159 16.8485C3.92173 16.7657 3.74025 16.6445 3.5875 16.4917C3.43474 16.339 3.31357 16.1575 3.23078 15.9576C3.14799 15.7578 3.10508 15.5436 3.10508 15.3271C3.10508 15.1107 3.14799 14.8965 3.23078 14.6966C3.31357 14.4968 3.43474 14.3153 3.5875 14.1625L3.6375 14.1125C3.82973 13.9161 3.95851 13.6669 4.00751 13.3964C4.0565 13.1259 4.02352 12.8471 3.9125 12.5958C3.80652 12.3492 3.63165 12.1377 3.40873 11.9868C3.18581 11.8359 2.92413 11.7519 2.655 11.7458H2.5C2.05797 11.7458 1.63405 11.5702 1.32149 11.2577C1.00893 10.9451 0.833336 10.5213 0.833336 10.0792C0.833336 9.63706 1.00893 9.21323 1.32149 8.90066C1.63405 8.5881 2.05797 8.4125 2.5 8.4125H2.575C2.85384 8.39977 3.1227 8.30458 3.34661 8.13925C3.57051 7.97392 3.74003 7.74598 3.83333 7.48333C3.94436 7.23201 3.97734 6.95324 3.92834 6.68271C3.87935 6.41219 3.75057 6.16298 3.55833 5.96667L3.50833 5.91667C3.35557 5.76391 3.2344 5.58244 3.15162 5.38257C3.06883 5.18271 3.02592 4.96854 3.02592 4.75208C3.02592 4.53563 3.06883 4.32146 3.15162 4.12159C3.2344 3.92173 3.35557 3.74025 3.50833 3.5875C3.66109 3.43474 3.84256 3.31357 4.04243 3.23078C4.24229 3.14799 4.45646 3.10508 4.67292 3.10508C4.88937 3.10508 5.10354 3.14799 5.30341 3.23078C5.50327 3.31357 5.68475 3.43474 5.8375 3.5875L5.8875 3.6375C6.08381 3.82973 6.33302 3.95851 6.60355 4.00751C6.87407 4.0565 7.15285 4.02352 7.40417 3.9125H7.48333C7.72991 3.80652 7.94141 3.63165 8.0923 3.40873C8.24319 3.18581 8.32723 2.92413 8.33333 2.655V2.5C8.33333 2.05797 8.50893 1.63405 8.82149 1.32149C9.13405 1.00893 9.55797 0.833336 10 0.833336C10.442 0.833336 10.8659 1.00893 11.1785 1.32149C11.4911 1.63405 11.6667 2.05797 11.6667 2.5V2.575C11.6728 2.84413 11.7568 3.10581 11.9077 3.32873C12.0586 3.55165 12.2701 3.72652 12.5167 3.8325C12.768 3.94352 13.0468 3.9765 13.3173 3.92751C13.5878 3.87851 13.837 3.74973 14.0333 3.5575L14.0833 3.5075C14.2361 3.35474 14.4176 3.23357 14.6174 3.15078C14.8173 3.06799 15.0315 3.02508 15.2479 3.02508C15.4644 3.02508 15.6785 3.06799 15.8784 3.15078C16.0783 3.23357 16.2597 3.35474 16.4125 3.5075C16.5653 3.66025 16.6864 3.84173 16.7692 4.04159C16.852 4.24146 16.8949 4.45563 16.8949 4.67208C16.8949 4.88854 16.852 5.10271 16.7692 5.30257C16.6864 5.50244 16.5653 5.68391 16.4125 5.83667L16.3625 5.88667C16.1703 6.08298 16.0415 6.33219 15.9925 6.60271C15.9435 6.87324 15.9765 7.15201 16.0875 7.40333V7.48333C16.1935 7.72991 16.3684 7.94141 16.5913 8.0923C16.8142 8.24319 17.0759 8.32723 17.345 8.33333H17.5C17.942 8.33333 18.3659 8.50893 18.6785 8.82149C18.9911 9.13405 19.1667 9.55797 19.1667 10C19.1667 10.442 18.9911 10.8659 18.6785 11.1785C18.3659 11.4911 17.942 11.6667 17.5 11.6667H17.425C17.1559 11.6728 16.8942 11.7568 16.6713 11.9077C16.4484 12.0586 16.2735 12.2701 16.1675 12.5167L16.1667 12.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <div class="company-dropdown" id="companyDropdown"></div>
+            </div>
+        </div>
+
+        <div class="nav">
+            <button class="nav-btn active" onclick="showSection('dashboard')">
+                Dashboard
+                <span class="reminder-badge" id="reminderBadge" style="display: none;">0</span>
+            </button>
+            <button class="nav-btn" onclick="showSection('customers')">Clienti</button>
+            <button class="nav-btn" onclick="showSection('invoices')">Fatture</button>
+            <button class="nav-btn" onclick="showSection('expenses')">Spese</button>
+            <button class="nav-btn" onclick="showSection('reminders')">Scadenze</button>
+            <button class="nav-btn" onclick="showSection('reports')">Report</button>
+        </div>
+
+        <div class="content">
+            <!-- DASHBOARD -->
+            <div id="dashboard" class="section active">
+                <div id="reminderAlerts"></div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Fatturato Totale</h3>
+                        <div class="value" id="totalRevenue">€0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Spese Totali</h3>
+                        <div class="value" id="totalExpenses">€0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Netto</h3>
+                        <div class="value" id="netRevenue">€0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Fatture Questo Mese</h3>
+                        <div class="value" id="monthInvoices">0</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Andamento Finanziario</h2>
+                    <div class="chart-container">
+                        <canvas id="financeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COMPANIES -->
+            <div id="companies" class="section">
+                <div class="card">
+                    <h2>Le Mie Aziende</h2>
+                    <button class="btn btn-primary" onclick="openCompanyModal()">+ NUOVA AZIENDA</button>
+
+                    <div class="table-container">
+                        <table id="companiesTable">
+                            <thead>
+                                <tr>
+                                    <th>Nome Azienda</th>
+                                    <th>Indirizzo</th>
+                                    <th>Email</th>
+                                    <th>Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CUSTOMERS -->
+            <div id="customers" class="section">
+                <div class="card">
+                    <h2>Gestione Clienti</h2>
+                    <button class="btn btn-primary" onclick="openCustomerModal()">+ Aggiungi Cliente</button>
+
+                    <div class="table-container">
+                        <table id="customersTable">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Fatturato Totale</th>
+                                    <th>Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INVOICES -->
+            <div id="invoices" class="section">
+                <div class="card">
+                    <h2>Gestione Fatture</h2>
+                    <button class="btn btn-primary" onclick="openInvoiceModal()">+ Nuova Fattura</button>
+                    <button class="btn btn-secondary" onclick="exportToCSV()">Esporta CSV</button>
+
+                    <div class="filter-bar">
+                        <label>
+                            Cliente:
+                            <select id="filterCustomer" onchange="filterInvoices()">
+                                <option value="">Tutti</option>
+                            </select>
+                        </label>
+                        <label>
+                            Anno:
+                            <select id="filterYear" onchange="filterInvoices()">
+                                <option value="">Tutti</option>
+                            </select>
+                        </label>
+                        <label>
+                            Mese:
+                            <select id="filterMonth" onchange="filterInvoices()">
+                                <option value="">Tutti</option>
+                                <option value="1">Gennaio</option>
+                                <option value="2">Febbraio</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Aprile</option>
+                                <option value="5">Maggio</option>
+                                <option value="6">Giugno</option>
+                                <option value="7">Luglio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Settembre</option>
+                                <option value="10">Ottobre</option>
+                                <option value="11">Novembre</option>
+                                <option value="12">Dicembre</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="invoicesTable">
+                            <thead>
+                                <tr>
+                                    <th>N° Fattura</th>
+                                    <th>Data</th>
+                                    <th>Cliente</th>
+                                    <th>Valuta</th>
+                                    <th>Importo</th>
+                                    <th>Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXPENSES -->
+            <div id="expenses" class="section">
+                <div class="card">
+                    <h2>Gestione Spese</h2>
+                    <button class="btn btn-primary" onclick="openExpenseModal()">+ Nuova Spesa</button>
+                    <button class="btn btn-secondary" onclick="exportExpensesToCSV()">Esporta CSV</button>
+
+                    <div class="table-container">
+                        <table id="expensesTable">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descrizione</th>
+                                    <th>Categoria</th>
+                                    <th>Importo</th>
+                                    <th>Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REMINDERS -->
+            <div id="reminders" class="section">
+                <div class="card">
+                    <h2>Scadenze e Adempimenti</h2>
+                    <button class="btn btn-primary" onclick="openReminderModal()">+ Nuova Scadenza</button>
+
+                    <div class="table-container">
+                        <table id="remindersTable">
+                            <thead>
+                                <tr>
+                                    <th>Descrizione</th>
+                                    <th>Scadenza</th>
+                                    <th>Ricorrenza</th>
+                                    <th>Stato</th>
+                                    <th>Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPORTS -->
+            <div id="reports" class="section">
+                <div class="card">
+                    <h2>Report Mensile/Annuale</h2>
+                    <div class="filter-bar">
+                        <label>
+                            Anno:
+                            <select id="reportYear" onchange="generateReports()"></select>
+                        </label>
+                    </div>
+                    <div class="table-container">
+                        <table id="monthlyReportTable">
+                            <thead>
+                                <tr>
+                                    <th>Mese</th>
+                                    <th>Fatture</th>
+                                    <th>Fatturato</th>
+                                    <th>Spese</th>
+                                    <th>Netto</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Report per Cliente</h2>
+                    <div class="table-container">
+                        <table id="customerReportTable">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Numero Fatture</th>
+                                    <th>Fatturato Totale</th>
+                                    <th>Media per Fattura</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPANY MODAL -->
+    <div id="companyModal" class="modal">
+        <div class="modal-content">
+            <h2 id="companyModalTitle">NUOVA AZIENDA</h2>
+            <form id="companyForm">
+                <input type="hidden" id="companyId">
+                <div class="form-group">
+                    <label>Nome Azienda/LLC *</label>
+                    <input type="text" id="companyName" required placeholder="Es: My Company LLC">
+                </div>
+                <div class="form-group">
+                    <label>Indirizzo *</label>
+                    <textarea id="companyAddress" rows="3" required placeholder="Indirizzo completo"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="companyEmail" placeholder="email@company.com">
+                </div>
+                <div class="form-group">
+                    <label>Tax ID / Partita IVA</label>
+                    <input type="text" id="companyTaxId" placeholder="Tax ID">
+                </div>
+                <div class="form-group">
+                    <label>Informazioni Pagamento</label>
+                    <textarea id="companyPayment" rows="3" placeholder="IBAN, PayPal, etc."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Salva Azienda</button>
+                <button type="button" class="btn btn-secondary" onclick="closeCompanyModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CUSTOMER MODAL -->
+    <div id="customerModal" class="modal">
+        <div class="modal-content">
+            <h2 id="customerModalTitle">Aggiungi Cliente</h2>
+            <form id="customerForm">
+                <input type="hidden" id="customerId">
+                <div class="form-group">
+                    <label>Nome Cliente *</label>
+                    <input type="text" id="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label>Indirizzo</label>
+                    <textarea id="customerAddress" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>VAT Number</label>
+                    <input type="text" id="customerVat" placeholder="IT12345678901">
+                </div>
+                <button type="submit" class="btn btn-primary">Salva</button>
+                <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- INVOICE MODAL -->
+    <div id="invoiceModal" class="modal">
+        <div class="modal-content">
+            <h2>Nuova Fattura</h2>
+            <form id="invoiceForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Numero Fattura *</label>
+                        <input type="number" id="invoiceNumber" required readonly>
+                        <small style="color: var(--text-secondary);">Progressivo automatico</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Data *</label>
+                        <input type="date" id="invoiceDate" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Cliente *</label>
+                        <select id="invoiceCustomer" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Valuta *</label>
+                        <select id="invoiceCurrency" required>
+                            <option value="EUR">EUR (€)</option>
+                            <option value="USD">USD ($)</option>
+                            <option value="GBP">GBP (£)</option>
+                            <option value="CHF">CHF (Fr)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3 style="margin: 20px 0 16px 0; font-size: 16px;">Voci di Fattura</h3>
+                <div id="invoiceItemsContainer" class="invoice-items"></div>
+                <button type="button" class="btn btn-secondary" onclick="addInvoiceItem()">+ Aggiungi Voce</button>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label><strong>Totale: <span id="currencySymbol">€</span><span id="invoiceTotal">0.00</span></strong></label>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Crea Fattura e Genera PDF</button>
+                <button type="button" class="btn btn-secondary" onclick="closeInvoiceModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- EXPENSE MODAL -->
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <h2>Nuova Spesa</h2>
+            <form id="expenseForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data *</label>
+                        <input type="date" id="expenseDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Importo *</label>
+                        <input type="number" id="expenseAmount" step="0.01" required placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Descrizione *</label>
+                    <input type="text" id="expenseDescription" required placeholder="Es: Acquisto materiale ufficio">
+                </div>
+
+                <div class="form-group">
+                    <label>Categoria *</label>
+                    <select id="expenseCategory" required>
+                        <option value="">Seleziona categoria...</option>
+                        <option value="Ufficio">Ufficio e Materiali</option>
+                        <option value="Software">Software e Abbonamenti</option>
+                        <option value="Marketing">Marketing e Pubblicità</option>
+                        <option value="Trasporti">Trasporti e Viaggi</option>
+                        <option value="Consulenze">Consulenze Professionali</option>
+                        <option value="Utenze">Utenze e Servizi</option>
+                        <option value="Personale">Personale e Stipendi</option>
+                        <option value="Altro">Altro</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Salva Spesa</button>
+                <button type="button" class="btn btn-secondary" onclick="closeExpenseModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- REMINDER MODAL -->
+    <div id="reminderModal" class="modal">
+        <div class="modal-content">
+            <h2>Nuova Scadenza</h2>
+            <form id="reminderForm">
+                <div class="form-group">
+                    <label>Descrizione *</label>
+                    <input type="text" id="reminderDescription" required placeholder="Es: Dichiarazione IVA trimestrale">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data Scadenza *</label>
+                        <input type="date" id="reminderDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Ricorrenza</label>
+                        <select id="reminderRecurrence">
+                            <option value="once">Una volta</option>
+                            <option value="weekly">Settimanale</option>
+                            <option value="monthly">Mensile</option>
+                            <option value="yearly">Annuale</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Salva Scadenza</button>
+                <button type="button" class="btn btn-secondary" onclick="closeReminderModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h2>Impostazioni Azienda</h2>
+            <form id="settingsForm">
+                <div class="form-group">
+                    <label>Nome Azienda *</label>
+                    <input type="text" id="settingsCompanyName" required>
+                </div>
+                <div class="form-group">
+                    <label>Indirizzo</label>
+                    <textarea id="settingsCompanyAddress" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="settingsCompanyEmail">
+                    </div>
+                    <div class="form-group">
+                        <label>Tax ID</label>
+                        <input type="text" id="settingsCompanyTaxId">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Informazioni di Pagamento</label>
+                    <textarea id="settingsCompanyPayment" rows="3" placeholder="IBAN, coordinate bancarie, etc."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Salva Modifiche</button>
+                <button type="button" class="btn btn-secondary" onclick="closeSettingsModal()">Annulla</button>
+                <button type="button" class="btn btn-danger" onclick="deleteCurrentCompany()" style="float: right;">Elimina Azienda</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Data Storage
+        let companies = JSON.parse(localStorage.getItem('companies')) || [];
+        let currentCompanyId = localStorage.getItem('currentCompanyId') || null;
+        let customers = JSON.parse(localStorage.getItem('customers')) || [];
+        let invoices = JSON.parse(localStorage.getItem('invoices')) || [];
+        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+        let reminders = JSON.parse(localStorage.getItem('reminders')) || [];
+
+        // Currency symbols
+        const currencySymbols = {
+            'EUR': '€',
+            'USD': '$',
+            'GBP': '£',
+            'CHF': 'Fr'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCompanies();
+            updateCompanyDisplay();
+            loadCustomers();
+            loadInvoices();
+            loadExpenses();
+            loadReminders();
+            updateDashboard();
+            generateReports();
+            setupInvoiceDate();
+            setupExpenseDate();
+            populateYearFilters();
+            checkReminders();
+
+            // Chiudi dropdown quando clicchi fuori
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('companyDropdown');
+                const companySelector = e.target.closest('.company-selector');
+
+                // Se clicchi fuori dal company selector, chiudi il dropdown
+                if (!companySelector && dropdown.classList.contains('active')) {
+                    dropdown.classList.remove('active');
+                }
+            });
+
+            // Currency change handler
+            document.getElementById('invoiceCurrency').addEventListener('change', function() {
+                const symbol = currencySymbols[this.value] || '€';
+                document.getElementById('currencySymbol').textContent = symbol;
+            });
+        });
+
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+
+            if (sectionId === 'dashboard') {
+                updateDashboard();
+                checkReminders();
+            } else if (sectionId === 'reports') {
+                generateReports();
+            } else if (sectionId === 'customers') {
+                loadCustomers();
+            } else if (sectionId === 'companies') {
+                loadCompanies();
+            } else if (sectionId === 'expenses') {
+                loadExpenses();
+            } else if (sectionId === 'reminders') {
+                loadReminders();
+            }
+        }
+
+        // Company Management
+        function toggleCompanyDropdown() {
+            const dropdown = document.getElementById('companyDropdown');
+            dropdown.classList.toggle('active');
+            updateCompanyDropdown();
+        }
+
+        function updateCompanyDropdown() {
+            const dropdown = document.getElementById('companyDropdown');
+            dropdown.innerHTML = '';
+
+            // Crea tutte le opzioni
+            companies.forEach(company => {
+                const option = document.createElement('div');
+                option.className = 'company-option';
+                option.textContent = company.name;
+                option.setAttribute('data-company-id', company.id);
+                option.onclick = () => selectCompany(company.id);
+                dropdown.appendChild(option);
+            });
+
+            // Evidenzia quella corrente
+            const allOptions = dropdown.querySelectorAll('.company-option');
+            allOptions.forEach(opt => {
+                const optId = opt.getAttribute('data-company-id');
+                if (optId == currentCompanyId) {
+                    opt.classList.add('active');
+                }
+            });
+
+            // Aggiungi "Nuova Azienda"
+            const newOption = document.createElement('div');
+            newOption.className = 'company-option new';
+            newOption.textContent = '+ NUOVA AZIENDA';
+            newOption.onclick = () => {
+                toggleCompanyDropdown();
+                openCompanyModal();
+            };
+            dropdown.appendChild(newOption);
+        }
+
+        function selectCompany(companyId) {
+            // Aggiorna l'azienda corrente
+            currentCompanyId = companyId;
+            localStorage.setItem('currentCompanyId', companyId);
+
+            // Chiudi il dropdown
+            const dropdown = document.getElementById('companyDropdown');
+            dropdown.classList.remove('active');
+
+            // Aggiorna UI
+            updateCompanyDisplay();
+            updateDashboard();
+        }
+
+        function updateCompanyDisplay() {
+            const company = companies.find(c => c.id === currentCompanyId);
+            if (company) {
+                document.getElementById('selectedCompany').textContent = company.name;
+                document.getElementById('currentCompanyName').textContent = company.name;
+            } else {
+                document.getElementById('selectedCompany').textContent = 'Seleziona Azienda';
+                document.getElementById('currentCompanyName').textContent = 'Nessuna azienda selezionata';
+            }
+        }
+
+        function openCompanyModal(companyId = null) {
+            const modal = document.getElementById('companyModal');
+            const form = document.getElementById('companyForm');
+
+            form.reset();
+
+            if (companyId) {
+                const company = companies.find(c => c.id === companyId);
+                document.getElementById('companyModalTitle').textContent = 'Modifica Azienda';
+                document.getElementById('companyId').value = company.id;
+                document.getElementById('companyName').value = company.name;
+                document.getElementById('companyAddress').value = company.address;
+                document.getElementById('companyEmail').value = company.email || '';
+                document.getElementById('companyTaxId').value = company.taxId || '';
+                document.getElementById('companyPayment').value = company.payment || '';
+            } else {
+                document.getElementById('companyModalTitle').textContent = 'NUOVA AZIENDA';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeCompanyModal() {
+            document.getElementById('companyModal').classList.remove('active');
+        }
+
+        document.getElementById('companyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            try {
+                const companyId = document.getElementById('companyId').value;
+                const companyData = {
+                    id: companyId || Date.now().toString(),
+                    name: document.getElementById('companyName').value,
+                    address: document.getElementById('companyAddress').value,
+                    email: document.getElementById('companyEmail').value,
+                    taxId: document.getElementById('companyTaxId').value,
+                    payment: document.getElementById('companyPayment').value,
+                    createdAt: companyId ? companies.find(c => c.id === companyId).createdAt : new Date().toISOString()
+                };
+
+                if (companyId) {
+                    const index = companies.findIndex(c => c.id === companyId);
+                    companies[index] = companyData;
+                } else {
+                    companies.push(companyData);
+                    if (!currentCompanyId) {
+                        currentCompanyId = companyData.id;
+                        localStorage.setItem('currentCompanyId', currentCompanyId);
+                    }
+                }
+
+                localStorage.setItem('companies', JSON.stringify(companies));
+
+                // CHIUDI IL MODAL PRIMA DI TUTTO
+                closeCompanyModal();
+
+                // Poi aggiorna tutto in async
+                setTimeout(() => {
+                    loadCompanies();
+                    updateCompanyDisplay();
+                    updateCompanyDropdown(); // AGGIORNA DROPDOWN PER EVIDENZIATURA
+                    alert('Azienda salvata con successo!');
+                }, 100);
+
+            } catch (error) {
+                console.error('Errore salvataggio azienda:', error);
+                closeCompanyModal();
+                alert('Errore: ' + error.message);
+            }
+        });
+
+        function loadCompanies() {
+            const tbody = document.querySelector('#companiesTable tbody');
+            tbody.innerHTML = '';
+
+            if (companies.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessuna azienda presente. Crea la prima azienda!</td></tr>';
+                return;
+            }
+
+            companies.forEach(company => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${company.name}</strong></td>
+                    <td>${company.address || '-'}</td>
+                    <td>${company.email || '-'}</td>
+                    <td class="action-btns">
+                        <button class="btn btn-primary" onclick="selectCompany('${company.id}')">Seleziona</button>
+                        <button class="btn btn-secondary" onclick="openCompanyModal('${company.id}')">Modifica</button>
+                        <button class="btn btn-danger" onclick="deleteCompany('${company.id}')">Elimina</button>
+                    </td>
+                `;
+            });
+        }
+
+        function deleteCompany(companyId) {
+            if (confirm('Sei sicuro di voler eliminare questa azienda?')) {
+                companies = companies.filter(c => c.id !== companyId);
+                if (currentCompanyId === companyId) {
+                    currentCompanyId = companies.length > 0 ? companies[0].id : null;
+                    localStorage.setItem('currentCompanyId', currentCompanyId);
+                }
+                localStorage.setItem('companies', JSON.stringify(companies));
+                loadCompanies();
+                updateCompanyDisplay();
+                updateDashboard();
+            }
+        }
+
+        // COMPANY SETTINGS
+        function openCompanySettings() {
+            if (!currentCompanyId) {
+                alert('Seleziona prima un\'azienda!');
+                return;
+            }
+
+            const company = companies.find(c => c.id === currentCompanyId);
+            if (!company) return;
+
+            document.getElementById('settingsCompanyName').value = company.name || '';
+            document.getElementById('settingsCompanyAddress').value = company.address || '';
+            document.getElementById('settingsCompanyEmail').value = company.email || '';
+            document.getElementById('settingsCompanyTaxId').value = company.taxId || '';
+            document.getElementById('settingsCompanyPayment').value = company.payment || '';
+
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        document.getElementById('settingsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            try {
+                if (!currentCompanyId) {
+                    alert('Nessuna azienda selezionata!');
+                    return;
+                }
+
+                const company = companies.find(c => c.id === currentCompanyId);
+                if (!company) {
+                    alert('Errore: azienda non trovata!');
+                    return;
+                }
+
+                company.name = document.getElementById('settingsCompanyName').value;
+                company.address = document.getElementById('settingsCompanyAddress').value;
+                company.email = document.getElementById('settingsCompanyEmail').value;
+                company.taxId = document.getElementById('settingsCompanyTaxId').value;
+                company.payment = document.getElementById('settingsCompanyPayment').value;
+
+                localStorage.setItem('companies', JSON.stringify(companies));
+
+                // Chiudi modal prima di aggiornare
+                closeSettingsModal();
+
+                // Poi aggiorna tutto
+                setTimeout(() => {
+                    loadCompanies();
+                    updateCompanyDisplay();
+                    updateCompanyDropdown();
+                    alert('Impostazioni azienda aggiornate con successo!');
+                }, 100);
+            } catch (error) {
+                console.error('Errore nel salvare le impostazioni:', error);
+                closeSettingsModal();
+                alert('Errore nel salvare le impostazioni: ' + error.message);
+            }
+        });
+
+        function deleteCurrentCompany() {
+            if (!currentCompanyId) return;
+
+            if (confirm('⚠️ ATTENZIONE: Eliminando questa azienda verranno eliminati anche tutti i dati associati (clienti, fatture, spese, scadenze). Questa azione è irreversibile. Continuare?')) {
+                // Delete all related data
+                customers = customers.filter(c => c.companyId !== currentCompanyId);
+                invoices = invoices.filter(i => i.companyId !== currentCompanyId);
+                expenses = expenses.filter(e => e.companyId !== currentCompanyId);
+                reminders = reminders.filter(r => r.companyId !== currentCompanyId);
+                companies = companies.filter(c => c.id !== currentCompanyId);
+
+                // Save everything
+                localStorage.setItem('customers', JSON.stringify(customers));
+                localStorage.setItem('invoices', JSON.stringify(invoices));
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+                localStorage.setItem('reminders', JSON.stringify(reminders));
+                localStorage.setItem('companies', JSON.stringify(companies));
+
+                // Switch to another company or clear selection
+                currentCompanyId = companies.length > 0 ? companies[0].id : null;
+                localStorage.setItem('currentCompanyId', currentCompanyId);
+
+                closeSettingsModal();
+                updateCompanyDisplay();
+                updateCompanyDropdown();
+                updateDashboard();
+                alert('Azienda eliminata con successo.');
+            }
+        }
+
+        // CUSTOMERS (rest of the code continues...)
+        function openCustomerModal(customerId = null) {
+            if (!currentCompanyId) {
+                alert('Seleziona prima un\'azienda!');
+                return;
+            }
+
+            const modal = document.getElementById('customerModal');
+            const form = document.getElementById('customerForm');
+
+            form.reset();
+
+            if (customerId) {
+                const customer = customers.find(c => c.id === customerId);
+                document.getElementById('customerModalTitle').textContent = 'Modifica Cliente';
+                document.getElementById('customerId').value = customer.id;
+                document.getElementById('customerName').value = customer.name;
+                document.getElementById('customerAddress').value = customer.address || '';
+                document.getElementById('customerVat').value = customer.vat || '';
+            } else {
+                document.getElementById('customerModalTitle').textContent = 'Aggiungi Cliente';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeCustomerModal() {
+            document.getElementById('customerModal').classList.remove('active');
+        }
+
+        document.getElementById('customerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const customerId = document.getElementById('customerId').value;
+            const customerData = {
+                id: customerId || Date.now().toString(),
+                companyId: currentCompanyId,
+                name: document.getElementById('customerName').value,
+                address: document.getElementById('customerAddress').value,
+                vat: document.getElementById('customerVat').value,
+                createdAt: customerId ? customers.find(c => c.id === customerId).createdAt : new Date().toISOString()
+            };
+
+            if (customerId) {
+                const index = customers.findIndex(c => c.id === customerId);
+                customers[index] = customerData;
+            } else {
+                customers.push(customerData);
+            }
+
+            localStorage.setItem('customers', JSON.stringify(customers));
+            loadCustomers();
+            closeCustomerModal();
+            updateDashboard();
+        });
+
+        function loadCustomers() {
+            if (!currentCompanyId) return;
+
+            const tbody = document.querySelector('#customersTable tbody');
+            tbody.innerHTML = '';
+
+            const companyCustomers = customers.filter(c => c.companyId === currentCompanyId);
+
+            if (companyCustomers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Nessun cliente presente. Aggiungi il primo cliente!</td></tr>';
+                return;
+            }
+
+            const customerRevenues = {};
+            invoices.filter(i => i.companyId === currentCompanyId).forEach(inv => {
+                if (!customerRevenues[inv.customerId]) {
+                    customerRevenues[inv.customerId] = 0;
+                }
+                customerRevenues[inv.customerId] += inv.total;
+            });
+
+            companyCustomers.forEach(customer => {
+                const revenue = customerRevenues[customer.id] || 0;
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${customer.name}</strong></td>
+                    <td><strong>€${revenue.toFixed(2)}</strong></td>
+                    <td class="action-btns">
+                        <button class="btn btn-secondary" onclick="openCustomerModal('${customer.id}')">Modifica</button>
+                        <button class="btn btn-danger" onclick="deleteCustomer('${customer.id}')">Elimina</button>
+                    </td>
+                `;
+            });
+
+            updateCustomerSelects();
+        }
+
+        function deleteCustomer(customerId) {
+            if (confirm('Sei sicuro di voler eliminare questo cliente?')) {
+                customers = customers.filter(c => c.id !== customerId);
+                invoices = invoices.filter(i => i.customerId !== customerId);
+                localStorage.setItem('customers', JSON.stringify(customers));
+                localStorage.setItem('invoices', JSON.stringify(invoices));
+                loadCustomers();
+                loadInvoices();
+                updateDashboard();
+            }
+        }
+
+        function updateCustomerSelects() {
+            const selects = [
+                document.getElementById('invoiceCustomer'),
+                document.getElementById('filterCustomer')
+            ];
+
+            selects.forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = select.id === 'filterCustomer' ? '<option value="">Tutti</option>' : '<option value="">Seleziona cliente...</option>';
+
+                const companyCustomers = customers.filter(c => c.companyId === currentCompanyId);
+                companyCustomers.forEach(customer => {
+                    const option = document.createElement('option');
+                    option.value = customer.id;
+                    option.textContent = customer.name;
+                    select.appendChild(option);
+                });
+
+                if (currentValue) select.value = currentValue;
+            });
+        }
+
+        // INVOICES
+        function setupInvoiceDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('invoiceDate').value = today;
+        }
+
+        function getNextInvoiceNumber() {
+            if (!currentCompanyId) return 1;
+            const companyInvoices = invoices.filter(i => i.companyId === currentCompanyId);
+            if (companyInvoices.length === 0) return 1;
+            const maxNumber = Math.max(...companyInvoices.map(i => parseInt(i.number) || 0));
+            return maxNumber + 1;
+        }
+
+        let invoiceItemCounter = 0;
+
+        function addInvoiceItem() {
+            const container = document.getElementById('invoiceItemsContainer');
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'invoice-item';
+            itemDiv.id = `item-${invoiceItemCounter}`;
+            itemDiv.innerHTML = `
+                <div class="form-group">
+                    <label>Descrizione</label>
+                    <input type="text" class="item-description" required placeholder="Es: Consulenza, Rimborso spese, etc.">
+                </div>
+                <div class="form-group">
+                    <label>Importo</label>
+                    <input type="number" class="item-amount" value="0" min="0" step="0.01" required onchange="calculateInvoiceTotal()">
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn btn-danger" onclick="removeInvoiceItem(${invoiceItemCounter})">✕</button>
+                </div>
+            `;
+            container.appendChild(itemDiv);
+            invoiceItemCounter++;
+            calculateInvoiceTotal();
+        }
+
+        function removeInvoiceItem(itemId) {
+            document.getElementById(`item-${itemId}`).remove();
+            calculateInvoiceTotal();
+        }
+
+        function calculateInvoiceTotal() {
+            const items = document.querySelectorAll('.invoice-item');
+            let total = 0;
+
+            items.forEach(item => {
+                const amount = parseFloat(item.querySelector('.item-amount').value) || 0;
+                total += amount;
+            });
+
+            document.getElementById('invoiceTotal').textContent = total.toFixed(2);
+        }
+
+        function openInvoiceModal() {
+            if (!currentCompanyId) {
+                alert('Seleziona prima un\'azienda!');
+                return;
+            }
+
+            const companyCustomers = customers.filter(c => c.companyId === currentCompanyId);
+            if (companyCustomers.length === 0) {
+                alert('Devi prima creare almeno un cliente!');
+                return;
+            }
+
+            const modal = document.getElementById('invoiceModal');
+            const form = document.getElementById('invoiceForm');
+
+            form.reset();
+            setupInvoiceDate();
+            document.getElementById('invoiceItemsContainer').innerHTML = '';
+            updateCustomerSelects();
+
+            const nextNumber = getNextInvoiceNumber();
+            document.getElementById('invoiceNumber').value = nextNumber;
+
+            addInvoiceItem();
+
+            modal.classList.add('active');
+        }
+
+        function closeInvoiceModal() {
+            document.getElementById('invoiceModal').classList.remove('active');
+        }
+
+        document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const invoiceNumber = parseInt(document.getElementById('invoiceNumber').value);
+            const expectedNumber = getNextInvoiceNumber();
+
+            if (invoiceNumber !== expectedNumber) {
+                alert(`❌ Errore: Il numero fattura deve essere ${expectedNumber} (progressivo).`);
+                document.getElementById('invoiceNumber').value = expectedNumber;
+                return;
+            }
+
+            const items = [];
+            document.querySelectorAll('.invoice-item').forEach(item => {
+                items.push({
+                    description: item.querySelector('.item-description').value,
+                    amount: parseFloat(item.querySelector('.item-amount').value)
+                });
+            });
+
+            const invoiceData = {
+                id: Date.now().toString(),
+                companyId: currentCompanyId,
+                number: invoiceNumber.toString(),
+                date: document.getElementById('invoiceDate').value,
+                customerId: document.getElementById('invoiceCustomer').value,
+                currency: document.getElementById('invoiceCurrency').value,
+                items: items,
+                total: parseFloat(document.getElementById('invoiceTotal').textContent),
+                createdAt: new Date().toISOString()
+            };
+
+            invoices.push(invoiceData);
+            localStorage.setItem('invoices', JSON.stringify(invoices));
+
+            generatePDF(invoiceData);
+            loadInvoices();
+            closeInvoiceModal();
+            updateDashboard();
+        });
+
+        function loadInvoices() {
+            if (!currentCompanyId) return;
+
+            const tbody = document.querySelector('#invoicesTable tbody');
+            tbody.innerHTML = '';
+
+            const companyInvoices = invoices.filter(i => i.companyId === currentCompanyId);
+
+            if (companyInvoices.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna fattura presente. Crea la prima fattura!</td></tr>';
+                return;
+            }
+
+            const sortedInvoices = [...companyInvoices].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedInvoices.forEach(invoice => {
+                const customer = customers.find(c => c.id === invoice.customerId);
+                const symbol = currencySymbols[invoice.currency] || '€';
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${invoice.number}</strong></td>
+                    <td>${new Date(invoice.date).toLocaleDateString('it-IT')}</td>
+                    <td>${customer ? customer.name : 'Cliente eliminato'}</td>
+                    <td>${invoice.currency}</td>
+                    <td><strong>${symbol}${invoice.total.toFixed(2)}</strong></td>
+                    <td class="action-btns">
+                        <button class="btn btn-secondary" onclick="regeneratePDF('${invoice.id}')">PDF</button>
+                        <button class="btn btn-danger" onclick="deleteInvoice('${invoice.id}')">Elimina</button>
+                    </td>
+                `;
+            });
+        }
+
+        function filterInvoices() {
+            if (!currentCompanyId) return;
+
+            const customerFilter = document.getElementById('filterCustomer').value;
+            const yearFilter = document.getElementById('filterYear').value;
+            const monthFilter = document.getElementById('filterMonth').value;
+
+            const tbody = document.querySelector('#invoicesTable tbody');
+            tbody.innerHTML = '';
+
+            let filtered = invoices.filter(i => i.companyId === currentCompanyId);
+
+            if (customerFilter) {
+                filtered = filtered.filter(i => i.customerId === customerFilter);
+            }
+
+            if (yearFilter) {
+                filtered = filtered.filter(i => new Date(i.date).getFullYear().toString() === yearFilter);
+            }
+
+            if (monthFilter) {
+                filtered = filtered.filter(i => (new Date(i.date).getMonth() + 1).toString() === monthFilter);
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna fattura trovata.</td></tr>';
+                return;
+            }
+
+            const sortedInvoices = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedInvoices.forEach(invoice => {
+                const customer = customers.find(c => c.id === invoice.customerId);
+                const symbol = currencySymbols[invoice.currency] || '€';
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${invoice.number}</strong></td>
+                    <td>${new Date(invoice.date).toLocaleDateString('it-IT')}</td>
+                    <td>${customer ? customer.name : 'Cliente eliminato'}</td>
+                    <td>${invoice.currency}</td>
+                    <td><strong>${symbol}${invoice.total.toFixed(2)}</strong></td>
+                    <td class="action-btns">
+                        <button class="btn btn-secondary" onclick="regeneratePDF('${invoice.id}')">PDF</button>
+                        <button class="btn btn-danger" onclick="deleteInvoice('${invoice.id}')">Elimina</button>
+                    </td>
+                `;
+            });
+        }
+
+        function deleteInvoice(invoiceId) {
+            if (confirm('⚠️ ATTENZIONE: Eliminare questa fattura comprometterà la numerazione progressiva!\n\nSei sicuro?')) {
+                invoices = invoices.filter(i => i.id !== invoiceId);
+                localStorage.setItem('invoices', JSON.stringify(invoices));
+                loadInvoices();
+                updateDashboard();
+            }
+        }
+
+        function regeneratePDF(invoiceId) {
+            const invoice = invoices.find(i => i.id === invoiceId);
+            if (invoice) {
+                generatePDF(invoice);
+            }
+        }
+
+        // PDF GENERATION
+        function generatePDF(invoice) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const customer = customers.find(c => c.id === invoice.customerId);
+            const company = companies.find(c => c.id === invoice.companyId);
+            const symbol = currencySymbols[invoice.currency] || '€';
+
+            // Header
+            doc.setFillColor(0, 0, 0);
+            doc.rect(0, 0, 210, 45, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(32);
+            doc.setFont('helvetica', 'bold');
+            doc.text('INVOICE', 105, 28, { align: 'center' });
+
+            doc.setTextColor(0, 0, 0);
+
+            // Company info (left)
+            doc.setFontSize(13);
+            doc.setFont('helvetica', 'bold');
+            doc.text(company.name, 15, 58);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+
+            let yPos = 65;
+            if (company.address) {
+                const addressLines = doc.splitTextToSize(company.address, 85);
+                addressLines.forEach(line => {
+                    doc.text(line, 15, yPos);
+                    yPos += 6;
+                });
+            }
+
+            if (company.email) {
+                doc.text(`Email: ${company.email}`, 15, yPos);
+                yPos += 6;
+            }
+
+            if (company.taxId) {
+                doc.text(`Tax ID: ${company.taxId}`, 15, yPos);
+            }
+
+            // Customer info (right)
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('BILL TO:', 120, 58);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.text(customer.name, 120, 65);
+            if (customer.address) {
+                doc.setFontSize(10);
+                const addressLines = doc.splitTextToSize(customer.address, 75);
+                let y = 72;
+                addressLines.forEach(line => {
+                    doc.text(line, 120, y);
+                    y += 6;
+                });
+            }
+
+            // Date
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`DATE: ${new Date(invoice.date).toLocaleDateString('en-US')}`, 15, 103);
+
+            // Items table
+            let tableY = 118;
+
+            // Table header
+            doc.setFillColor(0, 0, 0);
+            doc.rect(15, tableY, 180, 12, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('DESCRIPTION', 20, tableY + 8);
+            doc.text('AMOUNT', 180, tableY + 8, { align: 'right' });
+
+            // Table rows
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            tableY += 12;
+
+            invoice.items.forEach((item, index) => {
+                const descLines = doc.splitTextToSize(item.description, 130);
+                doc.setFont('helvetica', 'normal');
+                doc.text(descLines[0], 20, tableY + 7);
+                doc.setFont('helvetica', 'bold');
+                doc.text(`${symbol} ${item.amount.toFixed(2)}`, 190, tableY + 7, { align: 'right' });
+
+                // Add subtle line between items
+                if (index < invoice.items.length - 1) {
+                    doc.setDrawColor(240, 240, 240);
+                    doc.line(15, tableY + 10, 195, tableY + 10);
+                }
+
+                tableY += 12;
+            });
+
+            // Total
+            tableY += 10;
+
+            // Subtotal line
+            doc.setDrawColor(200, 200, 200);
+            doc.line(120, tableY, 195, tableY);
+
+            // Total box
+            doc.setFillColor(0, 0, 0);
+            doc.rect(120, tableY + 5, 75, 18, 'F');
+
+            // Total label
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('TOTAL', 125, tableY + 14);
+
+            // Total amount
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            const totalText = `${symbol} ${invoice.total.toFixed(2)}`;
+            doc.text(totalText, 190, tableY + 16, { align: 'right' });
+
+            // Payment info
+            if (company.payment) {
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PAYMENT INFORMATION:', 15, tableY + 35);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                const paymentLines = doc.splitTextToSize(company.payment, 180);
+                let y = tableY + 42;
+                paymentLines.forEach(line => {
+                    doc.text(line, 15, y);
+                    y += 5;
+                });
+            }
+
+            // Footer
+            doc.setTextColor(120, 120, 120);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'italic');
+            doc.text('Thank you for your business!', 105, 280, { align: 'center' });
+
+            // Save
+            doc.save(`Invoice_${customer.name.replace(/\s+/g, '_')}_${invoice.date}.pdf`);
+        }
+
+        // EXPENSES
+        function setupExpenseDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('expenseDate').value = today;
+        }
+
+        function openExpenseModal() {
+            if (!currentCompanyId) {
+                alert('Seleziona prima un\'azienda!');
+                return;
+            }
+
+            const modal = document.getElementById('expenseModal');
+            const form = document.getElementById('expenseForm');
+
+            form.reset();
+            setupExpenseDate();
+
+            modal.classList.add('active');
+        }
+
+        function closeExpenseModal() {
+            document.getElementById('expenseModal').classList.remove('active');
+        }
+
+        document.getElementById('expenseForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const expenseData = {
+                id: Date.now().toString(),
+                companyId: currentCompanyId,
+                date: document.getElementById('expenseDate').value,
+                description: document.getElementById('expenseDescription').value,
+                category: document.getElementById('expenseCategory').value,
+                amount: parseFloat(document.getElementById('expenseAmount').value),
+                createdAt: new Date().toISOString()
+            };
+
+            expenses.push(expenseData);
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+
+            loadExpenses();
+            closeExpenseModal();
+            updateDashboard();
+        });
+
+        function loadExpenses() {
+            if (!currentCompanyId) return;
+
+            const tbody = document.querySelector('#expensesTable tbody');
+            tbody.innerHTML = '';
+
+            const companyExpenses = expenses.filter(e => e.companyId === currentCompanyId);
+
+            if (companyExpenses.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna spesa presente. Aggiungi la prima spesa!</td></tr>';
+                return;
+            }
+
+            const sortedExpenses = [...companyExpenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedExpenses.forEach(expense => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${new Date(expense.date).toLocaleDateString('it-IT')}</td>
+                    <td>${expense.description}</td>
+                    <td>${expense.category}</td>
+                    <td><strong>€${expense.amount.toFixed(2)}</strong></td>
+                    <td class="action-btns">
+                        <button class="btn btn-danger" onclick="deleteExpense('${expense.id}')">Elimina</button>
+                    </td>
+                `;
+            });
+        }
+
+        function deleteExpense(expenseId) {
+            if (confirm('Sei sicuro di voler eliminare questa spesa?')) {
+                expenses = expenses.filter(e => e.id !== expenseId);
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+                loadExpenses();
+                updateDashboard();
+            }
+        }
+
+        function exportExpensesToCSV() {
+            if (!currentCompanyId) return;
+
+            const companyExpenses = expenses.filter(e => e.companyId === currentCompanyId);
+            if (companyExpenses.length === 0) {
+                alert('Non ci sono spese da esportare!');
+                return;
+            }
+
+            let csv = 'Data,Descrizione,Categoria,Importo\n';
+
+            companyExpenses.forEach(exp => {
+                const description = exp.description.replace(/,/g, ' ');
+                csv += `${exp.date},${description},${exp.category},${exp.amount.toFixed(2)}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', `spese_export_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // REMINDERS
+        function openReminderModal() {
+            const modal = document.getElementById('reminderModal');
+            const form = document.getElementById('reminderForm');
+
+            form.reset();
+
+            modal.classList.add('active');
+        }
+
+        function closeReminderModal() {
+            document.getElementById('reminderModal').classList.remove('active');
+        }
+
+        document.getElementById('reminderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!currentCompanyId) {
+                alert('Seleziona prima un\'azienda!');
+                return;
+            }
+
+            const reminderData = {
+                id: Date.now().toString(),
+                companyId: currentCompanyId,
+                description: document.getElementById('reminderDescription').value,
+                date: document.getElementById('reminderDate').value,
+                recurrence: document.getElementById('reminderRecurrence').value,
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+
+            reminders.push(reminderData);
+            localStorage.setItem('reminders', JSON.stringify(reminders));
+
+            loadReminders();
+            closeReminderModal();
+            checkReminders();
+        });
+
+        function loadReminders() {
+            if (!currentCompanyId) return;
+
+            const tbody = document.querySelector('#remindersTable tbody');
+            tbody.innerHTML = '';
+
+            const companyReminders = reminders.filter(r => r.companyId === currentCompanyId);
+
+            if (companyReminders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna scadenza presente. Aggiungi la prima scadenza!</td></tr>';
+                return;
+            }
+
+            const sortedReminders = [...companyReminders].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const recurrenceLabels = {
+                'once': 'Una volta',
+                'weekly': 'Settimanale',
+                'monthly': 'Mensile',
+                'yearly': 'Annuale'
+            };
+
+            sortedReminders.forEach(reminder => {
+                const row = tbody.insertRow();
+                const statusBadge = reminder.status === 'done' ?
+                    '<span style="color: var(--success); font-weight: 600;">✓ Fatto</span>' :
+                    '<span style="color: var(--warning); font-weight: 600;">⏱ In attesa</span>';
+
+                row.innerHTML = `
+                    <td>${reminder.description}</td>
+                    <td>${new Date(reminder.date).toLocaleDateString('it-IT')}</td>
+                    <td>${recurrenceLabels[reminder.recurrence]}</td>
+                    <td>${statusBadge}</td>
+                    <td class="action-btns">
+                        ${reminder.status === 'pending' ? `<button class="btn btn-success" onclick="markReminderDone('${reminder.id}')">Fatto</button>` : ''}
+                        <button class="btn btn-danger" onclick="deleteReminder('${reminder.id}')">Elimina</button>
+                    </td>
+                `;
+            });
+        }
+
+        function markReminderDone(reminderId) {
+            const reminder = reminders.find(r => r.id === reminderId);
+            if (!reminder) return;
+
+            reminder.status = 'done';
+
+            // Handle recurrence
+            if (reminder.recurrence !== 'once') {
+                const currentDate = new Date(reminder.date);
+                let nextDate = new Date(currentDate);
+
+                switch (reminder.recurrence) {
+                    case 'weekly':
+                        nextDate.setDate(nextDate.getDate() + 7);
+                        break;
+                    case 'monthly':
+                        nextDate.setMonth(nextDate.getMonth() + 1);
+                        break;
+                    case 'yearly':
+                        nextDate.setFullYear(nextDate.getFullYear() + 1);
+                        break;
+                }
+
+                // Create new reminder
+                const newReminder = {
+                    id: Date.now().toString(),
+                    companyId: reminder.companyId,
+                    description: reminder.description,
+                    date: nextDate.toISOString().split('T')[0],
+                    recurrence: reminder.recurrence,
+                    status: 'pending',
+                    createdAt: new Date().toISOString()
+                };
+
+                reminders.push(newReminder);
+            }
+
+            localStorage.setItem('reminders', JSON.stringify(reminders));
+            loadReminders();
+            checkReminders();
+        }
+
+        function deleteReminder(reminderId) {
+            if (confirm('Sei sicuro di voler eliminare questa scadenza?')) {
+                reminders = reminders.filter(r => r.id !== reminderId);
+                localStorage.setItem('reminders', JSON.stringify(reminders));
+                loadReminders();
+                checkReminders();
+            }
+        }
+
+        function checkReminders() {
+            if (!currentCompanyId) return;
+
+            const today = new Date();
+            const oneMonthLater = new Date(today);
+            oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+
+            const upcomingReminders = reminders.filter(r => {
+                if (r.companyId !== currentCompanyId) return false;
+                if (r.status === 'done') return false;
+                const reminderDate = new Date(r.date);
+                return reminderDate >= today && reminderDate <= oneMonthLater;
+            });
+
+            const alertsContainer = document.getElementById('reminderAlerts');
+            alertsContainer.innerHTML = '';
+
+            if (upcomingReminders.length > 0) {
+                upcomingReminders.forEach(reminder => {
+                    const daysUntil = Math.ceil((new Date(reminder.date) - today) / (1000 * 60 * 60 * 24));
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-warning';
+                    alert.innerHTML = `
+                        <div>
+                            <strong>⚠️ Scadenza:</strong> ${reminder.description} - 
+                            <strong>${daysUntil} giorni</strong> (${new Date(reminder.date).toLocaleDateString('it-IT')})
+                        </div>
+                        <button class="btn btn-success" onclick="markReminderDone('${reminder.id}')">Fatto</button>
+                    `;
+                    alertsContainer.appendChild(alert);
+                });
+
+                document.getElementById('reminderBadge').textContent = upcomingReminders.length;
+                document.getElementById('reminderBadge').style.display = 'inline';
+            } else {
+                document.getElementById('reminderBadge').style.display = 'none';
+            }
+        }
+
+        // DASHBOARD
+        function updateDashboard() {
+            if (!currentCompanyId) return;
+
+            const companyInvoices = invoices.filter(i => i.companyId === currentCompanyId);
+            const companyExpenses = expenses.filter(e => e.companyId === currentCompanyId);
+
+            const totalRevenue = companyInvoices.reduce((sum, inv) => sum + inv.total, 0);
+            const totalExpensesAmount = companyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const netRevenue = totalRevenue - totalExpensesAmount;
+
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+
+            const monthInvoices = companyInvoices.filter(inv => {
+                const invDate = new Date(inv.date);
+                return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
+            });
+
+            document.getElementById('totalRevenue').textContent = `€${totalRevenue.toFixed(2)}`;
+            document.getElementById('totalExpenses').textContent = `€${totalExpensesAmount.toFixed(2)}`;
+            document.getElementById('netRevenue').textContent = `€${netRevenue.toFixed(2)}`;
+            document.getElementById('monthInvoices').textContent = monthInvoices.length;
+
+            updateFinanceChart();
+        }
+
+        function updateFinanceChart() {
+            const canvas = document.getElementById('financeChart');
+            const ctx = canvas.getContext('2d');
+
+            if (window.financeChartInstance) {
+                window.financeChartInstance.destroy();
+            }
+
+            const months = [];
+            const revenues = [];
+            const expensesData = [];
+            const currentDate = new Date();
+
+            for (let i = 11; i >= 0; i--) {
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                const monthName = date.toLocaleDateString('it-IT', { month: 'short', year: '2-digit' });
+                months.push(monthName);
+
+                const monthRevenue = invoices
+                    .filter(inv => {
+                        if (inv.companyId !== currentCompanyId) return false;
+                        const invDate = new Date(inv.date);
+                        return invDate.getMonth() === date.getMonth() &&
+                               invDate.getFullYear() === date.getFullYear();
+                    })
+                    .reduce((sum, inv) => sum + inv.total, 0);
+
+                const monthExpenses = expenses
+                    .filter(exp => {
+                        if (exp.companyId !== currentCompanyId) return false;
+                        const expDate = new Date(exp.date);
+                        return expDate.getMonth() === date.getMonth() &&
+                               expDate.getFullYear() === date.getFullYear();
+                    })
+                    .reduce((sum, exp) => sum + exp.amount, 0);
+
+                revenues.push(monthRevenue);
+                expensesData.push(monthExpenses);
+            }
+
+            window.financeChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Fatturato (€)',
+                            data: revenues,
+                            borderColor: 'rgb(0, 255, 0)',
+                            backgroundColor: 'rgba(0, 255, 0, 0.15)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: 'rgb(0, 255, 0)',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2
+                        },
+                        {
+                            label: 'Spese (€)',
+                            data: expensesData,
+                            borderColor: 'rgba(255, 255, 255, 0.6)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            pointHoverBorderColor: '#000',
+                            pointHoverBorderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.9)',
+                                font: {
+                                    family: 'Manrope',
+                                    size: 12,
+                                    weight: '700'
+                                },
+                                padding: 16,
+                                usePointStyle: false,
+                                boxWidth: 12,
+                                boxHeight: 12,
+                                borderRadius: 3,
+                                generateLabels: function(chart) {
+                                    const datasets = chart.data.datasets;
+                                    return datasets.map((dataset, i) => ({
+                                        text: dataset.label,
+                                        fillStyle: dataset.borderColor,
+                                        hidden: !chart.isDatasetVisible(i),
+                                        lineCap: dataset.borderCapStyle,
+                                        lineDash: dataset.borderDash || [],
+                                        lineDashOffset: dataset.borderDashOffset,
+                                        lineJoin: dataset.borderJoinStyle,
+                                        lineWidth: 3,
+                                        strokeStyle: dataset.borderColor,
+                                        pointStyle: 'rect',
+                                        datasetIndex: i
+                                    }));
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            titleColor: 'rgba(255, 255, 255, 0.9)',
+                            bodyColor: 'rgba(255, 255, 255, 0.8)',
+                            borderColor: 'rgba(0, 255, 0, 0.3)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            titleFont: {
+                                family: 'Manrope',
+                                size: 13,
+                                weight: '700'
+                            },
+                            bodyFont: {
+                                family: 'Manrope',
+                                size: 12,
+                                weight: '600'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.5)',
+                                font: {
+                                    family: 'Manrope',
+                                    size: 11,
+                                    weight: '600'
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.5)',
+                                font: {
+                                    family: 'Manrope',
+                                    size: 11,
+                                    weight: '600'
+                                },
+                                callback: function(value) {
+                                    return '€' + value.toFixed(0);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCustomersChart() {
+            const canvas = document.getElementById('customersChart');
+            const ctx = canvas.getContext('2d');
+
+            if (window.customersChartInstance) {
+                window.customersChartInstance.destroy();
+            }
+
+            const customerRevenues = {};
+            invoices.filter(i => i.companyId === currentCompanyId).forEach(inv => {
+                if (!customerRevenues[inv.customerId]) {
+                    customerRevenues[inv.customerId] = 0;
+                }
+                customerRevenues[inv.customerId] += inv.total;
+            });
+
+            const sorted = Object.entries(customerRevenues)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            if (sorted.length === 0) {
+                canvas.parentElement.innerHTML = '<div class="empty-state">Nessun dato disponibile.</div>';
+                return;
+            }
+
+            const labels = sorted.map(([id]) => {
+                const customer = customers.find(c => c.id === id);
+                return customer ? customer.name : 'Cliente eliminato';
+            });
+
+            const data = sorted.map(([, revenue]) => revenue);
+
+            window.customersChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Fatturato (€)',
+                        data: data,
+                        backgroundColor: 'rgba(0, 255, 0, 0.8)',
+                        borderColor: 'rgb(0, 255, 0)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '€' + value.toFixed(0);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // REPORTS
+        function populateYearFilters() {
+            const years = [...new Set(invoices.map(inv => new Date(inv.date).getFullYear()))].sort((a, b) => b - a);
+
+            if (years.length === 0) {
+                years.push(new Date().getFullYear());
+            }
+
+            const selects = [
+                document.getElementById('filterYear'),
+                document.getElementById('reportYear')
+            ];
+
+            selects.forEach(select => {
+                const currentValue = select.value;
+                if (select.id === 'filterYear') {
+                    select.innerHTML = '<option value="">Tutti</option>';
+                } else {
+                    select.innerHTML = '';
+                }
+
+                years.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    select.appendChild(option);
+                });
+
+                if (!currentValue && years.length > 0) {
+                    select.value = years[0];
+                }
+            });
+        }
+
+        function generateReports() {
+            generateMonthlyReport();
+            generateCustomerReport();
+        }
+
+        function generateMonthlyReport() {
+            if (!currentCompanyId) return;
+
+            const year = document.getElementById('reportYear').value || new Date().getFullYear();
+            const tbody = document.querySelector('#monthlyReportTable tbody');
+            tbody.innerHTML = '';
+
+            const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                              'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+
+            let yearTotal = 0;
+            let yearExpenses = 0;
+            let yearInvoices = 0;
+
+            for (let month = 0; month < 12; month++) {
+                const monthInvoices = invoices.filter(inv => {
+                    if (inv.companyId !== currentCompanyId) return false;
+                    const invDate = new Date(inv.date);
+                    return invDate.getMonth() === month && invDate.getFullYear() == year;
+                });
+
+                const monthExpenses = expenses.filter(exp => {
+                    if (exp.companyId !== currentCompanyId) return false;
+                    const expDate = new Date(exp.date);
+                    return expDate.getMonth() === month && expDate.getFullYear() == year;
+                });
+
+                const monthRevenue = monthInvoices.reduce((sum, inv) => sum + inv.total, 0);
+                const monthExpenseTotal = monthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+                const monthNet = monthRevenue - monthExpenseTotal;
+
+                yearTotal += monthRevenue;
+                yearExpenses += monthExpenseTotal;
+                yearInvoices += monthInvoices.length;
+
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${monthNames[month]}</strong></td>
+                    <td>${monthInvoices.length}</td>
+                    <td><strong>€${monthRevenue.toFixed(2)}</strong></td>
+                    <td><strong>€${monthExpenseTotal.toFixed(2)}</strong></td>
+                    <td><strong>€${monthNet.toFixed(2)}</strong></td>
+                `;
+            }
+
+            const totalRow = tbody.insertRow();
+            totalRow.style.background = 'rgba(255, 255, 255, 0.05)';
+            totalRow.style.borderTop = '2px solid var(--primary-green)';
+            totalRow.style.color = 'var(--text-primary)';
+            totalRow.style.fontWeight = 'bold';
+            totalRow.innerHTML = `
+                <td><strong>TOTALE ${year}</strong></td>
+                <td>${yearInvoices}</td>
+                <td><strong>€${yearTotal.toFixed(2)}</strong></td>
+                <td><strong>€${yearExpenses.toFixed(2)}</strong></td>
+                <td><strong>€${(yearTotal - yearExpenses).toFixed(2)}</strong></td>
+            `;
+        }
+
+        function generateCustomerReport() {
+            if (!currentCompanyId) return;
+
+            const tbody = document.querySelector('#customerReportTable tbody');
+            tbody.innerHTML = '';
+
+            const customerData = {};
+
+            invoices.filter(i => i.companyId === currentCompanyId).forEach(inv => {
+                if (!customerData[inv.customerId]) {
+                    customerData[inv.customerId] = {
+                        count: 0,
+                        total: 0
+                    };
+                }
+                customerData[inv.customerId].count++;
+                customerData[inv.customerId].total += inv.total;
+            });
+
+            const sorted = Object.entries(customerData).sort((a, b) => b[1].total - a[1].total);
+
+            if (sorted.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessun dato disponibile.</td></tr>';
+                return;
+            }
+
+            sorted.forEach(([customerId, data]) => {
+                const customer = customers.find(c => c.id === customerId);
+                const average = data.total / data.count;
+
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${customer ? customer.name : 'Cliente eliminato'}</strong></td>
+                    <td>${data.count}</td>
+                    <td><strong>€${data.total.toFixed(2)}</strong></td>
+                    <td>€${average.toFixed(2)}</td>
+                `;
+            });
+        }
+
+        // CSV EXPORT
+        function exportToCSV() {
+            if (!currentCompanyId) return;
+
+            const companyInvoices = invoices.filter(i => i.companyId === currentCompanyId);
+            if (companyInvoices.length === 0) {
+                alert('Non ci sono fatture da esportare!');
+                return;
+            }
+
+            let csv = 'Numero Fattura,Data,Cliente,Valuta,Importo\n';
+
+            companyInvoices.forEach(inv => {
+                const customer = customers.find(c => c.id === inv.customerId);
+                const customerName = customer ? customer.name.replace(/,/g, ' ') : 'Cliente eliminato';
+
+                csv += `${inv.number},${inv.date},${customerName},${inv.currency},${inv.total.toFixed(2)}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', `fatture_export_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
