@@ -1324,13 +1324,60 @@
     </div>
 
     <script>
-        // Data Storage
-        let companies = JSON.parse(localStorage.getItem('companies')) || [];
+        // ==========================================
+        // API CONFIGURATION - RENDER BACKEND
+        // ==========================================
+        const API_BASE = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000/api'
+            : 'https://numbers-backend-jw5i.onrender.com/api';
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            };
+        }
+
+        async function apiCall(method, endpoint, data = null) {
+            const options = {
+                method,
+                headers: getHeaders()
+            };
+            if (data) options.body = JSON.stringify(data);
+
+            const response = await fetch(`${API_BASE}${endpoint}`, options);
+
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || 'Errore API');
+            }
+
+            return response.json();
+        }
+
+        // Check login
+        if (!getToken()) {
+            window.location.href = 'auth.html';
+        }
+
+        // Data Storage (in-memory cache)
+        let companies = [];
         let currentCompanyId = localStorage.getItem('currentCompanyId') || null;
-        let customers = JSON.parse(localStorage.getItem('customers')) || [];
-        let invoices = JSON.parse(localStorage.getItem('invoices')) || [];
-        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
-        let reminders = JSON.parse(localStorage.getItem('reminders')) || [];
+        let customers = [];
+        let invoices = [];
+        let expenses = [];
+        let reminders = [];
 
         // Currency symbols
         const currencySymbols = {
@@ -1341,19 +1388,10 @@
         };
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadCompanies();
-            updateCompanyDisplay();
-            loadCustomers();
-            loadInvoices();
-            loadExpenses();
-            loadReminders();
-            updateDashboard();
-            generateReports();
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initApp();
             setupInvoiceDate();
             setupExpenseDate();
-            populateYearFilters();
-            checkReminders();
 
             // Chiudi dropdown quando clicchi fuori
             document.addEventListener('click', function(e) {
@@ -1438,18 +1476,61 @@
             dropdown.appendChild(newOption);
         }
 
+        async function initApp() {
+            try {
+                companies = await apiCall('GET', '/companies') || [];
+                if (companies.length > 0) {
+                    if (!currentCompanyId || !companies.find(c => c.id == currentCompanyId)) {
+                        currentCompanyId = companies[0].id;
+                        localStorage.setItem('currentCompanyId', currentCompanyId);
+                    }
+                    await loadAllData();
+                }
+                updateCompanyDisplay();
+                updateCompanyDropdown();
+                updateDashboard();
+                generateReports();
+                populateYearFilters();
+                checkReminders();
+            } catch(e) {
+                console.error('Errore inizializzazione:', e);
+            }
+        }
+
+        async function loadAllData() {
+            if (!currentCompanyId) return;
+            try {
+                [customers, invoices, expenses, reminders] = await Promise.all([
+                    apiCall('GET', `/companies/${currentCompanyId}/customers`),
+                    apiCall('GET', `/companies/${currentCompanyId}/invoices`),
+                    apiCall('GET', `/companies/${currentCompanyId}/expenses`),
+                    apiCall('GET', `/companies/${currentCompanyId}/reminders`)
+                ]);
+                customers = customers || [];
+                invoices = invoices || [];
+                expenses = expenses || [];
+                reminders = reminders || [];
+            } catch(e) {
+                console.error('Errore caricamento dati:', e);
+            }
+        }
+
         function selectCompany(companyId) {
-            // Aggiorna l'azienda corrente
             currentCompanyId = companyId;
             localStorage.setItem('currentCompanyId', companyId);
 
-            // Chiudi il dropdown
             const dropdown = document.getElementById('companyDropdown');
             dropdown.classList.remove('active');
 
-            // Aggiorna UI
             updateCompanyDisplay();
-            updateDashboard();
+            loadAllData().then(() => {
+                loadCustomers();
+                loadInvoices();
+                loadExpenses();
+                loadReminders();
+                updateDashboard();
+                checkReminders();
+            });
         }
 
         function updateCompanyDisplay() {
@@ -1489,48 +1570,36 @@
             document.getElementById('companyModal').classList.remove('active');
         }
 
-        document.getElementById('companyForm').addEventListener('submit', function(e) {
+        document.getElementById('companyForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-
             try {
                 const companyId = document.getElementById('companyId').value;
                 const companyData = {
-                    id: companyId || Date.now().toString(),
                     name: document.getElementById('companyName').value,
                     address: document.getElementById('companyAddress').value,
                     email: document.getElementById('companyEmail').value,
-                    taxId: document.getElementById('companyTaxId').value,
-                    payment: document.getElementById('companyPayment').value,
-                    createdAt: companyId ? companies.find(c => c.id === companyId).createdAt : new Date().toISOString()
+                    vat_number: document.getElementById('companyTaxId').value,
+                    payment_info: document.getElementById('companyPayment').value
                 };
 
                 if (companyId) {
-                    const index = companies.findIndex(c => c.id === companyId);
-                    companies[index] = companyData;
+                    await apiCall('PUT', `/companies/${companyId}`, companyData);
                 } else {
-                    companies.push(companyData);
+                    const newCompany = await apiCall('POST', '/companies', companyData);
                     if (!currentCompanyId) {
-                        currentCompanyId = companyData.id;
+                        currentCompanyId = newCompany.id;
                         localStorage.setItem('currentCompanyId', currentCompanyId);
                     }
                 }
 
-                localStorage.setItem('companies', JSON.stringify(companies));
-
-                // CHIUDI IL MODAL PRIMA DI TUTTO
+                companies = await apiCall('GET', '/companies') || [];
                 closeCompanyModal();
-
-                // Poi aggiorna tutto in async
-                setTimeout(() => {
-                    loadCompanies();
-                    updateCompanyDisplay();
-                    updateCompanyDropdown(); // AGGIORNA DROPDOWN PER EVIDENZIATURA
-                    alert('Azienda salvata con successo!');
-                }, 100);
-
+                loadCompanies();
+                updateCompanyDisplay();
+                updateCompanyDropdown();
+                alert('Azienda salvata con successo!');
             } catch (error) {
                 console.error('Errore salvataggio azienda:', error);
-                closeCompanyModal();
                 alert('Errore: ' + error.message);
             }
         });
@@ -1559,17 +1628,21 @@
             });
         }
 
-        function deleteCompany(companyId) {
+        async function deleteCompany(companyId) {
             if (confirm('Sei sicuro di voler eliminare questa azienda?')) {
-                companies = companies.filter(c => c.id !== companyId);
-                if (currentCompanyId === companyId) {
-                    currentCompanyId = companies.length > 0 ? companies[0].id : null;
-                    localStorage.setItem('currentCompanyId', currentCompanyId);
+                try {
+                    await apiCall('DELETE', `/companies/${companyId}`);
+                    companies = await apiCall('GET', '/companies') || [];
+                    if (currentCompanyId == companyId) {
+                        currentCompanyId = companies.length > 0 ? companies[0].id : null;
+                        localStorage.setItem('currentCompanyId', currentCompanyId);
+                    }
+                    loadCompanies();
+                    updateCompanyDisplay();
+                    updateDashboard();
+                } catch(e) {
+                    alert('Errore eliminazione: ' + e.message);
                 }
-                localStorage.setItem('companies', JSON.stringify(companies));
-                loadCompanies();
-                updateCompanyDisplay();
-                updateDashboard();
             }
         }
 
@@ -1596,73 +1669,45 @@
             document.getElementById('settingsModal').classList.remove('active');
         }
 
-        document.getElementById('settingsForm').addEventListener('submit', function(e) {
+        document.getElementById('settingsForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-
             try {
-                if (!currentCompanyId) {
-                    alert('Nessuna azienda selezionata!');
-                    return;
-                }
-
-                const company = companies.find(c => c.id === currentCompanyId);
-                if (!company) {
-                    alert('Errore: azienda non trovata!');
-                    return;
-                }
-
-                company.name = document.getElementById('settingsCompanyName').value;
-                company.address = document.getElementById('settingsCompanyAddress').value;
-                company.email = document.getElementById('settingsCompanyEmail').value;
-                company.taxId = document.getElementById('settingsCompanyTaxId').value;
-                company.payment = document.getElementById('settingsCompanyPayment').value;
-
-                localStorage.setItem('companies', JSON.stringify(companies));
-
-                // Chiudi modal prima di aggiornare
+                if (!currentCompanyId) { alert('Nessuna azienda selezionata!'); return; }
+                await apiCall('PUT', `/companies/${currentCompanyId}`, {
+                    name: document.getElementById('settingsCompanyName').value,
+                    address: document.getElementById('settingsCompanyAddress').value,
+                    email: document.getElementById('settingsCompanyEmail').value,
+                    vat_number: document.getElementById('settingsCompanyTaxId').value,
+                    payment_info: document.getElementById('settingsCompanyPayment').value
+                });
+                companies = await apiCall('GET', '/companies') || [];
                 closeSettingsModal();
-
-                // Poi aggiorna tutto
-                setTimeout(() => {
-                    loadCompanies();
-                    updateCompanyDisplay();
-                    updateCompanyDropdown();
-                    alert('Impostazioni azienda aggiornate con successo!');
-                }, 100);
+                loadCompanies();
+                updateCompanyDisplay();
+                updateCompanyDropdown();
+                alert('Impostazioni azienda aggiornate con successo!');
             } catch (error) {
-                console.error('Errore nel salvare le impostazioni:', error);
-                closeSettingsModal();
-                alert('Errore nel salvare le impostazioni: ' + error.message);
+                alert('Errore: ' + error.message);
             }
         });
 
-        function deleteCurrentCompany() {
+        async function deleteCurrentCompany() {
             if (!currentCompanyId) return;
-
-            if (confirm('⚠️ ATTENZIONE: Eliminando questa azienda verranno eliminati anche tutti i dati associati (clienti, fatture, spese, scadenze). Questa azione è irreversibile. Continuare?')) {
-                // Delete all related data
-                customers = customers.filter(c => c.companyId !== currentCompanyId);
-                invoices = invoices.filter(i => i.companyId !== currentCompanyId);
-                expenses = expenses.filter(e => e.companyId !== currentCompanyId);
-                reminders = reminders.filter(r => r.companyId !== currentCompanyId);
-                companies = companies.filter(c => c.id !== currentCompanyId);
-
-                // Save everything
-                localStorage.setItem('customers', JSON.stringify(customers));
-                localStorage.setItem('invoices', JSON.stringify(invoices));
-                localStorage.setItem('expenses', JSON.stringify(expenses));
-                localStorage.setItem('reminders', JSON.stringify(reminders));
-                localStorage.setItem('companies', JSON.stringify(companies));
-
-                // Switch to another company or clear selection
-                currentCompanyId = companies.length > 0 ? companies[0].id : null;
-                localStorage.setItem('currentCompanyId', currentCompanyId);
-
-                closeSettingsModal();
-                updateCompanyDisplay();
-                updateCompanyDropdown();
-                updateDashboard();
-                alert('Azienda eliminata con successo.');
+            if (confirm('⚠️ ATTENZIONE: Eliminando questa azienda verranno eliminati anche tutti i dati associati. Continuare?')) {
+                try {
+                    await apiCall('DELETE', `/companies/${currentCompanyId}`);
+                    companies = await apiCall('GET', '/companies') || [];
+                    currentCompanyId = companies.length > 0 ? companies[0].id : null;
+                    localStorage.setItem('currentCompanyId', currentCompanyId);
+                    if (currentCompanyId) await loadAllData();
+                    closeSettingsModal();
+                    updateCompanyDisplay();
+                    updateCompanyDropdown();
+                    updateDashboard();
+                    alert('Azienda eliminata con successo.');
+                } catch(e) {
+                    alert('Errore: ' + e.message);
+                }
             }
         }
 
@@ -1696,30 +1741,27 @@
             document.getElementById('customerModal').classList.remove('active');
         }
 
-        document.getElementById('customerForm').addEventListener('submit', function(e) {
+        document.getElementById('customerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-
-            const customerId = document.getElementById('customerId').value;
-            const customerData = {
-                id: customerId || Date.now().toString(),
-                companyId: currentCompanyId,
-                name: document.getElementById('customerName').value,
-                address: document.getElementById('customerAddress').value,
-                vat: document.getElementById('customerVat').value,
-                createdAt: customerId ? customers.find(c => c.id === customerId).createdAt : new Date().toISOString()
-            };
-
-            if (customerId) {
-                const index = customers.findIndex(c => c.id === customerId);
-                customers[index] = customerData;
-            } else {
-                customers.push(customerData);
+            try {
+                const customerId = document.getElementById('customerId').value;
+                const customerData = {
+                    name: document.getElementById('customerName').value,
+                    address: document.getElementById('customerAddress').value,
+                    vat_number: document.getElementById('customerVat').value
+                };
+                if (customerId) {
+                    await apiCall('PUT', `/customers/${customerId}`, customerData);
+                } else {
+                    await apiCall('POST', `/companies/${currentCompanyId}/customers`, customerData);
+                }
+                customers = await apiCall('GET', `/companies/${currentCompanyId}/customers`) || [];
+                loadCustomers();
+                closeCustomerModal();
+                updateDashboard();
+            } catch(e) {
+                alert('Errore: ' + e.message);
             }
-
-            localStorage.setItem('customers', JSON.stringify(customers));
-            loadCustomers();
-            closeCustomerModal();
-            updateDashboard();
         });
 
         function loadCustomers() {
@@ -1728,7 +1770,7 @@
             const tbody = document.querySelector('#customersTable tbody');
             tbody.innerHTML = '';
 
-            const companyCustomers = customers.filter(c => c.companyId === currentCompanyId);
+            const companyCustomers = customers;
 
             if (companyCustomers.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Nessun cliente presente. Aggiungi il primo cliente!</td></tr>';
@@ -1736,11 +1778,10 @@
             }
 
             const customerRevenues = {};
-            invoices.filter(i => i.companyId === currentCompanyId).forEach(inv => {
-                if (!customerRevenues[inv.customerId]) {
-                    customerRevenues[inv.customerId] = 0;
-                }
-                customerRevenues[inv.customerId] += inv.total;
+            invoices.forEach(inv => {
+                const cid = inv.customer_id || inv.customerId;
+                if (!customerRevenues[cid]) customerRevenues[cid] = 0;
+                customerRevenues[cid] += parseFloat(inv.total);
             });
 
             companyCustomers.forEach(customer => {
@@ -1759,15 +1800,18 @@
             updateCustomerSelects();
         }
 
-        function deleteCustomer(customerId) {
+        async function deleteCustomer(customerId) {
             if (confirm('Sei sicuro di voler eliminare questo cliente?')) {
-                customers = customers.filter(c => c.id !== customerId);
-                invoices = invoices.filter(i => i.customerId !== customerId);
-                localStorage.setItem('customers', JSON.stringify(customers));
-                localStorage.setItem('invoices', JSON.stringify(invoices));
-                loadCustomers();
-                loadInvoices();
-                updateDashboard();
+                try {
+                    await apiCall('DELETE', `/customers/${customerId}`);
+                    customers = await apiCall('GET', `/companies/${currentCompanyId}/customers`) || [];
+                    invoices = await apiCall('GET', `/companies/${currentCompanyId}/invoices`) || [];
+                    loadCustomers();
+                    loadInvoices();
+                    updateDashboard();
+                } catch(e) {
+                    alert('Errore: ' + e.message);
+                }
             }
         }
 
@@ -1882,45 +1926,59 @@
             document.getElementById('invoiceModal').classList.remove('active');
         }
 
-        document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+        document.getElementById('invoiceForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            try {
+                const invoiceNumber = parseInt(document.getElementById('invoiceNumber').value);
+                const expectedNumber = getNextInvoiceNumber();
 
-            const invoiceNumber = parseInt(document.getElementById('invoiceNumber').value);
-            const expectedNumber = getNextInvoiceNumber();
+                if (invoiceNumber !== expectedNumber) {
+                    alert(`❌ Errore: Il numero fattura deve essere ${expectedNumber} (progressivo).`);
+                    document.getElementById('invoiceNumber').value = expectedNumber;
+                    return;
+                }
 
-            if (invoiceNumber !== expectedNumber) {
-                alert(`❌ Errore: Il numero fattura deve essere ${expectedNumber} (progressivo).`);
-                document.getElementById('invoiceNumber').value = expectedNumber;
-                return;
-            }
-
-            const items = [];
-            document.querySelectorAll('.invoice-item').forEach(item => {
-                items.push({
-                    description: item.querySelector('.item-description').value,
-                    amount: parseFloat(item.querySelector('.item-amount').value)
+                const items = [];
+                document.querySelectorAll('.invoice-item').forEach(item => {
+                    items.push({
+                        description: item.querySelector('.item-description').value,
+                        amount: parseFloat(item.querySelector('.item-amount').value)
+                    });
                 });
-            });
 
-            const invoiceData = {
-                id: Date.now().toString(),
-                companyId: currentCompanyId,
-                number: invoiceNumber.toString(),
-                date: document.getElementById('invoiceDate').value,
-                customerId: document.getElementById('invoiceCustomer').value,
-                currency: document.getElementById('invoiceCurrency').value,
-                items: items,
-                total: parseFloat(document.getElementById('invoiceTotal').textContent),
-                createdAt: new Date().toISOString()
-            };
+                const total = parseFloat(document.getElementById('invoiceTotal').textContent);
+                const invoiceData = {
+                    invoice_number: invoiceNumber.toString(),
+                    invoice_date: document.getElementById('invoiceDate').value,
+                    customer_id: parseInt(document.getElementById('invoiceCustomer').value),
+                    currency: document.getElementById('invoiceCurrency').value,
+                    items: items,
+                    subtotal: total,
+                    tax: 0,
+                    total: total
+                };
 
-            invoices.push(invoiceData);
-            localStorage.setItem('invoices', JSON.stringify(invoices));
+                const newInvoice = await apiCall('POST', `/companies/${currentCompanyId}/invoices`, invoiceData);
+                invoices = await apiCall('GET', `/companies/${currentCompanyId}/invoices`) || [];
 
-            generatePDF(invoiceData);
-            loadInvoices();
-            closeInvoiceModal();
-            updateDashboard();
+                // Genera PDF con i dati locali
+                const pdfData = {
+                    ...newInvoice,
+                    number: invoiceNumber.toString(),
+                    date: invoiceData.invoice_date,
+                    customerId: invoiceData.customer_id,
+                    companyId: currentCompanyId,
+                    items: items,
+                    total: total,
+                    currency: invoiceData.currency
+                };
+                generatePDF(pdfData);
+                loadInvoices();
+                closeInvoiceModal();
+                updateDashboard();
+            } catch(e) {
+                alert('Errore creazione fattura: ' + e.message);
+            }
         });
 
         function loadInvoices() {
@@ -1929,28 +1987,30 @@
             const tbody = document.querySelector('#invoicesTable tbody');
             tbody.innerHTML = '';
 
-            const companyInvoices = invoices.filter(i => i.companyId === currentCompanyId);
-
-            if (companyInvoices.length === 0) {
+            if (invoices.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna fattura presente. Crea la prima fattura!</td></tr>';
                 return;
             }
 
-            const sortedInvoices = [...companyInvoices].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const sortedInvoices = [...invoices].sort((a, b) => new Date(b.invoice_date || b.date) - new Date(a.invoice_date || a.date));
 
             sortedInvoices.forEach(invoice => {
-                const customer = customers.find(c => c.id === invoice.customerId);
-                const symbol = currencySymbols[invoice.currency] || '€';
+                const cid = invoice.customer_id || invoice.customerId;
+                const customer = customers.find(c => c.id == cid);
+                const currency = invoice.currency || 'EUR';
+                const symbol = currencySymbols[currency] || '€';
+                const date = invoice.invoice_date || invoice.date;
+                const number = invoice.invoice_number || invoice.number;
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td><strong>${invoice.number}</strong></td>
-                    <td>${new Date(invoice.date).toLocaleDateString('it-IT')}</td>
+                    <td><strong>${number}</strong></td>
+                    <td>${new Date(date).toLocaleDateString('it-IT')}</td>
                     <td>${customer ? customer.name : 'Cliente eliminato'}</td>
-                    <td>${invoice.currency}</td>
-                    <td><strong>${symbol}${invoice.total.toFixed(2)}</strong></td>
+                    <td>${currency}</td>
+                    <td><strong>${symbol}${parseFloat(invoice.total).toFixed(2)}</strong></td>
                     <td class="action-btns">
-                        <button class="btn btn-secondary" onclick="regeneratePDF('${invoice.id}')">PDF</button>
-                        <button class="btn btn-danger" onclick="deleteInvoice('${invoice.id}')">Elimina</button>
+                        <button class="btn btn-secondary" onclick="regeneratePDF(${invoice.id})">PDF</button>
+                        <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Elimina</button>
                     </td>
                 `;
             });
@@ -1966,18 +2026,16 @@
             const tbody = document.querySelector('#invoicesTable tbody');
             tbody.innerHTML = '';
 
-            let filtered = invoices.filter(i => i.companyId === currentCompanyId);
+            let filtered = [...invoices];
 
             if (customerFilter) {
-                filtered = filtered.filter(i => i.customerId === customerFilter);
+                filtered = filtered.filter(i => (i.customer_id || i.customerId) == customerFilter);
             }
-
             if (yearFilter) {
-                filtered = filtered.filter(i => new Date(i.date).getFullYear().toString() === yearFilter);
+                filtered = filtered.filter(i => new Date(i.invoice_date || i.date).getFullYear().toString() === yearFilter);
             }
-
             if (monthFilter) {
-                filtered = filtered.filter(i => (new Date(i.date).getMonth() + 1).toString() === monthFilter);
+                filtered = filtered.filter(i => (new Date(i.invoice_date || i.date).getMonth() + 1).toString() === monthFilter);
             }
 
             if (filtered.length === 0) {
@@ -1985,39 +2043,59 @@
                 return;
             }
 
-            const sortedInvoices = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const sortedInvoices = [...filtered].sort((a, b) => new Date(b.invoice_date || b.date) - new Date(a.invoice_date || a.date));
 
             sortedInvoices.forEach(invoice => {
-                const customer = customers.find(c => c.id === invoice.customerId);
-                const symbol = currencySymbols[invoice.currency] || '€';
+                const cid = invoice.customer_id || invoice.customerId;
+                const customer = customers.find(c => c.id == cid);
+                const currency = invoice.currency || 'EUR';
+                const symbol = currencySymbols[currency] || '€';
+                const date = invoice.invoice_date || invoice.date;
+                const number = invoice.invoice_number || invoice.number;
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td><strong>${invoice.number}</strong></td>
-                    <td>${new Date(invoice.date).toLocaleDateString('it-IT')}</td>
+                    <td><strong>${number}</strong></td>
+                    <td>${new Date(date).toLocaleDateString('it-IT')}</td>
                     <td>${customer ? customer.name : 'Cliente eliminato'}</td>
-                    <td>${invoice.currency}</td>
-                    <td><strong>${symbol}${invoice.total.toFixed(2)}</strong></td>
+                    <td>${currency}</td>
+                    <td><strong>${symbol}${parseFloat(invoice.total).toFixed(2)}</strong></td>
                     <td class="action-btns">
-                        <button class="btn btn-secondary" onclick="regeneratePDF('${invoice.id}')">PDF</button>
-                        <button class="btn btn-danger" onclick="deleteInvoice('${invoice.id}')">Elimina</button>
+                        <button class="btn btn-secondary" onclick="regeneratePDF(${invoice.id})">PDF</button>
+                        <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Elimina</button>
                     </td>
                 `;
             });
         }
 
-        function deleteInvoice(invoiceId) {
+        async function deleteInvoice(invoiceId) {
             if (confirm('⚠️ ATTENZIONE: Eliminare questa fattura comprometterà la numerazione progressiva!\n\nSei sicuro?')) {
-                invoices = invoices.filter(i => i.id !== invoiceId);
-                localStorage.setItem('invoices', JSON.stringify(invoices));
-                loadInvoices();
-                updateDashboard();
+                try {
+                    await apiCall('DELETE', `/invoices/${invoiceId}`);
+                    invoices = await apiCall('GET', `/companies/${currentCompanyId}/invoices`) || [];
+                    loadInvoices();
+                    updateDashboard();
+                } catch(e) {
+                    alert('Errore: ' + e.message);
+                }
             }
         }
 
         function regeneratePDF(invoiceId) {
-            const invoice = invoices.find(i => i.id === invoiceId);
+            const invoice = invoices.find(i => i.id == invoiceId);
             if (invoice) {
-                generatePDF(invoice);
+                const cid = invoice.customer_id || invoice.customerId;
+                const customer = customers.find(c => c.id == cid);
+                const company = companies.find(c => c.id == currentCompanyId);
+                const pdfData = {
+                    number: invoice.invoice_number || invoice.number,
+                    date: invoice.invoice_date || invoice.date,
+                    customerId: cid,
+                    companyId: currentCompanyId,
+                    items: invoice.items || [],
+                    total: parseFloat(invoice.total),
+                    currency: invoice.currency || 'EUR'
+                };
+                generatePDF(pdfData);
             }
         }
 
@@ -2196,25 +2274,22 @@
             document.getElementById('expenseModal').classList.remove('active');
         }
 
-        document.getElementById('expenseForm').addEventListener('submit', function(e) {
+        document.getElementById('expenseForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-
-            const expenseData = {
-                id: Date.now().toString(),
-                companyId: currentCompanyId,
-                date: document.getElementById('expenseDate').value,
-                description: document.getElementById('expenseDescription').value,
-                category: document.getElementById('expenseCategory').value,
-                amount: parseFloat(document.getElementById('expenseAmount').value),
-                createdAt: new Date().toISOString()
-            };
-
-            expenses.push(expenseData);
-            localStorage.setItem('expenses', JSON.stringify(expenses));
-
-            loadExpenses();
-            closeExpenseModal();
-            updateDashboard();
+            try {
+                await apiCall('POST', `/companies/${currentCompanyId}/expenses`, {
+                    expense_date: document.getElementById('expenseDate').value,
+                    description: document.getElementById('expenseDescription').value,
+                    category: document.getElementById('expenseCategory').value,
+                    amount: parseFloat(document.getElementById('expenseAmount').value)
+                });
+                expenses = await apiCall('GET', `/companies/${currentCompanyId}/expenses`) || [];
+                loadExpenses();
+                closeExpenseModal();
+                updateDashboard();
+            } catch(e) {
+                alert('Errore: ' + e.message);
+            }
         });
 
         function loadExpenses() {
@@ -2223,52 +2298,55 @@
             const tbody = document.querySelector('#expensesTable tbody');
             tbody.innerHTML = '';
 
-            const companyExpenses = expenses.filter(e => e.companyId === currentCompanyId);
-
-            if (companyExpenses.length === 0) {
+            if (expenses.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna spesa presente. Aggiungi la prima spesa!</td></tr>';
                 return;
             }
 
-            const sortedExpenses = [...companyExpenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const sortedExpenses = [...expenses].sort((a, b) => new Date(b.expense_date || b.date) - new Date(a.expense_date || a.date));
 
             sortedExpenses.forEach(expense => {
+                const date = expense.expense_date || expense.date;
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td>${new Date(expense.date).toLocaleDateString('it-IT')}</td>
+                    <td>${new Date(date).toLocaleDateString('it-IT')}</td>
                     <td>${expense.description}</td>
-                    <td>${expense.category}</td>
-                    <td><strong>€${expense.amount.toFixed(2)}</strong></td>
+                    <td>${expense.category || '-'}</td>
+                    <td><strong>€${parseFloat(expense.amount).toFixed(2)}</strong></td>
                     <td class="action-btns">
-                        <button class="btn btn-danger" onclick="deleteExpense('${expense.id}')">Elimina</button>
+                        <button class="btn btn-danger" onclick="deleteExpense(${expense.id})">Elimina</button>
                     </td>
                 `;
             });
         }
 
-        function deleteExpense(expenseId) {
+        async function deleteExpense(expenseId) {
             if (confirm('Sei sicuro di voler eliminare questa spesa?')) {
-                expenses = expenses.filter(e => e.id !== expenseId);
-                localStorage.setItem('expenses', JSON.stringify(expenses));
-                loadExpenses();
-                updateDashboard();
+                try {
+                    await apiCall('DELETE', `/expenses/${expenseId}`);
+                    expenses = await apiCall('GET', `/companies/${currentCompanyId}/expenses`) || [];
+                    loadExpenses();
+                    updateDashboard();
+                } catch(e) {
+                    alert('Errore: ' + e.message);
+                }
             }
         }
 
         function exportExpensesToCSV() {
             if (!currentCompanyId) return;
 
-            const companyExpenses = expenses.filter(e => e.companyId === currentCompanyId);
-            if (companyExpenses.length === 0) {
+            if (expenses.length === 0) {
                 alert('Non ci sono spese da esportare!');
                 return;
             }
 
             let csv = 'Data,Descrizione,Categoria,Importo\n';
 
-            companyExpenses.forEach(exp => {
+            expenses.forEach(exp => {
+                const date = exp.expense_date || exp.date;
                 const description = exp.description.replace(/,/g, ' ');
-                csv += `${exp.date},${description},${exp.category},${exp.amount.toFixed(2)}\n`;
+                csv += `${date},${description},${exp.category || '-'},${parseFloat(exp.amount).toFixed(2)}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -2298,30 +2376,23 @@
             document.getElementById('reminderModal').classList.remove('active');
         }
 
-        document.getElementById('reminderForm').addEventListener('submit', function(e) {
+        document.getElementById('reminderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-
-            if (!currentCompanyId) {
-                alert('Seleziona prima un\'azienda!');
-                return;
+            if (!currentCompanyId) { alert('Seleziona prima un\'azienda!'); return; }
+            try {
+                await apiCall('POST', `/companies/${currentCompanyId}/reminders`, {
+                    title: document.getElementById('reminderDescription').value,
+                    description: document.getElementById('reminderDescription').value,
+                    due_date: document.getElementById('reminderDate').value,
+                    recurrence: document.getElementById('reminderRecurrence').value
+                });
+                reminders = await apiCall('GET', `/companies/${currentCompanyId}/reminders`) || [];
+                loadReminders();
+                closeReminderModal();
+                checkReminders();
+            } catch(e) {
+                alert('Errore: ' + e.message);
             }
-
-            const reminderData = {
-                id: Date.now().toString(),
-                companyId: currentCompanyId,
-                description: document.getElementById('reminderDescription').value,
-                date: document.getElementById('reminderDate').value,
-                recurrence: document.getElementById('reminderRecurrence').value,
-                status: 'pending',
-                createdAt: new Date().toISOString()
-            };
-
-            reminders.push(reminderData);
-            localStorage.setItem('reminders', JSON.stringify(reminders));
-
-            loadReminders();
-            closeReminderModal();
-            checkReminders();
         });
 
         function loadReminders() {
@@ -2330,89 +2401,60 @@
             const tbody = document.querySelector('#remindersTable tbody');
             tbody.innerHTML = '';
 
-            const companyReminders = reminders.filter(r => r.companyId === currentCompanyId);
-
-            if (companyReminders.length === 0) {
+            if (reminders.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna scadenza presente. Aggiungi la prima scadenza!</td></tr>';
                 return;
             }
 
-            const sortedReminders = [...companyReminders].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const sortedReminders = [...reminders].sort((a, b) => new Date(a.due_date || a.date) - new Date(b.due_date || b.date));
 
             const recurrenceLabels = {
-                'once': 'Una volta',
-                'weekly': 'Settimanale',
-                'monthly': 'Mensile',
-                'yearly': 'Annuale'
+                'once': 'Una volta', 'weekly': 'Settimanale',
+                'monthly': 'Mensile', 'yearly': 'Annuale'
             };
 
             sortedReminders.forEach(reminder => {
-                const row = tbody.insertRow();
-                const statusBadge = reminder.status === 'done' ?
+                const date = reminder.due_date || reminder.date;
+                const isCompleted = reminder.completed;
+                const statusBadge = isCompleted ?
                     '<span style="color: var(--success); font-weight: 600;">✓ Fatto</span>' :
                     '<span style="color: var(--warning); font-weight: 600;">⏱ In attesa</span>';
 
+                const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td>${reminder.description}</td>
-                    <td>${new Date(reminder.date).toLocaleDateString('it-IT')}</td>
-                    <td>${recurrenceLabels[reminder.recurrence]}</td>
+                    <td>${reminder.title || reminder.description}</td>
+                    <td>${new Date(date).toLocaleDateString('it-IT')}</td>
+                    <td>${recurrenceLabels[reminder.recurrence] || 'Una volta'}</td>
                     <td>${statusBadge}</td>
                     <td class="action-btns">
-                        ${reminder.status === 'pending' ? `<button class="btn btn-success" onclick="markReminderDone('${reminder.id}')">Fatto</button>` : ''}
-                        <button class="btn btn-danger" onclick="deleteReminder('${reminder.id}')">Elimina</button>
+                        ${!isCompleted ? `<button class="btn btn-success" onclick="markReminderDone(${reminder.id})">Fatto</button>` : ''}
+                        <button class="btn btn-danger" onclick="deleteReminder(${reminder.id})">Elimina</button>
                     </td>
                 `;
             });
         }
 
-        function markReminderDone(reminderId) {
-            const reminder = reminders.find(r => r.id === reminderId);
-            if (!reminder) return;
-
-            reminder.status = 'done';
-
-            // Handle recurrence
-            if (reminder.recurrence !== 'once') {
-                const currentDate = new Date(reminder.date);
-                let nextDate = new Date(currentDate);
-
-                switch (reminder.recurrence) {
-                    case 'weekly':
-                        nextDate.setDate(nextDate.getDate() + 7);
-                        break;
-                    case 'monthly':
-                        nextDate.setMonth(nextDate.getMonth() + 1);
-                        break;
-                    case 'yearly':
-                        nextDate.setFullYear(nextDate.getFullYear() + 1);
-                        break;
-                }
-
-                // Create new reminder
-                const newReminder = {
-                    id: Date.now().toString(),
-                    companyId: reminder.companyId,
-                    description: reminder.description,
-                    date: nextDate.toISOString().split('T')[0],
-                    recurrence: reminder.recurrence,
-                    status: 'pending',
-                    createdAt: new Date().toISOString()
-                };
-
-                reminders.push(newReminder);
-            }
-
-            localStorage.setItem('reminders', JSON.stringify(reminders));
-            loadReminders();
-            checkReminders();
-        }
-
-        function deleteReminder(reminderId) {
-            if (confirm('Sei sicuro di voler eliminare questa scadenza?')) {
-                reminders = reminders.filter(r => r.id !== reminderId);
-                localStorage.setItem('reminders', JSON.stringify(reminders));
+        async function markReminderDone(reminderId) {
+            try {
+                await apiCall('PUT', `/reminders/${reminderId}`, { completed: true });
+                reminders = await apiCall('GET', `/companies/${currentCompanyId}/reminders`) || [];
                 loadReminders();
                 checkReminders();
+            } catch(e) {
+                alert('Errore: ' + e.message);
+            }
+        }
+
+        async function deleteReminder(reminderId) {
+            if (confirm('Sei sicuro di voler eliminare questa scadenza?')) {
+                try {
+                    await apiCall('DELETE', `/reminders/${reminderId}`);
+                    reminders = await apiCall('GET', `/companies/${currentCompanyId}/reminders`) || [];
+                    loadReminders();
+                    checkReminders();
+                } catch(e) {
+                    alert('Errore: ' + e.message);
+                }
             }
         }
 
@@ -2424,9 +2466,8 @@
             oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
 
             const upcomingReminders = reminders.filter(r => {
-                if (r.companyId !== currentCompanyId) return false;
-                if (r.status === 'done') return false;
-                const reminderDate = new Date(r.date);
+                if (r.completed) return false;
+                const reminderDate = new Date(r.due_date || r.date);
                 return reminderDate >= today && reminderDate <= oneMonthLater;
             });
 
@@ -2440,10 +2481,10 @@
                     alert.className = 'alert alert-warning';
                     alert.innerHTML = `
                         <div>
-                            <strong>⚠️ Scadenza:</strong> ${reminder.description} - 
-                            <strong>${daysUntil} giorni</strong> (${new Date(reminder.date).toLocaleDateString('it-IT')})
+                            <strong>⚠️ Scadenza:</strong> ${reminder.title || reminder.description} -
+                            <strong>${daysUntil} giorni</strong> (${new Date(reminder.due_date || reminder.date).toLocaleDateString('it-IT')})
                         </div>
-                        <button class="btn btn-success" onclick="markReminderDone('${reminder.id}')">Fatto</button>
+                        <button class="btn btn-success" onclick="markReminderDone(${reminder.id})">Fatto</button>
                     `;
                     alertsContainer.appendChild(alert);
                 });
@@ -2459,8 +2500,8 @@
         function updateDashboard() {
             if (!currentCompanyId) return;
 
-            const companyInvoices = invoices.filter(i => i.companyId === currentCompanyId);
-            const companyExpenses = expenses.filter(e => e.companyId === currentCompanyId);
+            const companyInvoices = invoices;
+            const companyExpenses = expenses;
 
             const totalRevenue = companyInvoices.reduce((sum, inv) => sum + inv.total, 0);
             const totalExpensesAmount = companyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -2502,21 +2543,19 @@
 
                 const monthRevenue = invoices
                     .filter(inv => {
-                        if (inv.companyId !== currentCompanyId) return false;
-                        const invDate = new Date(inv.date);
+                        const invDate = new Date(inv.invoice_date || inv.date);
                         return invDate.getMonth() === date.getMonth() &&
                                invDate.getFullYear() === date.getFullYear();
                     })
-                    .reduce((sum, inv) => sum + inv.total, 0);
+                    .reduce((sum, inv) => sum + parseFloat(inv.total), 0);
 
                 const monthExpenses = expenses
                     .filter(exp => {
-                        if (exp.companyId !== currentCompanyId) return false;
-                        const expDate = new Date(exp.date);
+                        const expDate = new Date(exp.expense_date || exp.date);
                         return expDate.getMonth() === date.getMonth() &&
                                expDate.getFullYear() === date.getFullYear();
                     })
-                    .reduce((sum, exp) => sum + exp.amount, 0);
+                    .reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
 
                 revenues.push(monthRevenue);
                 expensesData.push(monthExpenses);
@@ -2666,11 +2705,10 @@
             }
 
             const customerRevenues = {};
-            invoices.filter(i => i.companyId === currentCompanyId).forEach(inv => {
-                if (!customerRevenues[inv.customerId]) {
-                    customerRevenues[inv.customerId] = 0;
-                }
-                customerRevenues[inv.customerId] += inv.total;
+            invoices.forEach(inv => {
+                const cid = inv.customer_id || inv.customerId;
+                if (!customerRevenues[cid]) customerRevenues[cid] = 0;
+                customerRevenues[cid] += parseFloat(inv.total);
             });
 
             const sorted = Object.entries(customerRevenues)
@@ -2683,7 +2721,7 @@
             }
 
             const labels = sorted.map(([id]) => {
-                const customer = customers.find(c => c.id === id);
+                const customer = customers.find(c => c.id == id);
                 return customer ? customer.name : 'Cliente eliminato';
             });
 
@@ -2726,7 +2764,7 @@
 
         // REPORTS
         function populateYearFilters() {
-            const years = [...new Set(invoices.map(inv => new Date(inv.date).getFullYear()))].sort((a, b) => b - a);
+            const years = [...new Set(invoices.map(inv => new Date(inv.invoice_date || inv.date).getFullYear()))].sort((a, b) => b - a);
 
             if (years.length === 0) {
                 years.push(new Date().getFullYear());
@@ -2779,14 +2817,12 @@
 
             for (let month = 0; month < 12; month++) {
                 const monthInvoices = invoices.filter(inv => {
-                    if (inv.companyId !== currentCompanyId) return false;
-                    const invDate = new Date(inv.date);
+                    const invDate = new Date(inv.invoice_date || inv.date);
                     return invDate.getMonth() === month && invDate.getFullYear() == year;
                 });
 
                 const monthExpenses = expenses.filter(exp => {
-                    if (exp.companyId !== currentCompanyId) return false;
-                    const expDate = new Date(exp.date);
+                    const expDate = new Date(exp.expense_date || exp.date);
                     return expDate.getMonth() === month && expDate.getFullYear() == year;
                 });
 
@@ -2830,15 +2866,11 @@
 
             const customerData = {};
 
-            invoices.filter(i => i.companyId === currentCompanyId).forEach(inv => {
-                if (!customerData[inv.customerId]) {
-                    customerData[inv.customerId] = {
-                        count: 0,
-                        total: 0
-                    };
-                }
-                customerData[inv.customerId].count++;
-                customerData[inv.customerId].total += inv.total;
+            invoices.forEach(inv => {
+                const cid = inv.customer_id || inv.customerId;
+                if (!customerData[cid]) customerData[cid] = { count: 0, total: 0 };
+                customerData[cid].count++;
+                customerData[cid].total += parseFloat(inv.total);
             });
 
             const sorted = Object.entries(customerData).sort((a, b) => b[1].total - a[1].total);
@@ -2849,7 +2881,7 @@
             }
 
             sorted.forEach(([customerId, data]) => {
-                const customer = customers.find(c => c.id === customerId);
+                const customer = customers.find(c => c.id == customerId);
                 const average = data.total / data.count;
 
                 const row = tbody.insertRow();
@@ -2866,19 +2898,22 @@
         function exportToCSV() {
             if (!currentCompanyId) return;
 
-            const companyInvoices = invoices.filter(i => i.companyId === currentCompanyId);
-            if (companyInvoices.length === 0) {
+            if (invoices.length === 0) {
                 alert('Non ci sono fatture da esportare!');
                 return;
             }
 
             let csv = 'Numero Fattura,Data,Cliente,Valuta,Importo\n';
 
-            companyInvoices.forEach(inv => {
-                const customer = customers.find(c => c.id === inv.customerId);
+            invoices.forEach(inv => {
+                const cid = inv.customer_id || inv.customerId;
+                const customer = customers.find(c => c.id == cid);
                 const customerName = customer ? customer.name.replace(/,/g, ' ') : 'Cliente eliminato';
+                const date = inv.invoice_date || inv.date;
+                const number = inv.invoice_number || inv.number;
+                const currency = inv.currency || 'EUR';
 
-                csv += `${inv.number},${inv.date},${customerName},${inv.currency},${inv.total.toFixed(2)}\n`;
+                csv += `${number},${date},${customerName},${currency},${parseFloat(inv.total).toFixed(2)}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
