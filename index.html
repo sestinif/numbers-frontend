@@ -1560,14 +1560,14 @@
             form.reset();
 
             if (companyId) {
-                const company = companies.find(c => c.id === companyId);
+                const company = companies.find(c => c.id == companyId);
                 document.getElementById('companyModalTitle').textContent = 'Modifica Azienda';
                 document.getElementById('companyId').value = company.id;
                 document.getElementById('companyName').value = company.name;
                 document.getElementById('companyAddress').value = company.address;
                 document.getElementById('companyEmail').value = company.email || '';
-                document.getElementById('companyTaxId').value = company.taxId || '';
-                document.getElementById('companyPayment').value = company.payment || '';
+                document.getElementById('companyTaxId').value = company.vat_number || company.taxId || '';
+                document.getElementById('companyPayment').value = company.payment_info || company.payment || '';
             } else {
                 document.getElementById('companyModalTitle').textContent = 'NUOVA AZIENDA';
             }
@@ -1662,14 +1662,14 @@
                 return;
             }
 
-            const company = companies.find(c => c.id === currentCompanyId);
+            const company = companies.find(c => c.id == currentCompanyId);
             if (!company) return;
 
             document.getElementById('settingsCompanyName').value = company.name || '';
             document.getElementById('settingsCompanyAddress').value = company.address || '';
             document.getElementById('settingsCompanyEmail').value = company.email || '';
-            document.getElementById('settingsCompanyTaxId').value = company.taxId || '';
-            document.getElementById('settingsCompanyPayment').value = company.payment || '';
+            document.getElementById('settingsCompanyTaxId').value = company.vat_number || company.taxId || '';
+            document.getElementById('settingsCompanyPayment').value = company.payment_info || company.payment || '';
 
             document.getElementById('settingsModal').classList.add('active');
         }
@@ -1733,12 +1733,12 @@
             form.reset();
 
             if (customerId) {
-                const customer = customers.find(c => c.id === customerId);
+                const customer = customers.find(c => c.id == customerId);
                 document.getElementById('customerModalTitle').textContent = 'Modifica Cliente';
                 document.getElementById('customerId').value = customer.id;
                 document.getElementById('customerName').value = customer.name;
                 document.getElementById('customerAddress').value = customer.address || '';
-                document.getElementById('customerVat').value = customer.vat || '';
+                document.getElementById('customerVat').value = customer.vat_number || customer.vat || '';
             } else {
                 document.getElementById('customerModalTitle').textContent = 'Aggiungi Cliente';
             }
@@ -1834,8 +1834,7 @@
                 const currentValue = select.value;
                 select.innerHTML = select.id === 'filterCustomer' ? '<option value="">Tutti</option>' : '<option value="">Seleziona cliente...</option>';
 
-                const companyCustomers = customers.filter(c => c.companyId === currentCompanyId);
-                companyCustomers.forEach(customer => {
+                customers.forEach(customer => {
                     const option = document.createElement('option');
                     option.value = customer.id;
                     option.textContent = customer.name;
@@ -1854,9 +1853,8 @@
 
         function getNextInvoiceNumber() {
             if (!currentCompanyId) return 1;
-            const companyInvoices = invoices.filter(i => i.companyId === currentCompanyId);
-            if (companyInvoices.length === 0) return 1;
-            const maxNumber = Math.max(...companyInvoices.map(i => parseInt(i.number) || 0));
+            if (invoices.length === 0) return 1;
+            const maxNumber = Math.max(...invoices.map(i => parseInt(i.invoice_number || i.number) || 0));
             return maxNumber + 1;
         }
 
@@ -1909,8 +1907,7 @@
                 return;
             }
 
-            const companyCustomers = customers.filter(c => c.companyId === currentCompanyId);
-            if (companyCustomers.length === 0) {
+            if (customers.length === 0) {
                 alert('Devi prima creare almeno un cliente!');
                 return;
             }
@@ -2113,8 +2110,8 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            const customer = customers.find(c => c.id === invoice.customerId);
-            const company = companies.find(c => c.id === invoice.companyId);
+            const customer = customers.find(c => c.id == (invoice.customerId || invoice.customer_id));
+            const company = companies.find(c => c.id == (invoice.companyId || currentCompanyId));
             const symbol = currencySymbols[invoice.currency] || '€';
 
             // Header
@@ -2149,8 +2146,8 @@
                 yPos += 6;
             }
 
-            if (company.taxId) {
-                doc.text(`Tax ID: ${company.taxId}`, 15, yPos);
+            if (company.vat_number || company.taxId) {
+                doc.text(`Tax ID: ${company.vat_number || company.taxId}`, 15, yPos);
             }
 
             // Customer info (right)
@@ -2173,7 +2170,7 @@
             // Date
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text(`DATE: ${new Date(invoice.date).toLocaleDateString('en-US')}`, 15, 103);
+            doc.text(`DATE: ${new Date(invoice.date || invoice.invoice_date).toLocaleDateString('en-US')}`, 15, 103);
 
             // Items table
             let tableY = 118;
@@ -2233,14 +2230,15 @@
             doc.text(totalText, 190, tableY + 16, { align: 'right' });
 
             // Payment info
-            if (company.payment) {
+            const paymentInfo = company.payment_info || company.payment;
+            if (paymentInfo) {
                 doc.setTextColor(0, 0, 0);
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'bold');
                 doc.text('PAYMENT INFORMATION:', 15, tableY + 35);
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(9);
-                const paymentLines = doc.splitTextToSize(company.payment, 180);
+                const paymentLines = doc.splitTextToSize(paymentInfo, 180);
                 let y = tableY + 42;
                 paymentLines.forEach(line => {
                     doc.text(line, 15, y);
@@ -2255,7 +2253,7 @@
             doc.text('Thank you for your business!', 105, 280, { align: 'center' });
 
             // Save
-            doc.save(`Invoice_${customer.name.replace(/\s+/g, '_')}_${invoice.date}.pdf`);
+            doc.save(`Invoice_${customer.name.replace(/\s+/g, '_')}_${invoice.date || invoice.invoice_date}.pdf`);
         }
 
         // EXPENSES
@@ -2485,7 +2483,7 @@
 
             if (upcomingReminders.length > 0) {
                 upcomingReminders.forEach(reminder => {
-                    const daysUntil = Math.ceil((new Date(reminder.date) - today) / (1000 * 60 * 60 * 24));
+                    const daysUntil = Math.ceil((new Date(reminder.due_date || reminder.date) - today) / (1000 * 60 * 60 * 24));
                     const alert = document.createElement('div');
                     alert.className = 'alert alert-warning';
                     alert.innerHTML = `
@@ -2512,15 +2510,15 @@
             const companyInvoices = invoices;
             const companyExpenses = expenses;
 
-            const totalRevenue = companyInvoices.reduce((sum, inv) => sum + inv.total, 0);
-            const totalExpensesAmount = companyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const totalRevenue = companyInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+            const totalExpensesAmount = companyExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
             const netRevenue = totalRevenue - totalExpensesAmount;
 
             const currentMonth = new Date().getMonth();
             const currentYear = new Date().getFullYear();
 
             const monthInvoices = companyInvoices.filter(inv => {
-                const invDate = new Date(inv.date);
+                const invDate = new Date(inv.invoice_date || inv.date);
                 return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
             });
 
@@ -2835,8 +2833,8 @@
                     return expDate.getMonth() === month && expDate.getFullYear() == year;
                 });
 
-                const monthRevenue = monthInvoices.reduce((sum, inv) => sum + inv.total, 0);
-                const monthExpenseTotal = monthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+                const monthRevenue = monthInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+                const monthExpenseTotal = monthExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
                 const monthNet = monthRevenue - monthExpenseTotal;
 
                 yearTotal += monthRevenue;
