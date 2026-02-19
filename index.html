@@ -1566,7 +1566,7 @@
                 document.getElementById('companyName').value = company.name;
                 document.getElementById('companyAddress').value = company.address;
                 document.getElementById('companyEmail').value = company.email || '';
-                document.getElementById('companyTaxId').value = company.vat_number || company.taxId || '';
+                document.getElementById('companyTaxId').value = company.tax_id || company.vat_number || company.taxId || '';
                 document.getElementById('companyPayment').value = company.payment_info || company.payment || '';
             } else {
                 document.getElementById('companyModalTitle').textContent = 'NUOVA AZIENDA';
@@ -1587,7 +1587,7 @@
                     name: document.getElementById('companyName').value,
                     address: document.getElementById('companyAddress').value,
                     email: document.getElementById('companyEmail').value,
-                    vat_number: document.getElementById('companyTaxId').value,
+                    tax_id: document.getElementById('companyTaxId').value,
                     payment_info: document.getElementById('companyPayment').value
                 };
 
@@ -1668,7 +1668,7 @@
             document.getElementById('settingsCompanyName').value = company.name || '';
             document.getElementById('settingsCompanyAddress').value = company.address || '';
             document.getElementById('settingsCompanyEmail').value = company.email || '';
-            document.getElementById('settingsCompanyTaxId').value = company.vat_number || company.taxId || '';
+            document.getElementById('settingsCompanyTaxId').value = company.tax_id || company.vat_number || company.taxId || '';
             document.getElementById('settingsCompanyPayment').value = company.payment_info || company.payment || '';
 
             document.getElementById('settingsModal').classList.add('active');
@@ -1686,7 +1686,7 @@
                     name: document.getElementById('settingsCompanyName').value,
                     address: document.getElementById('settingsCompanyAddress').value,
                     email: document.getElementById('settingsCompanyEmail').value,
-                    vat_number: document.getElementById('settingsCompanyTaxId').value,
+                    tax_id: document.getElementById('settingsCompanyTaxId').value,
                     payment_info: document.getElementById('settingsCompanyPayment').value
                 });
                 companies = await apiCall('GET', '/companies') || [];
@@ -1738,7 +1738,7 @@
                 document.getElementById('customerId').value = customer.id;
                 document.getElementById('customerName').value = customer.name;
                 document.getElementById('customerAddress').value = customer.address || '';
-                document.getElementById('customerVat').value = customer.vat_number || customer.vat || '';
+                document.getElementById('customerVat').value = customer.vat || customer.vat_number || '';
             } else {
                 document.getElementById('customerModalTitle').textContent = 'Aggiungi Cliente';
             }
@@ -1757,7 +1757,7 @@
                 const customerData = {
                     name: document.getElementById('customerName').value,
                     address: document.getElementById('customerAddress').value,
-                    vat_number: document.getElementById('customerVat').value
+                    vat: document.getElementById('customerVat').value
                 };
                 if (customerId) {
                     await apiCall('PUT', `/customers/${customerId}`, customerData);
@@ -1955,7 +1955,7 @@
                 const total = parseFloat(document.getElementById('invoiceTotal').textContent);
                 const invoiceData = {
                     invoice_number: invoiceNumber.toString(),
-                    invoice_date: document.getElementById('invoiceDate').value,
+                    date: document.getElementById('invoiceDate').value,
                     customer_id: parseInt(document.getElementById('invoiceCustomer').value),
                     currency: document.getElementById('invoiceCurrency').value,
                     items: items,
@@ -2146,8 +2146,8 @@
                 yPos += 6;
             }
 
-            if (company.vat_number || company.taxId) {
-                doc.text(`Tax ID: ${company.vat_number || company.taxId}`, 15, yPos);
+            if (company.tax_id || company.vat_number || company.taxId) {
+                doc.text(`Tax ID: ${company.tax_id || company.vat_number || company.taxId}`, 15, yPos);
             }
 
             // Customer info (right)
@@ -2285,7 +2285,7 @@
             e.preventDefault();
             try {
                 await apiCall('POST', `/companies/${currentCompanyId}/expenses`, {
-                    expense_date: document.getElementById('expenseDate').value,
+                    date: document.getElementById('expenseDate').value,
                     description: document.getElementById('expenseDescription').value,
                     category: document.getElementById('expenseCategory').value,
                     amount: parseFloat(document.getElementById('expenseAmount').value)
@@ -2443,7 +2443,14 @@
 
         async function markReminderDone(reminderId) {
             try {
-                await apiCall('PUT', `/reminders/${reminderId}`, { completed: true });
+                const reminder = reminders.find(r => r.id == reminderId);
+                if (!reminder) return;
+                await apiCall('PUT', `/reminders/${reminderId}`, {
+                    title: reminder.title,
+                    description: reminder.description,
+                    due_date: reminder.due_date,
+                    completed: true
+                });
                 reminders = await apiCall('GET', `/companies/${currentCompanyId}/reminders`) || [];
                 loadReminders();
                 checkReminders();
