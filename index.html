@@ -1515,32 +1515,41 @@
             }
         }
 
-        function selectCompany(companyId) {
+        async function selectCompany(companyId) {
             currentCompanyId = companyId;
             localStorage.setItem('currentCompanyId', companyId);
 
+            // Chiudi dropdown
             const dropdown = document.getElementById('companyDropdown');
             dropdown.classList.remove('active');
 
+            // Aggiorna subito il nome in alto
             updateCompanyDisplay();
-            loadAllData().then(() => {
-                loadCustomers();
-                loadInvoices();
-                loadExpenses();
-                loadReminders();
-                updateDashboard();
-                checkReminders();
-            });
+
+            // Carica tutti i dati della nuova azienda
+            await loadAllData();
+
+            // Aggiorna tutte le sezioni
+            loadCustomers();
+            loadInvoices();
+            loadExpenses();
+            loadReminders();
+            updateDashboard();
+            generateReports();
+            populateYearFilters();
+            checkReminders();
         }
 
         function updateCompanyDisplay() {
-            const company = companies.find(c => c.id === currentCompanyId);
+            const company = companies.find(c => c.id == currentCompanyId);
+            const selectedEl = document.getElementById('selectedCompany');
+            const nameEl = document.getElementById('currentCompanyName');
             if (company) {
-                document.getElementById('selectedCompany').textContent = company.name;
-                document.getElementById('currentCompanyName').textContent = company.name;
+                if (selectedEl) selectedEl.textContent = company.name;
+                if (nameEl) nameEl.textContent = company.name;
             } else {
-                document.getElementById('selectedCompany').textContent = 'Seleziona Azienda';
-                document.getElementById('currentCompanyName').textContent = 'Nessuna azienda selezionata';
+                if (selectedEl) selectedEl.textContent = 'Seleziona Azienda';
+                if (nameEl) nameEl.textContent = 'Nessuna azienda selezionata';
             }
         }
 
