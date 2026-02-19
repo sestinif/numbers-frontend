@@ -1112,6 +1112,34 @@
         </div>
     </div>
 
+    <!-- NO COMPANY MODAL (forced, no close button) -->
+    <div id="noCompanyModal" class="modal">
+        <div class="modal-content" style="max-width: 460px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🏢</div>
+            <h2 style="margin-bottom: 8px;">Benvenuto in Numbers</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 32px; font-size: 14px; line-height: 1.6;">
+                Per iniziare, crea la tua prima azienda.<br>Potrai aggiungere clienti, fatture e spese.
+            </p>
+            <form id="noCompanyForm">
+                <div class="form-group" style="text-align: left;">
+                    <label>Nome Azienda *</label>
+                    <input type="text" id="noCompanyName" required placeholder="Es: Mario Rossi Consulting">
+                </div>
+                <div class="form-group" style="text-align: left;">
+                    <label>Indirizzo</label>
+                    <input type="text" id="noCompanyAddress" placeholder="Via Roma 1, Milano">
+                </div>
+                <div class="form-group" style="text-align: left;">
+                    <label>Email</label>
+                    <input type="email" id="noCompanyEmail" placeholder="info@azienda.it">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                    ✦ CREA AZIENDA
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- COMPANY MODAL -->
     <div id="companyModal" class="modal">
         <div class="modal-content">
@@ -1476,6 +1504,41 @@
             dropdown.appendChild(newOption);
         }
 
+        function checkNoCompany() {
+            const modal = document.getElementById('noCompanyModal');
+            if (companies.length === 0) {
+                modal.classList.add('active');
+            } else {
+                modal.classList.remove('active');
+            }
+        }
+
+        document.getElementById('noCompanyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            try {
+                const newCompany = await apiCall('POST', '/companies', {
+                    name: document.getElementById('noCompanyName').value,
+                    address: document.getElementById('noCompanyAddress').value,
+                    email: document.getElementById('noCompanyEmail').value
+                });
+                companies = await apiCall('GET', '/companies') || [];
+                currentCompanyId = newCompany.id;
+                localStorage.setItem('currentCompanyId', currentCompanyId);
+                await loadAllData();
+                checkNoCompany();
+                updateCompanyDisplay();
+                updateCompanyDropdown();
+                updateDashboard();
+                generateReports();
+                populateYearFilters();
+                checkReminders();
+                loadCustomers(); loadInvoices(); loadExpenses(); loadReminders(); loadCompanies();
+                document.getElementById('noCompanyForm').reset();
+            } catch(e) {
+                alert('Errore: ' + e.message);
+            }
+        });
+
         async function initApp() {
             try {
                 companies = await apiCall('GET', '/companies') || [];
@@ -1486,6 +1549,7 @@
                     }
                     await loadAllData();
                 }
+                checkNoCompany();
                 updateCompanyDisplay();
                 updateCompanyDropdown();
                 updateDashboard();
@@ -1648,7 +1712,9 @@
                     }
                     loadCompanies();
                     updateCompanyDisplay();
+                    updateCompanyDropdown();
                     updateDashboard();
+                    checkNoCompany();
                 } catch(e) {
                     alert('Errore eliminazione: ' + e.message);
                 }
@@ -1713,6 +1779,7 @@
                     updateCompanyDisplay();
                     updateCompanyDropdown();
                     updateDashboard();
+                    checkNoCompany();
                     alert('Azienda eliminata con successo.');
                 } catch(e) {
                     alert('Errore: ' + e.message);
