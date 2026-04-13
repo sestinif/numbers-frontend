@@ -2791,42 +2791,20 @@
         function loadInvoices() {
             if (!currentCompanyId) return;
 
-            const tbody = document.querySelector('#invoicesTable tbody');
-            tbody.innerHTML = '';
-
-            // Mini-stats fatture (sempre visibili)
+            // Mini-stats fatture (sempre su TUTTI i dati, non filtrati)
             const totalInvAmount = invoices.reduce((s, i) => s + parseFloat(i.total || 0), 0);
             const avgInv = invoices.length > 0 ? totalInvAmount / invoices.length : 0;
             document.getElementById('miniInvoiceTotal').textContent = formatCurrency(totalInvAmount);
             document.getElementById('miniInvoiceCount').textContent = invoices.length;
             document.getElementById('miniInvoiceAvg').textContent = formatCurrency(avgInv);
 
-            if (invoices.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna fattura presente. Crea la prima fattura!</td></tr>';
-                return;
-            }
+            // Reset filtri a "Tutti" quando si carica la sezione
+            document.getElementById('filterCustomer').value = '';
+            document.getElementById('filterYear').value = '';
+            document.getElementById('filterMonth').value = '';
 
-            const sortedInvoices = [...invoices].sort((a, b) => new Date(b.invoice_date || b.date) - new Date(a.invoice_date || a.date));
-
-            sortedInvoices.forEach(invoice => {
-                const cid = invoice.customer_id || invoice.customerId;
-                const customer = customers.find(c => c.id == cid);
-                const currency = invoice.currency || 'EUR';
-                const symbol = currencySymbols[currency] || '\u20AC';
-                const date = invoice.invoice_date || invoice.date;
-                const number = invoice.invoice_number || invoice.number;
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td><strong>${number}</strong></td>
-                    <td>${new Date(date).toLocaleDateString('it-IT')}</td>
-                    <td>${customer ? customer.name : 'Cliente eliminato'}</td>
-                    <td><strong>${formatCurrency(invoice.total, symbol)}</strong></td>
-                    <td class="action-btns">
-                        <button class="btn btn-secondary" onclick="regeneratePDF(${invoice.id})">PDF</button>
-                        <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Elimina</button>
-                    </td>
-                `;
-            });
+            // Mostra tutte le fatture
+            renderInvoiceTable(invoices);
         }
 
         function filterInvoices() {
@@ -2835,9 +2813,6 @@
             const customerFilter = document.getElementById('filterCustomer').value;
             const yearFilter = document.getElementById('filterYear').value;
             const monthFilter = document.getElementById('filterMonth').value;
-
-            const tbody = document.querySelector('#invoicesTable tbody');
-            tbody.innerHTML = '';
 
             let filtered = [...invoices];
 
@@ -2851,14 +2826,21 @@
                 filtered = filtered.filter(i => (new Date(i.invoice_date || i.date).getMonth() + 1).toString() === monthFilter);
             }
 
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna fattura trovata.</td></tr>';
+            renderInvoiceTable(filtered);
+        }
+
+        function renderInvoiceTable(data) {
+            const tbody = document.querySelector('#invoicesTable tbody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna fattura trovata.</td></tr>';
                 return;
             }
 
-            const sortedInvoices = [...filtered].sort((a, b) => new Date(b.invoice_date || b.date) - new Date(a.invoice_date || a.date));
+            const sorted = [...data].sort((a, b) => new Date(b.invoice_date || b.date) - new Date(a.invoice_date || a.date));
 
-            sortedInvoices.forEach(invoice => {
+            sorted.forEach(invoice => {
                 const cid = invoice.customer_id || invoice.customerId;
                 const customer = customers.find(c => c.id == cid);
                 const currency = invoice.currency || 'EUR';
@@ -3406,7 +3388,7 @@
                     const d = new Date(exp.expense_date || exp.date);
                     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
                 }).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
-                expTrend.textContent = `\u20AC${currentMonthExp.toFixed(0)} questo mese`;
+                expTrend.textContent = `${formatCurrency(currentMonthExp)} questo mese`;
             }
             if (netTrend) netTrend.textContent = netRevenue >= 0 ? 'Positivo' : 'In perdita';
             if (monthTrend) monthTrend.textContent = `su ${companyInvoices.length} totali`;
