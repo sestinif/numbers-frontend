@@ -1621,7 +1621,7 @@
                                 <span class="mini-stat-value" id="miniInvoiceCount">0</span>
                             </div>
                             <div class="mini-stat">
-                                <span class="mini-stat-label">Media fattura</span>
+                                <span class="mini-stat-label">Media per fattura</span>
                                 <span class="mini-stat-value" id="miniInvoiceAvg">€0</span>
                             </div>
                         </div>
@@ -1784,9 +1784,9 @@
                                     <thead>
                                         <tr>
                                             <th>Cliente</th>
-                                            <th>N.</th>
-                                            <th>Totale</th>
-                                            <th>Media</th>
+                                            <th>N. Fatture</th>
+                                            <th>Fatturato</th>
+                                            <th>Media/Fatt.</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -1933,8 +1933,9 @@
     <!-- EXPENSE MODAL -->
     <div id="expenseModal" class="modal">
         <div class="modal-content">
-            <h2>Nuova Spesa</h2>
+            <h2 id="expenseModalTitle">Nuova Spesa</h2>
             <form id="expenseForm">
+                <input type="hidden" id="expenseId">
                 <div class="form-row">
                     <div class="form-group">
                         <label>Data *</label>
@@ -2044,6 +2045,18 @@
         // API CONFIGURATION - RENDER BACKEND
         // ==========================================
         const API_BASE = APP_CONFIG.API_URL;
+
+        // Formatta numeri in stile italiano (28.628,04)
+        function formatCurrency(amount, symbol = '\u20AC') {
+            return symbol + parseFloat(amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatCurrencyShort(amount, symbol = '\u20AC') {
+            const n = parseFloat(amount);
+            if (n >= 1000000) return symbol + (n / 1000000).toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'M';
+            if (n >= 1000) return symbol + (n / 1000).toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'k';
+            return symbol + n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
 
         function getToken() {
             return localStorage.getItem('token');
@@ -2575,7 +2588,7 @@
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td><strong>${customer.name}</strong></td>
-                    <td><strong>\u20AC${revenue.toFixed(2)}</strong></td>
+                    <td><strong>${formatCurrency(revenue)}</strong></td>
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="openCustomerModal('${customer.id}')">Modifica</button>
                         <button class="btn btn-danger" onclick="deleteCustomer('${customer.id}')">Elimina</button>
@@ -2589,7 +2602,7 @@
             const bestId = Object.entries(customerRevenues).sort((a, b) => b[1] - a[1])[0];
             const bestCustomer = bestId ? companyCustomers.find(c => c.id == bestId[0]) : null;
             document.getElementById('miniCustomerCount').textContent = companyCustomers.length;
-            document.getElementById('miniCustomerAvg').textContent = '\u20AC' + avgRevenue.toFixed(0);
+            document.getElementById('miniCustomerAvg').textContent = formatCurrency(avgRevenue);
             document.getElementById('miniBestCustomer').textContent = bestCustomer ? bestCustomer.name : '-';
 
             updateCustomerSelects();
@@ -2779,8 +2792,15 @@
             const tbody = document.querySelector('#invoicesTable tbody');
             tbody.innerHTML = '';
 
+            // Mini-stats fatture (sempre visibili)
+            const totalInvAmount = invoices.reduce((s, i) => s + parseFloat(i.total || 0), 0);
+            const avgInv = invoices.length > 0 ? totalInvAmount / invoices.length : 0;
+            document.getElementById('miniInvoiceTotal').textContent = formatCurrency(totalInvAmount);
+            document.getElementById('miniInvoiceCount').textContent = invoices.length;
+            document.getElementById('miniInvoiceAvg').textContent = formatCurrency(avgInv);
+
             if (invoices.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna fattura presente. Crea la prima fattura!</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna fattura presente. Crea la prima fattura!</td></tr>';
                 return;
             }
 
@@ -2798,20 +2818,13 @@
                     <td><strong>${number}</strong></td>
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
                     <td>${customer ? customer.name : 'Cliente eliminato'}</td>
-                    <td><strong>${symbol}${parseFloat(invoice.total).toFixed(2)}</strong></td>
+                    <td><strong>${formatCurrency(invoice.total, symbol)}</strong></td>
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="regeneratePDF(${invoice.id})">PDF</button>
                         <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Elimina</button>
                     </td>
                 `;
             });
-
-            // Mini-stats fatture
-            const totalInvAmount = invoices.reduce((s, i) => s + parseFloat(i.total || 0), 0);
-            const avgInv = invoices.length > 0 ? totalInvAmount / invoices.length : 0;
-            document.getElementById('miniInvoiceTotal').textContent = '\u20AC' + totalInvAmount.toFixed(0);
-            document.getElementById('miniInvoiceCount').textContent = invoices.length;
-            document.getElementById('miniInvoiceAvg').textContent = '\u20AC' + avgInv.toFixed(0);
         }
 
         function filterInvoices() {
@@ -2855,7 +2868,7 @@
                     <td><strong>${number}</strong></td>
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
                     <td>${customer ? customer.name : 'Cliente eliminato'}</td>
-                    <td><strong>${symbol}${parseFloat(invoice.total).toFixed(2)}</strong></td>
+                    <td><strong>${formatCurrency(invoice.total, symbol)}</strong></td>
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="regeneratePDF(${invoice.id})">PDF</button>
                         <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Elimina</button>
@@ -3053,7 +3066,7 @@
             document.getElementById('expenseDate').value = today;
         }
 
-        function openExpenseModal() {
+        function openExpenseModal(expenseId = null) {
             if (!currentCompanyId) {
                 alert('Seleziona prima un\'azienda!');
                 return;
@@ -3063,7 +3076,21 @@
             const form = document.getElementById('expenseForm');
 
             form.reset();
-            setupExpenseDate();
+            document.getElementById('expenseId').value = '';
+
+            if (expenseId) {
+                const expense = expenses.find(e => e.id == expenseId);
+                if (!expense) return;
+                document.getElementById('expenseModalTitle').textContent = 'Modifica Spesa';
+                document.getElementById('expenseId').value = expense.id;
+                document.getElementById('expenseDate').value = (expense.expense_date || expense.date || '').split('T')[0];
+                document.getElementById('expenseAmount').value = expense.amount;
+                document.getElementById('expenseDescription').value = expense.description;
+                document.getElementById('expenseCategory').value = expense.category || '';
+            } else {
+                document.getElementById('expenseModalTitle').textContent = 'Nuova Spesa';
+                setupExpenseDate();
+            }
 
             modal.classList.add('active');
         }
@@ -3075,12 +3102,20 @@
         document.getElementById('expenseForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             try {
-                await apiCall('POST', `/companies/${currentCompanyId}/expenses`, {
+                const expenseId = document.getElementById('expenseId').value;
+                const expenseData = {
                     date: document.getElementById('expenseDate').value,
                     description: document.getElementById('expenseDescription').value,
                     category: document.getElementById('expenseCategory').value,
                     amount: parseFloat(document.getElementById('expenseAmount').value)
-                });
+                };
+
+                if (expenseId) {
+                    await apiCall('PUT', `/expenses/${expenseId}`, expenseData);
+                } else {
+                    await apiCall('POST', `/companies/${currentCompanyId}/expenses`, expenseData);
+                }
+
                 expenses = await apiCall('GET', `/companies/${currentCompanyId}/expenses`) || [];
                 loadExpenses();
                 closeExpenseModal();
@@ -3110,8 +3145,9 @@
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
                     <td>${expense.description}</td>
                     <td>${expense.category || '-'}</td>
-                    <td><strong>\u20AC${parseFloat(expense.amount).toFixed(2)}</strong></td>
+                    <td><strong>${formatCurrency(expense.amount)}</strong></td>
                     <td class="action-btns">
+                        <button class="btn btn-secondary" onclick="openExpenseModal(${expense.id})">Modifica</button>
                         <button class="btn btn-danger" onclick="deleteExpense(${expense.id})">Elimina</button>
                     </td>
                 `;
@@ -3124,8 +3160,8 @@
                 const d = new Date(e.expense_date || e.date);
                 return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
             }).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-            document.getElementById('miniExpenseTotal').textContent = '\u20AC' + totalExp.toFixed(0);
-            document.getElementById('miniExpenseMonth').textContent = '\u20AC' + monthExp.toFixed(0);
+            document.getElementById('miniExpenseTotal').textContent = formatCurrency(totalExp);
+            document.getElementById('miniExpenseMonth').textContent = formatCurrency(monthExp);
             document.getElementById('miniExpenseCount').textContent = expenses.length;
         }
 
@@ -3341,9 +3377,9 @@
                 return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
             });
 
-            document.getElementById('totalRevenue').textContent = `\u20AC${totalRevenue.toFixed(2)}`;
-            document.getElementById('totalExpenses').textContent = `\u20AC${totalExpensesAmount.toFixed(2)}`;
-            document.getElementById('netRevenue').textContent = `\u20AC${netRevenue.toFixed(2)}`;
+            document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
+            document.getElementById('totalExpenses').textContent = formatCurrency(totalExpensesAmount);
+            document.getElementById('netRevenue').textContent = formatCurrency(netRevenue);
             document.getElementById('monthInvoices').textContent = monthInvoices.length;
 
             // Calculate trends
@@ -3465,7 +3501,7 @@
                             labels: {
                                 color: 'rgba(255, 255, 255, 0.9)',
                                 font: {
-                                    family: 'Manrope',
+                                    family: 'Inter',
                                     size: 12,
                                     weight: '700'
                                 },
@@ -3501,12 +3537,12 @@
                             padding: 12,
                             displayColors: true,
                             titleFont: {
-                                family: 'Manrope',
+                                family: 'Inter',
                                 size: 13,
                                 weight: '700'
                             },
                             bodyFont: {
-                                family: 'Manrope',
+                                family: 'Inter',
                                 size: 12,
                                 weight: '600'
                             }
@@ -3520,7 +3556,7 @@
                             ticks: {
                                 color: 'rgba(255, 255, 255, 0.5)',
                                 font: {
-                                    family: 'Manrope',
+                                    family: 'Inter',
                                     size: 11,
                                     weight: '600'
                                 }
@@ -3535,12 +3571,12 @@
                             ticks: {
                                 color: 'rgba(255, 255, 255, 0.5)',
                                 font: {
-                                    family: 'Manrope',
+                                    family: 'Inter',
                                     size: 11,
                                     weight: '600'
                                 },
                                 callback: function(value) {
-                                    return '\u20AC' + value.toFixed(0);
+                                    return '\u20AC' + value.toLocaleString('it-IT');
                                 }
                             }
                         }
@@ -3606,7 +3642,7 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    return '\u20AC' + value.toFixed(0);
+                                    return '\u20AC' + value.toLocaleString('it-IT');
                                 }
                             }
                         }
@@ -3691,9 +3727,9 @@
                 row.innerHTML = `
                     <td><strong>${monthNames[month]}</strong></td>
                     <td>${monthInvoices.length}</td>
-                    <td><strong>\u20AC${monthRevenue.toFixed(2)}</strong></td>
-                    <td><strong>\u20AC${monthExpenseTotal.toFixed(2)}</strong></td>
-                    <td><strong>\u20AC${monthNet.toFixed(2)}</strong></td>
+                    <td><strong>${formatCurrency(monthRevenue)}</strong></td>
+                    <td><strong>${formatCurrency(monthExpenseTotal)}</strong></td>
+                    <td><strong>${formatCurrency(monthNet)}</strong></td>
                 `;
             }
 
@@ -3705,9 +3741,9 @@
             totalRow.innerHTML = `
                 <td><strong>TOTALE ${year}</strong></td>
                 <td>${yearInvoices}</td>
-                <td><strong>\u20AC${yearTotal.toFixed(2)}</strong></td>
-                <td><strong>\u20AC${yearExpenses.toFixed(2)}</strong></td>
-                <td><strong>\u20AC${(yearTotal - yearExpenses).toFixed(2)}</strong></td>
+                <td><strong>${formatCurrency(yearTotal)}</strong></td>
+                <td><strong>${formatCurrency(yearExpenses)}</strong></td>
+                <td><strong>${formatCurrency(yearTotal - yearExpenses)}</strong></td>
             `;
         }
 
@@ -3741,8 +3777,8 @@
                 row.innerHTML = `
                     <td><strong>${customer ? customer.name : 'Cliente eliminato'}</strong></td>
                     <td>${data.count}</td>
-                    <td><strong>\u20AC${data.total.toFixed(2)}</strong></td>
-                    <td>\u20AC${average.toFixed(2)}</td>
+                    <td><strong>${formatCurrency(data.total)}</strong></td>
+                    <td>${formatCurrency(average)}</td>
                 `;
             });
         }
