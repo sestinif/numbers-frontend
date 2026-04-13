@@ -3,110 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <title>Numbers - Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="auth-shared.css">
     <style>
-        :root {
-            --primary-green: #00FF00;
-            --green-hover: #00DD00;
-            --green-light: rgba(0, 255, 0, 0.1);
-            --bg-primary: #0A0A0A;
-            --bg-secondary: #141414;
-            --bg-card: #1A1A1A;
-            --bg-hover: #252525;
-            --border-color: #2A2A2A;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A0A0A0;
-            --error: #FF4444;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .auth-container {
-            width: 100%;
-            max-width: 440px;
-            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .logo-section {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-
-        .logo-icon {
-            width: 56px;
-            height: 56px;
-            background: var(--primary-green);
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            font-weight: 900;
-            color: #000000;
-            box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
-            margin-bottom: 16px;
-            position: relative;
-        }
-
-        .logo-icon::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%);
-            border-radius: 12px;
-        }
-
-        .logo-text {
-            font-size: 36px;
-            font-weight: 800;
-            letter-spacing: -1.5px;
-            color: var(--text-primary);
-        }
-
-        .logo-tagline {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-top: 8px;
-            letter-spacing: 0.5px;
-        }
-
-        .auth-card {
-            background: var(--bg-card);
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--border-color);
-        }
-
         .auth-tabs {
             display: flex;
             gap: 12px;
@@ -152,130 +55,8 @@
             animation: fadeIn 0.4s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-
-        input {
-            width: 100%;
-            padding: 14px 16px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-family: 'Manrope', sans-serif;
-            font-size: 15px;
-            transition: all 0.3s ease;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary-green);
-            box-shadow: 0 0 0 3px var(--green-light);
-        }
-
-        input::placeholder {
-            color: var(--text-secondary);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 16px;
-            background: var(--primary-green);
-            color: #000000;
-            border: none;
-            border-radius: 12px;
-            font-family: 'Manrope', sans-serif;
-            font-size: 15px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .btn:hover {
-            background: var(--green-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 255, 0, 0.3);
-        }
-
-        .btn:hover::before {
-            opacity: 1;
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .error-message {
-            background: rgba(255, 68, 68, 0.1);
-            border: 1px solid var(--error);
-            color: var(--error);
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
         .error-message.active {
-            display: block;
             animation: shake 0.5s ease;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-
-        .success-message {
-            background: var(--green-light);
-            border: 1px solid var(--primary-green);
-            color: var(--primary-green);
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .success-message.active {
-            display: block;
-            animation: fadeIn 0.4s ease;
         }
 
         .divider {
@@ -300,25 +81,6 @@
             padding: 0 16px;
             color: var(--text-secondary);
             font-size: 13px;
-        }
-
-        .helper-text {
-            text-align: center;
-            margin-top: 24px;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .link {
-            color: var(--primary-green);
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.3s ease;
-        }
-
-        .link:hover {
-            color: var(--green-hover);
-            text-decoration: underline;
         }
 
         .loading {
@@ -359,8 +121,8 @@
         <div class="auth-card">
             <!-- Tabs -->
             <div class="auth-tabs">
-                <button class="auth-tab active" onclick="switchTab('login')">Login</button>
-                <button class="auth-tab" onclick="switchTab('register')">Registrati</button>
+                <button class="auth-tab active" onclick="switchTab('login', this)">Login</button>
+                <button class="auth-tab" onclick="switchTab('register', this)">Registrati</button>
             </div>
 
             <!-- Error/Success Messages -->
@@ -416,17 +178,16 @@
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script>
         // API Configuration
-        const API_URL = window.location.hostname === 'localhost'
-            ? 'http://localhost:3000/api'
-            : 'https://numbers-backend-jw5i.onrender.com/api';
+        const API_URL = APP_CONFIG.API_URL;
 
         // Switch between login and register tabs
-        function switchTab(tab) {
+        function switchTab(tab, btn) {
             // Update tabs
             document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+            btn.classList.add('active');
 
             // Update forms
             document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
@@ -465,7 +226,12 @@
         // Show/hide loading
         function setLoading(isLoading) {
             document.getElementById('loading').classList.toggle('active', isLoading);
-            document.querySelectorAll('.form-section').forEach(f => f.style.display = isLoading ? 'none' : 'block');
+            if (isLoading) {
+                document.querySelectorAll('.form-section').forEach(f => f.style.display = 'none');
+            } else {
+                // Mostra solo la form attiva, non entrambe
+                document.querySelectorAll('.form-section').forEach(f => f.style.display = '');
+            }
             document.querySelectorAll('.btn').forEach(btn => btn.disabled = isLoading);
         }
 
