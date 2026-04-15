@@ -2941,7 +2941,7 @@
                 const pdfData = {
                     ...newInvoice,
                     number: invoiceNumber.toString(),
-                    date: invoiceData.invoice_date,
+                    date: invoiceData.date,
                     customerId: invoiceData.customer_id,
                     companyId: currentCompanyId,
                     items: items,
@@ -4167,58 +4167,6 @@
                     </td>
                 `;
             });
-        }
-
-        // Crea fattura da nota spesa - precompila il modal
-        function createInvoiceFromNote(noteId) {
-            const note = expenseNotes.find(n => n.id == noteId);
-            if (!note) return;
-
-            if (customers.length === 0) {
-                alert('Devi prima creare almeno un cliente!');
-                return;
-            }
-
-            // Apri la sezione fatture
-            showSection('invoices', document.querySelectorAll('.sidebar-nav-item')[1]);
-
-            // Apri il modal fattura
-            setTimeout(() => {
-                const modal = document.getElementById('invoiceModal');
-                const form = document.getElementById('invoiceForm');
-                form.reset();
-                setupInvoiceDate();
-                document.getElementById('invoiceItemsContainer').innerHTML = '';
-                updateCustomerSelects();
-
-                const nextNumber = getNextInvoiceNumber();
-                document.getElementById('invoiceNumber').value = nextNumber;
-
-                // Pre-seleziona il cliente se corrisponde
-                if (note.customer_name) {
-                    const matchedCustomer = customers.find(c =>
-                        c.name.toLowerCase().includes(note.customer_name.toLowerCase()) ||
-                        note.customer_name.toLowerCase().includes(c.name.toLowerCase())
-                    );
-                    if (matchedCustomer) {
-                        document.getElementById('invoiceCustomer').value = matchedCustomer.id;
-                    }
-                }
-
-                // Aggiungi la voce precompilata
-                addInvoiceItem();
-                const lastItem = document.getElementById(`item-${invoiceItemCounter - 1}`);
-                if (lastItem) {
-                    lastItem.querySelector('.item-description').value = note.description + (note.notes ? ' - ' + note.notes : '');
-                    lastItem.querySelector('.item-amount').value = parseFloat(note.amount).toFixed(2);
-                    calculateInvoiceTotal();
-                }
-
-                // Salva l'ID della nota per segnarla come completata dopo la fattura
-                modal.dataset.fromNoteId = noteId;
-
-                modal.classList.add('active');
-            }, 200);
         }
 
         async function completeExpenseNote(noteId) {
