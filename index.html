@@ -1464,6 +1464,10 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     <span>Scadenze</span>
                 </button>
+                <button class="sidebar-nav-item" onclick="showSection('expense-notes', this)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                    <span>Note Spese</span>
+                </button>
                 <button class="sidebar-nav-item" onclick="showSection('reports', this)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
                     <span>Report</span>
@@ -1795,8 +1799,93 @@
                         </div>
                     </div>
                 </div>
+                <!-- EXPENSE NOTES (RIMBORSI) -->
+                <div id="expense-notes" class="section">
+                    <div class="section-toolbar">
+                        <div class="mini-stats-bar">
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Da gestire</span>
+                                <span class="mini-stat-value" id="miniNotesPending">0</span>
+                            </div>
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Totale aperto</span>
+                                <span class="mini-stat-value" id="miniNotesTotal">€0</span>
+                            </div>
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Completate</span>
+                                <span class="mini-stat-value" id="miniNotesDone">0</span>
+                            </div>
+                        </div>
+                        <div class="toolbar-actions">
+                            <button class="btn btn-primary" onclick="openExpenseNoteModal()">+ Nota Spesa</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table id="expenseNotesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrizione</th>
+                                        <th>Importo</th>
+                                        <th>Azione</th>
+                                        <th>Stato</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
+    </div>
+
+    <!-- EXPENSE NOTE MODAL -->
+    <div id="expenseNoteModal" class="modal">
+        <div class="modal-content">
+            <h2 id="expenseNoteModalTitle">Nuova Nota Spesa</h2>
+            <form id="expenseNoteForm">
+                <input type="hidden" id="expenseNoteId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data *</label>
+                        <input type="date" id="expenseNoteDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Importo *</label>
+                        <input type="number" id="expenseNoteAmount" step="0.01" required placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Descrizione *</label>
+                    <input type="text" id="expenseNoteDescription" required placeholder="Es: Volo Malta-Bologna, Hotel Milano...">
+                </div>
+
+                <div class="form-group">
+                    <label>Cosa fare *</label>
+                    <select id="expenseNoteAction" required onchange="toggleExpenseNoteCustomer()">
+                        <option value="reimburse">Da rimborsare</option>
+                        <option value="invoice">Da fatturare a cliente</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="expenseNoteCustomerGroup" style="display:none;">
+                    <label>Nome Cliente</label>
+                    <input type="text" id="expenseNoteCustomer" placeholder="Es: N1Marketing LLC">
+                </div>
+
+                <div class="form-group">
+                    <label>Note aggiuntive</label>
+                    <input type="text" id="expenseNoteNotes" placeholder="Dettagli opzionali...">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Salva</button>
+                <button type="button" class="btn btn-secondary" onclick="closeExpenseNoteModal()">Annulla</button>
+            </form>
+        </div>
     </div>
 
     <!-- NO COMPANY MODAL (forced, no close button) -->
@@ -2105,6 +2194,7 @@
         let invoices = [];
         let expenses = [];
         let reminders = [];
+        let expenseNotes = [];
 
         // Currency symbols
         const currencySymbols = {
@@ -2147,7 +2237,7 @@
             btn.classList.add('active');
 
             // Update main header title
-            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', reminders: 'Scadenze', reports: 'Report', companies: 'Aziende' };
+            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', reminders: 'Scadenze', 'expense-notes': 'Note Spese', reports: 'Report', companies: 'Aziende' };
             document.getElementById('mainHeaderTitle').textContent = titles[sectionId] || sectionId;
 
             // Close sidebar on mobile
@@ -2169,6 +2259,8 @@
                 loadExpenses();
             } else if (sectionId === 'reminders') {
                 loadReminders();
+            } else if (sectionId === 'expense-notes') {
+                loadExpenseNotes();
             }
         }
 
@@ -2289,16 +2381,18 @@
         async function loadAllData() {
             if (!currentCompanyId) return;
             try {
-                [customers, invoices, expenses, reminders] = await Promise.all([
+                [customers, invoices, expenses, reminders, expenseNotes] = await Promise.all([
                     apiCall('GET', `/companies/${currentCompanyId}/customers`),
                     apiCall('GET', `/companies/${currentCompanyId}/invoices`),
                     apiCall('GET', `/companies/${currentCompanyId}/expenses`),
-                    apiCall('GET', `/companies/${currentCompanyId}/reminders`)
+                    apiCall('GET', `/companies/${currentCompanyId}/reminders`),
+                    apiCall('GET', `/companies/${currentCompanyId}/expense-notes`)
                 ]);
                 customers = customers || [];
                 invoices = invoices || [];
                 expenses = expenses || [];
                 reminders = reminders || [];
+                expenseNotes = expenseNotes || [];
             } catch(e) {
                 console.error('Errore caricamento dati:', e);
             }
@@ -2780,6 +2874,16 @@
                     currency: invoiceData.currency
                 };
                 generatePDF(pdfData);
+
+                // Se la fattura e' stata creata da una nota spesa, segnala come completata
+                const fromNoteId = document.getElementById('invoiceModal').dataset.fromNoteId;
+                if (fromNoteId) {
+                    try {
+                        await completeExpenseNote(parseInt(fromNoteId));
+                    } catch(err) { console.error('Errore completamento nota:', err); }
+                    delete document.getElementById('invoiceModal').dataset.fromNoteId;
+                }
+
                 loadInvoices();
                 closeInvoiceModal();
                 updateDashboard();
@@ -2897,151 +3001,230 @@
         function generatePDF(invoice) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            const pw = doc.internal.pageSize.getWidth();
 
             const customer = customers.find(c => c.id == (invoice.customerId || invoice.customer_id));
             const company = companies.find(c => c.id == (invoice.companyId || currentCompanyId));
             const symbol = currencySymbols[invoice.currency] || '\u20AC';
+            const invoiceDate = new Date(invoice.date || invoice.invoice_date);
+            const invoiceNum = invoice.number || invoice.invoice_number;
 
-            // Header
-            doc.setFillColor(0, 0, 0);
-            doc.rect(0, 0, 210, 45, 'F');
+            const items = typeof invoice.items === 'string' ? JSON.parse(invoice.items) : invoice.items;
 
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(32);
+            // Colors
+            const black = [15, 15, 15];
+            const darkGray = [60, 60, 60];
+            const medGray = [120, 120, 120];
+            const lightGray = [200, 200, 200];
+            const veryLightGray = [245, 245, 245];
+            const green = [0, 200, 0];
+            const white = [255, 255, 255];
+            const margin = 20;
+
+            // === TOP ACCENT BAR ===
+            doc.setFillColor(...green);
+            doc.rect(0, 0, pw, 4, 'F');
+
+            // === HEADER SECTION ===
+            // Company name (big, bold, left)
+            doc.setTextColor(...black);
+            doc.setFontSize(22);
             doc.setFont('helvetica', 'bold');
-            doc.text('INVOICE', 105, 28, { align: 'center' });
+            doc.text(company.name.toUpperCase(), margin, 24);
 
-            doc.setTextColor(0, 0, 0);
-
-            // Company info (left)
-            doc.setFontSize(13);
-            doc.setFont('helvetica', 'bold');
-            doc.text(company.name, 15, 58);
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-
-            let yPos = 65;
-            if (company.address) {
-                const addressLines = doc.splitTextToSize(company.address, 85);
-                addressLines.forEach(line => {
-                    doc.text(line, 15, yPos);
-                    yPos += 6;
-                });
-            }
-
-            if (company.email) {
-                doc.text(`Email: ${company.email}`, 15, yPos);
-                yPos += 6;
-            }
-
-            if (company.tax_id || company.vat_number || company.taxId) {
-                doc.text(`Tax ID: ${company.tax_id || company.vat_number || company.taxId}`, 15, yPos);
-            }
-
-            // Customer info (right)
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text('BILL TO:', 120, 58);
-            doc.setFont('helvetica', 'normal');
+            // INVOICE label (right aligned, elegant)
+            doc.setTextColor(...medGray);
             doc.setFontSize(11);
-            doc.text(customer.name, 120, 65);
-            if (customer.address) {
-                doc.setFontSize(10);
-                const addressLines = doc.splitTextToSize(customer.address, 75);
-                let y = 72;
-                addressLines.forEach(line => {
-                    doc.text(line, 120, y);
-                    y += 6;
-                });
-            }
+            doc.setFont('helvetica', 'normal');
+            doc.text('INVOICE', pw - margin, 16, { align: 'right' });
 
-            // Date
+            // Invoice number (right, big)
+            doc.setTextColor(...black);
+            doc.setFontSize(28);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`#${invoiceNum}`, pw - margin, 28, { align: 'right' });
+
+            // Thin separator
+            doc.setDrawColor(...lightGray);
+            doc.setLineWidth(0.3);
+            doc.line(margin, 34, pw - margin, 34);
+
+            // === INFO SECTION (two columns) ===
+            let infoY = 44;
+
+            // Left: Company details
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...medGray);
+            doc.text('FROM', margin, infoY);
+
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text(`DATE: ${new Date(invoice.date || invoice.invoice_date).toLocaleDateString('en-US')}`, 15, 103);
+            doc.setTextColor(...black);
+            doc.text(company.name, margin, infoY + 7);
 
-            // Items table
-            let tableY = 118;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(...darkGray);
+            let leftY = infoY + 13;
+            if (company.address) {
+                const lines = doc.splitTextToSize(company.address, 75);
+                lines.forEach(line => { doc.text(line, margin, leftY); leftY += 5; });
+            }
+            if (company.email) { doc.text(company.email, margin, leftY); leftY += 5; }
+            const taxId = company.tax_id || company.vat_number || company.taxId;
+            if (taxId) { doc.text('Tax ID: ' + taxId, margin, leftY); }
+
+            // Right: Customer details
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...medGray);
+            doc.text('BILL TO', 120, infoY);
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...black);
+            doc.text(customer.name, 120, infoY + 7);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(...darkGray);
+            let rightY = infoY + 13;
+            if (customer.address) {
+                const lines = doc.splitTextToSize(customer.address, 70);
+                lines.forEach(line => { doc.text(line, 120, rightY); rightY += 5; });
+            }
+            if (customer.vat) { doc.text('VAT: ' + customer.vat, 120, rightY); }
+
+            // === DATE & DETAILS ROW ===
+            let detailY = Math.max(leftY, rightY) + 12;
+
+            // Light background row for date info
+            doc.setFillColor(...veryLightGray);
+            doc.roundedRect(margin, detailY - 5, pw - margin * 2, 16, 3, 3, 'F');
+
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...medGray);
+
+            doc.text('DATE', margin + 8, detailY + 1);
+            doc.text('INVOICE NO.', margin + 60, detailY + 1);
+            doc.text('CURRENCY', margin + 120, detailY + 1);
+
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...black);
+
+            doc.text(invoiceDate.toLocaleDateString('it-IT'), margin + 8, detailY + 7);
+            doc.text(String(invoiceNum), margin + 60, detailY + 7);
+            doc.text(invoice.currency || 'EUR', margin + 120, detailY + 7);
+
+            // === ITEMS TABLE ===
+            let tableY = detailY + 20;
 
             // Table header
-            doc.setFillColor(0, 0, 0);
-            doc.rect(15, tableY, 180, 12, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(10);
+            doc.setFontSize(8);
             doc.setFont('helvetica', 'bold');
-            doc.text('DESCRIPTION', 20, tableY + 8);
-            doc.text('AMOUNT', 180, tableY + 8, { align: 'right' });
+            doc.setTextColor(...medGray);
+            doc.text('DESCRIPTION', margin, tableY);
+            doc.text('AMOUNT', pw - margin, tableY, { align: 'right' });
 
-            // Table rows
-            doc.setTextColor(0, 0, 0);
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            tableY += 12;
+            doc.setDrawColor(...lightGray);
+            doc.setLineWidth(0.3);
+            doc.line(margin, tableY + 3, pw - margin, tableY + 3);
 
-            invoice.items.forEach((item, index) => {
-                const descLines = doc.splitTextToSize(item.description, 130);
-                doc.setFont('helvetica', 'normal');
-                doc.text(descLines[0], 20, tableY + 7);
-                doc.setFont('helvetica', 'bold');
-                doc.text(`${symbol} ${item.amount.toFixed(2)}`, 190, tableY + 7, { align: 'right' });
-
-                // Add subtle line between items
-                if (index < invoice.items.length - 1) {
-                    doc.setDrawColor(240, 240, 240);
-                    doc.line(15, tableY + 10, 195, tableY + 10);
-                }
-
-                tableY += 12;
-            });
-
-            // Total
             tableY += 10;
 
-            // Subtotal line
-            doc.setDrawColor(200, 200, 200);
-            doc.line(120, tableY, 195, tableY);
+            // Items
+            doc.setTextColor(...black);
+            items.forEach((item, index) => {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                const descLines = doc.splitTextToSize(item.description, 120);
+                doc.text(descLines[0], margin, tableY);
+                if (descLines[1]) { doc.setFontSize(8); doc.text(descLines[1], margin, tableY + 5); }
 
-            // Total box
-            doc.setFillColor(0, 0, 0);
-            doc.rect(120, tableY + 5, 75, 18, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text(`${symbol} ${parseFloat(item.amount).toLocaleString('it-IT', {minimumFractionDigits: 2})}`, pw - margin, tableY, { align: 'right' });
 
-            // Total label
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(12);
+                tableY += descLines.length > 1 ? 14 : 10;
+
+                // Separator between items
+                if (index < items.length - 1) {
+                    doc.setDrawColor(235, 235, 235);
+                    doc.setLineWidth(0.2);
+                    doc.line(margin, tableY - 3, pw - margin, tableY - 3);
+                }
+            });
+
+            // === TOTAL SECTION ===
+            tableY += 5;
+            doc.setDrawColor(...lightGray);
+            doc.setLineWidth(0.3);
+            doc.line(pw / 2, tableY, pw - margin, tableY);
+
+            tableY += 8;
+
+            // Subtotal
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...medGray);
+            doc.text('Subtotal', pw - margin - 55, tableY);
+            doc.setTextColor(...black);
+            doc.text(`${symbol} ${parseFloat(invoice.total).toLocaleString('it-IT', {minimumFractionDigits: 2})}`, pw - margin, tableY, { align: 'right' });
+
+            tableY += 10;
+
+            // Total with green accent
+            doc.setFillColor(...green);
+            doc.roundedRect(pw / 2, tableY - 5, pw / 2 - margin, 18, 3, 3, 'F');
+
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text('TOTAL', 125, tableY + 14);
+            doc.setTextColor(...white);
+            doc.text('TOTAL', pw - margin - 50, tableY + 5);
 
-            // Total amount
-            doc.setFontSize(18);
-            doc.setFont('helvetica', 'bold');
-            const totalText = `${symbol} ${invoice.total.toFixed(2)}`;
-            doc.text(totalText, 190, tableY + 16, { align: 'right' });
+            doc.setFontSize(16);
+            doc.text(`${symbol} ${parseFloat(invoice.total).toLocaleString('it-IT', {minimumFractionDigits: 2})}`, pw - margin - 3, tableY + 6, { align: 'right' });
 
-            // Payment info
+            // === PAYMENT INFO ===
             const paymentInfo = company.payment_info || company.payment;
             if (paymentInfo) {
-                doc.setTextColor(0, 0, 0);
-                doc.setFontSize(10);
+                tableY += 28;
+                doc.setFillColor(...veryLightGray);
+                const paymentLines = doc.splitTextToSize(paymentInfo, pw - margin * 2 - 16);
+                const boxH = paymentLines.length * 5 + 18;
+                doc.roundedRect(margin, tableY - 5, pw - margin * 2, boxH, 3, 3, 'F');
+
+                doc.setFontSize(8);
                 doc.setFont('helvetica', 'bold');
-                doc.text('PAYMENT INFORMATION:', 15, tableY + 35);
+                doc.setTextColor(...medGray);
+                doc.text('PAYMENT DETAILS', margin + 8, tableY + 2);
+
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(9);
-                const paymentLines = doc.splitTextToSize(paymentInfo, 180);
-                let y = tableY + 42;
-                paymentLines.forEach(line => {
-                    doc.text(line, 15, y);
-                    y += 5;
-                });
+                doc.setTextColor(...darkGray);
+                let py = tableY + 9;
+                paymentLines.forEach(line => { doc.text(line, margin + 8, py); py += 5; });
             }
 
-            // Footer
-            doc.setTextColor(120, 120, 120);
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'italic');
-            doc.text('Thank you for your business!', 105, 280, { align: 'center' });
+            // === FOOTER ===
+            doc.setDrawColor(...lightGray);
+            doc.setLineWidth(0.2);
+            doc.line(margin, 275, pw - margin, 275);
+
+            doc.setTextColor(...medGray);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Thank you for your business', pw / 2, 281, { align: 'center' });
+
+            // Green bottom accent
+            doc.setFillColor(...green);
+            doc.rect(0, 293, pw, 4, 'F');
 
             // Save
-            doc.save(`Invoice_${customer.name.replace(/\s+/g, '_')}_${invoice.date || invoice.invoice_date}.pdf`);
+            doc.save(`Invoice_${invoiceNum}_${customer.name.replace(/\s+/g, '_')}_${invoiceDate.toISOString().split('T')[0]}.pdf`);
         }
 
         // EXPENSES
@@ -3765,6 +3948,208 @@
                     <td>${formatCurrency(average)}</td>
                 `;
             });
+        }
+
+        // ============= EXPENSE NOTES =============
+
+        function openExpenseNoteModal(noteId = null) {
+            if (!currentCompanyId) { alert('Seleziona prima un\'azienda!'); return; }
+
+            const modal = document.getElementById('expenseNoteModal');
+            const form = document.getElementById('expenseNoteForm');
+            form.reset();
+            document.getElementById('expenseNoteId').value = '';
+            document.getElementById('expenseNoteCustomerGroup').style.display = 'none';
+
+            if (noteId) {
+                const note = expenseNotes.find(n => n.id == noteId);
+                if (!note) return;
+                document.getElementById('expenseNoteModalTitle').textContent = 'Modifica Nota Spesa';
+                document.getElementById('expenseNoteId').value = note.id;
+                document.getElementById('expenseNoteDate').value = (note.date || '').split('T')[0];
+                document.getElementById('expenseNoteAmount').value = note.amount;
+                document.getElementById('expenseNoteDescription').value = note.description;
+                document.getElementById('expenseNoteAction').value = note.action_type || 'reimburse';
+                document.getElementById('expenseNoteCustomer').value = note.customer_name || '';
+                document.getElementById('expenseNoteNotes').value = note.notes || '';
+                toggleExpenseNoteCustomer();
+            } else {
+                document.getElementById('expenseNoteModalTitle').textContent = 'Nuova Nota Spesa';
+                document.getElementById('expenseNoteDate').value = new Date().toISOString().split('T')[0];
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeExpenseNoteModal() {
+            document.getElementById('expenseNoteModal').classList.remove('active');
+        }
+
+        function toggleExpenseNoteCustomer() {
+            const action = document.getElementById('expenseNoteAction').value;
+            document.getElementById('expenseNoteCustomerGroup').style.display = action === 'invoice' ? 'block' : 'none';
+        }
+
+        document.getElementById('expenseNoteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            try {
+                const noteId = document.getElementById('expenseNoteId').value;
+                const noteData = {
+                    date: document.getElementById('expenseNoteDate').value,
+                    description: document.getElementById('expenseNoteDescription').value,
+                    amount: parseFloat(document.getElementById('expenseNoteAmount').value),
+                    action_type: document.getElementById('expenseNoteAction').value,
+                    customer_name: document.getElementById('expenseNoteCustomer').value || null,
+                    notes: document.getElementById('expenseNoteNotes').value || null
+                };
+
+                if (noteId) {
+                    const existing = expenseNotes.find(n => n.id == noteId);
+                    noteData.completed = existing ? existing.completed : false;
+                    await apiCall('PUT', `/expense-notes/${noteId}`, noteData);
+                } else {
+                    await apiCall('POST', `/companies/${currentCompanyId}/expense-notes`, noteData);
+                }
+
+                expenseNotes = await apiCall('GET', `/companies/${currentCompanyId}/expense-notes`) || [];
+                loadExpenseNotes();
+                closeExpenseNoteModal();
+            } catch(e) {
+                alert('Errore: ' + e.message);
+            }
+        });
+
+        function loadExpenseNotes() {
+            if (!currentCompanyId) return;
+
+            const tbody = document.querySelector('#expenseNotesTable tbody');
+            tbody.innerHTML = '';
+
+            // Mini-stats
+            const pending = expenseNotes.filter(n => !n.completed);
+            const done = expenseNotes.filter(n => n.completed);
+            const totalOpen = pending.reduce((s, n) => s + parseFloat(n.amount || 0), 0);
+            document.getElementById('miniNotesPending').textContent = pending.length;
+            document.getElementById('miniNotesTotal').textContent = formatCurrency(totalOpen);
+            document.getElementById('miniNotesDone').textContent = done.length;
+
+            if (expenseNotes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna nota spesa. Aggiungi la prima!</td></tr>';
+                return;
+            }
+
+            const actionLabels = { 'reimburse': 'Da rimborsare', 'invoice': 'Da fatturare' };
+
+            // Pending first, then completed
+            const sorted = [...expenseNotes].sort((a, b) => {
+                if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                return new Date(b.date || b.created_at) - new Date(a.date || a.created_at);
+            });
+
+            sorted.forEach(note => {
+                const date = note.date || note.created_at;
+                const actionLabel = note.action_type === 'invoice'
+                    ? `Fatturare a ${note.customer_name || '?'}`
+                    : actionLabels[note.action_type] || 'Da rimborsare';
+                const statusBadge = note.completed
+                    ? '<span class="badge badge-paid">Completato</span>'
+                    : '<span class="badge badge-pending">In sospeso</span>';
+
+                const row = tbody.insertRow();
+                if (note.completed) row.style.opacity = '0.5';
+                row.innerHTML = `
+                    <td>${date ? new Date(date).toLocaleDateString('it-IT') : '-'}</td>
+                    <td><strong>${note.description}</strong>${note.notes ? '<br><small style="color:var(--text-secondary)">' + note.notes + '</small>' : ''}</td>
+                    <td><strong>${formatCurrency(note.amount)}</strong></td>
+                    <td>${actionLabel}</td>
+                    <td>${statusBadge}</td>
+                    <td class="action-btns">
+                        ${!note.completed && note.action_type === 'invoice' ? `<button class="btn btn-primary" onclick="createInvoiceFromNote(${note.id})">Crea Fattura</button>` : ''}
+                        ${!note.completed ? `<button class="btn btn-success" onclick="completeExpenseNote(${note.id})">Completato</button>` : ''}
+                        <button class="btn btn-secondary" onclick="openExpenseNoteModal(${note.id})">Modifica</button>
+                        <button class="btn btn-danger" onclick="deleteExpenseNote(${note.id})">Elimina</button>
+                    </td>
+                `;
+            });
+        }
+
+        // Crea fattura da nota spesa - precompila il modal
+        function createInvoiceFromNote(noteId) {
+            const note = expenseNotes.find(n => n.id == noteId);
+            if (!note) return;
+
+            if (customers.length === 0) {
+                alert('Devi prima creare almeno un cliente!');
+                return;
+            }
+
+            // Apri la sezione fatture
+            showSection('invoices', document.querySelectorAll('.sidebar-nav-item')[1]);
+
+            // Apri il modal fattura
+            setTimeout(() => {
+                const modal = document.getElementById('invoiceModal');
+                const form = document.getElementById('invoiceForm');
+                form.reset();
+                setupInvoiceDate();
+                document.getElementById('invoiceItemsContainer').innerHTML = '';
+                updateCustomerSelects();
+
+                const nextNumber = getNextInvoiceNumber();
+                document.getElementById('invoiceNumber').value = nextNumber;
+
+                // Pre-seleziona il cliente se corrisponde
+                if (note.customer_name) {
+                    const matchedCustomer = customers.find(c =>
+                        c.name.toLowerCase().includes(note.customer_name.toLowerCase()) ||
+                        note.customer_name.toLowerCase().includes(c.name.toLowerCase())
+                    );
+                    if (matchedCustomer) {
+                        document.getElementById('invoiceCustomer').value = matchedCustomer.id;
+                    }
+                }
+
+                // Aggiungi la voce precompilata
+                addInvoiceItem();
+                const lastItem = document.getElementById(`item-${invoiceItemCounter - 1}`);
+                if (lastItem) {
+                    lastItem.querySelector('.item-description').value = note.description + (note.notes ? ' - ' + note.notes : '');
+                    lastItem.querySelector('.item-amount').value = parseFloat(note.amount).toFixed(2);
+                    calculateInvoiceTotal();
+                }
+
+                // Salva l'ID della nota per segnarla come completata dopo la fattura
+                modal.dataset.fromNoteId = noteId;
+
+                modal.classList.add('active');
+            }, 200);
+        }
+
+        async function completeExpenseNote(noteId) {
+            try {
+                const note = expenseNotes.find(n => n.id == noteId);
+                if (!note) return;
+                await apiCall('PUT', `/expense-notes/${noteId}`, {
+                    ...note,
+                    completed: true
+                });
+                expenseNotes = await apiCall('GET', `/companies/${currentCompanyId}/expense-notes`) || [];
+                loadExpenseNotes();
+            } catch(e) {
+                alert('Errore: ' + e.message);
+            }
+        }
+
+        async function deleteExpenseNote(noteId) {
+            if (confirm('Sei sicuro di voler eliminare questa nota spesa?')) {
+                try {
+                    await apiCall('DELETE', `/expense-notes/${noteId}`);
+                    expenseNotes = await apiCall('GET', `/companies/${currentCompanyId}/expense-notes`) || [];
+                    loadExpenseNotes();
+                } catch(e) {
+                    alert('Errore: ' + e.message);
+                }
+            }
         }
 
         // CSV EXPORT
