@@ -1873,8 +1873,10 @@
                 </div>
 
                 <div class="form-group" id="expenseNoteCustomerGroup" style="display:none;">
-                    <label>Nome Cliente</label>
-                    <input type="text" id="expenseNoteCustomer" placeholder="Es: N1Marketing LLC">
+                    <label>Cliente</label>
+                    <select id="expenseNoteCustomer">
+                        <option value="">Seleziona cliente...</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -1992,7 +1994,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Cliente *</label>
-                        <select id="invoiceCustomer" required></select>
+                        <select id="invoiceCustomer" required onchange="showPendingNotes()"></select>
                     </div>
                     <div class="form-group">
                         <label>Valuta *</label>
@@ -2003,6 +2005,11 @@
                             <option value="CHF">CHF (Fr)</option>
                         </select>
                     </div>
+                </div>
+
+                <div id="pendingNotesContainer" style="display:none; margin: 16px 0; padding: 14px; background: rgba(0,255,0,0.04); border: 1px solid rgba(0,255,0,0.15); border-radius: 10px;">
+                    <div style="font-size: 12px; font-weight: 600; color: var(--primary-green); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Note spese da fatturare</div>
+                    <div id="pendingNotesList"></div>
                 </div>
 
                 <h3 style="margin: 20px 0 16px 0; font-size: 16px;">Voci di Fattura</h3>
@@ -2779,6 +2786,77 @@
             calculateInvoiceTotal();
         }
 
+        // Mostra note spese pendenti per il cliente selezionato
+        function showPendingNotes() {
+            const customerId = document.getElementById('invoiceCustomer').value;
+            const container = document.getElementById('pendingNotesContainer');
+            const list = document.getElementById('pendingNotesList');
+
+            if (!customerId) {
+                container.style.display = 'none';
+                return;
+            }
+
+            // Trova note pendenti assegnate a questo cliente
+            const pending = expenseNotes.filter(n =>
+                !n.completed &&
+                n.action_type === 'invoice' &&
+                n.customer_name == customerId
+            );
+
+            if (pending.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            list.innerHTML = '';
+
+            pending.forEach(note => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);';
+                div.innerHTML = `
+                    <div>
+                        <strong style="font-size:13px;">${note.description}</strong>
+                        <span style="color:var(--text-secondary); font-size:12px; margin-left:8px;">${formatCurrency(note.amount)}</span>
+                        ${note.notes ? '<br><small style="color:var(--text-secondary);">' + note.notes + '</small>' : ''}
+                    </div>
+                    <button type="button" class="btn btn-primary" style="padding:6px 14px; font-size:11px; margin:0;" onclick="addNoteToInvoice(${note.id})">+ Aggiungi</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // Aggiunge una nota spesa come voce fattura
+        function addNoteToInvoice(noteId) {
+            const note = expenseNotes.find(n => n.id == noteId);
+            if (!note) return;
+
+            addInvoiceItem();
+            const lastItem = document.getElementById(`item-${invoiceItemCounter - 1}`);
+            if (lastItem) {
+                lastItem.querySelector('.item-description').value = note.description + (note.notes ? ' - ' + note.notes : '');
+                lastItem.querySelector('.item-amount').value = parseFloat(note.amount).toFixed(2);
+                calculateInvoiceTotal();
+            }
+
+            // Salva ID nota per segnarla come completata
+            const modal = document.getElementById('invoiceModal');
+            const noteIds = modal.dataset.fromNoteIds ? JSON.parse(modal.dataset.fromNoteIds) : [];
+            noteIds.push(noteId);
+            modal.dataset.fromNoteIds = JSON.stringify(noteIds);
+
+            // Nascondi la nota dalla lista (gia' aggiunta)
+            const btn = event.target;
+            btn.parentElement.parentElement.style.display = 'none';
+
+            // Se non ci sono piu' note visibili, nascondi il container
+            const visibleNotes = document.querySelectorAll('#pendingNotesList > div:not([style*="display: none"])');
+            if (visibleNotes.length === 0) {
+                document.getElementById('pendingNotesContainer').style.display = 'none';
+            }
+        }
+
         function removeInvoiceItem(itemId) {
             document.getElementById(`item-${itemId}`).remove();
             calculateInvoiceTotal();
@@ -2820,7 +2898,15 @@
 
             addInvoiceItem();
 
+            // Reset note IDs e nascondi container
+            delete modal.dataset.fromNoteIds;
+            delete modal.dataset.fromNoteId;
+            document.getElementById('pendingNotesContainer').style.display = 'none';
+
             modal.classList.add('active');
+
+            // Mostra eventuali note pendenti se un cliente e' gia' selezionato
+            showPendingNotes();
         }
 
         function closeInvoiceModal() {
@@ -2875,12 +2961,19 @@
                 };
                 generatePDF(pdfData);
 
-                // Se la fattura e' stata creata da una nota spesa, segnala come completata
+                // Segna come completate le note spese aggiunte alla fattura
+                const noteIdsStr = document.getElementById('invoiceModal').dataset.fromNoteIds;
+                if (noteIdsStr) {
+                    const noteIds = JSON.parse(noteIdsStr);
+                    for (const nid of noteIds) {
+                        try { await completeExpenseNote(parseInt(nid)); } catch(err) { console.error('Errore completamento nota:', err); }
+                    }
+                    delete document.getElementById('invoiceModal').dataset.fromNoteIds;
+                }
+                // Legacy: supporto singolo ID
                 const fromNoteId = document.getElementById('invoiceModal').dataset.fromNoteId;
                 if (fromNoteId) {
-                    try {
-                        await completeExpenseNote(parseInt(fromNoteId));
-                    } catch(err) { console.error('Errore completamento nota:', err); }
+                    try { await completeExpenseNote(parseInt(fromNoteId)); } catch(err) {}
                     delete document.getElementById('invoiceModal').dataset.fromNoteId;
                 }
 
@@ -3002,229 +3095,241 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const pw = doc.internal.pageSize.getWidth();
+            const ph = doc.internal.pageSize.getHeight();
 
             const customer = customers.find(c => c.id == (invoice.customerId || invoice.customer_id));
             const company = companies.find(c => c.id == (invoice.companyId || currentCompanyId));
             const symbol = currencySymbols[invoice.currency] || '\u20AC';
             const invoiceDate = new Date(invoice.date || invoice.invoice_date);
-            const invoiceNum = invoice.number || invoice.invoice_number;
 
             const items = typeof invoice.items === 'string' ? JSON.parse(invoice.items) : invoice.items;
+            const fmtAmount = (n) => `${symbol} ${parseFloat(n).toLocaleString('it-IT', {minimumFractionDigits: 2})}`;
 
-            // Colors
-            const black = [15, 15, 15];
-            const darkGray = [60, 60, 60];
-            const medGray = [120, 120, 120];
-            const lightGray = [200, 200, 200];
-            const veryLightGray = [245, 245, 245];
-            const green = [0, 200, 0];
+            // Palette
+            const ink = [20, 20, 20];
+            const dark = [50, 50, 50];
+            const mid = [130, 130, 130];
+            const soft = [180, 180, 180];
+            const line = [220, 220, 220];
+            const bg = [248, 248, 248];
+            const accent = [0, 190, 0];
             const white = [255, 255, 255];
-            const margin = 20;
+            const m = 25; // margin
 
-            // === TOP ACCENT BAR ===
-            doc.setFillColor(...green);
-            doc.rect(0, 0, pw, 4, 'F');
+            // ─── HEADER ───────────────────────────────────
+            // Thin accent line top
+            doc.setFillColor(...accent);
+            doc.rect(0, 0, pw, 2.5, 'F');
 
-            // === HEADER SECTION ===
-            // Company name (big, bold, left)
-            doc.setTextColor(...black);
-            doc.setFontSize(22);
+            // Company name - large, bold, uppercase
+            doc.setTextColor(...ink);
+            doc.setFontSize(26);
             doc.setFont('helvetica', 'bold');
-            doc.text(company.name.toUpperCase(), margin, 24);
+            doc.text(company.name.toUpperCase(), m, 22);
 
-            // INVOICE label (right aligned, elegant)
-            doc.setTextColor(...medGray);
+            // "INVOICE" - right side, light
+            doc.setTextColor(...soft);
+            doc.setFontSize(36);
+            doc.setFont('helvetica', 'bold');
+            doc.text('INVOICE', pw - m, 24, { align: 'right' });
+
+            // ─── SEPARATOR ────────────────────────────────
+            doc.setDrawColor(...line);
+            doc.setLineWidth(0.4);
+            doc.line(m, 30, pw - m, 30);
+
+            // ─── INFO COLUMNS ─────────────────────────────
+            let y = 42;
+
+            // LEFT: From
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...mid);
+            doc.text('F R O M', m, y);
+
+            y += 7;
             doc.setFontSize(11);
-            doc.setFont('helvetica', 'normal');
-            doc.text('INVOICE', pw - margin, 16, { align: 'right' });
-
-            // Invoice number (right, big)
-            doc.setTextColor(...black);
-            doc.setFontSize(28);
             doc.setFont('helvetica', 'bold');
-            doc.text(`#${invoiceNum}`, pw - margin, 28, { align: 'right' });
+            doc.setTextColor(...ink);
+            doc.text(company.name, m, y);
 
-            // Thin separator
-            doc.setDrawColor(...lightGray);
-            doc.setLineWidth(0.3);
-            doc.line(margin, 34, pw - margin, 34);
-
-            // === INFO SECTION (two columns) ===
-            let infoY = 44;
-
-            // Left: Company details
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...medGray);
-            doc.text('FROM', margin, infoY);
-
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...black);
-            doc.text(company.name, margin, infoY + 7);
-
+            y += 6;
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
-            doc.setTextColor(...darkGray);
-            let leftY = infoY + 13;
+            doc.setTextColor(...dark);
             if (company.address) {
-                const lines = doc.splitTextToSize(company.address, 75);
-                lines.forEach(line => { doc.text(line, margin, leftY); leftY += 5; });
+                const lines = doc.splitTextToSize(company.address, 70);
+                lines.forEach(l => { doc.text(l, m, y); y += 4.5; });
             }
-            if (company.email) { doc.text(company.email, margin, leftY); leftY += 5; }
+            if (company.email) { doc.text(company.email, m, y); y += 4.5; }
             const taxId = company.tax_id || company.vat_number || company.taxId;
-            if (taxId) { doc.text('Tax ID: ' + taxId, margin, leftY); }
+            if (taxId) { doc.text(taxId, m, y); y += 4.5; }
 
-            // Right: Customer details
-            doc.setFontSize(8);
+            // RIGHT: Bill To
+            let ry = 42;
+            doc.setFontSize(7.5);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...medGray);
-            doc.text('BILL TO', 120, infoY);
+            doc.setTextColor(...mid);
+            doc.text('B I L L   T O', 125, ry);
+
+            ry += 7;
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...ink);
+            doc.text(customer.name, 125, ry);
+
+            ry += 6;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(...dark);
+            if (customer.address) {
+                const lines = doc.splitTextToSize(customer.address, 60);
+                lines.forEach(l => { doc.text(l, 125, ry); ry += 4.5; });
+            }
+            if (customer.vat) { doc.text(customer.vat, 125, ry); }
+
+            // ─── DATE ROW ─────────────────────────────────
+            let detY = Math.max(y, ry) + 10;
+            doc.setFillColor(...bg);
+            doc.roundedRect(m, detY - 4, pw - m * 2, 14, 2, 2, 'F');
+
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...mid);
+            doc.text('D A T E', m + 8, detY + 2);
+            doc.text('C U R R E N C Y', m + 80, detY + 2);
 
             doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...black);
-            doc.text(customer.name, 120, infoY + 7);
-
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
-            doc.setTextColor(...darkGray);
-            let rightY = infoY + 13;
-            if (customer.address) {
-                const lines = doc.splitTextToSize(customer.address, 70);
-                lines.forEach(line => { doc.text(line, 120, rightY); rightY += 5; });
-            }
-            if (customer.vat) { doc.text('VAT: ' + customer.vat, 120, rightY); }
+            doc.setTextColor(...ink);
+            doc.text(invoiceDate.toLocaleDateString('it-IT'), m + 8, detY + 7);
+            doc.text(invoice.currency || 'EUR', m + 80, detY + 7);
 
-            // === DATE & DETAILS ROW ===
-            let detailY = Math.max(leftY, rightY) + 12;
+            // ─── ITEMS TABLE ──────────────────────────────
+            let tY = detY + 22;
 
-            // Light background row for date info
-            doc.setFillColor(...veryLightGray);
-            doc.roundedRect(margin, detailY - 5, pw - margin * 2, 16, 3, 3, 'F');
-
-            doc.setFontSize(8);
+            // Column headers
+            doc.setFontSize(7.5);
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...medGray);
+            doc.setTextColor(...mid);
+            doc.text('D E S C R I P T I O N', m, tY);
+            doc.text('A M O U N T', pw - m, tY, { align: 'right' });
 
-            doc.text('DATE', margin + 8, detailY + 1);
-            doc.text('INVOICE NO.', margin + 60, detailY + 1);
-            doc.text('CURRENCY', margin + 120, detailY + 1);
+            tY += 4;
+            doc.setDrawColor(...accent);
+            doc.setLineWidth(0.6);
+            doc.line(m, tY, pw - m, tY);
 
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(...black);
+            tY += 9;
 
-            doc.text(invoiceDate.toLocaleDateString('it-IT'), margin + 8, detailY + 7);
-            doc.text(String(invoiceNum), margin + 60, detailY + 7);
-            doc.text(invoice.currency || 'EUR', margin + 120, detailY + 7);
-
-            // === ITEMS TABLE ===
-            let tableY = detailY + 20;
-
-            // Table header
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...medGray);
-            doc.text('DESCRIPTION', margin, tableY);
-            doc.text('AMOUNT', pw - margin, tableY, { align: 'right' });
-
-            doc.setDrawColor(...lightGray);
-            doc.setLineWidth(0.3);
-            doc.line(margin, tableY + 3, pw - margin, tableY + 3);
-
-            tableY += 10;
-
-            // Items
-            doc.setTextColor(...black);
-            items.forEach((item, index) => {
+            // Rows
+            items.forEach((item, i) => {
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(10);
-                const descLines = doc.splitTextToSize(item.description, 120);
-                doc.text(descLines[0], margin, tableY);
-                if (descLines[1]) { doc.setFontSize(8); doc.text(descLines[1], margin, tableY + 5); }
+                doc.setTextColor(...ink);
+
+                const descLines = doc.splitTextToSize(item.description, 115);
+                doc.text(descLines[0], m, tY);
+                if (descLines[1]) {
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(...dark);
+                    doc.text(descLines[1], m, tY + 5);
+                }
 
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
-                doc.text(`${symbol} ${parseFloat(item.amount).toLocaleString('it-IT', {minimumFractionDigits: 2})}`, pw - margin, tableY, { align: 'right' });
+                doc.setTextColor(...ink);
+                doc.text(fmtAmount(item.amount), pw - m, tY, { align: 'right' });
 
-                tableY += descLines.length > 1 ? 14 : 10;
+                tY += descLines.length > 1 ? 15 : 11;
 
-                // Separator between items
-                if (index < items.length - 1) {
-                    doc.setDrawColor(235, 235, 235);
-                    doc.setLineWidth(0.2);
-                    doc.line(margin, tableY - 3, pw - margin, tableY - 3);
+                if (i < items.length - 1) {
+                    doc.setDrawColor(...line);
+                    doc.setLineWidth(0.15);
+                    doc.line(m, tY - 4, pw - m, tY - 4);
                 }
             });
 
-            // === TOTAL SECTION ===
-            tableY += 5;
-            doc.setDrawColor(...lightGray);
+            // ─── TOTAL ────────────────────────────────────
+            tY += 4;
+            doc.setDrawColor(...line);
             doc.setLineWidth(0.3);
-            doc.line(pw / 2, tableY, pw - margin, tableY);
+            doc.line(pw / 2 + 10, tY, pw - m, tY);
 
-            tableY += 8;
-
-            // Subtotal
+            // Subtotal row
+            tY += 8;
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.setTextColor(...medGray);
-            doc.text('Subtotal', pw - margin - 55, tableY);
-            doc.setTextColor(...black);
-            doc.text(`${symbol} ${parseFloat(invoice.total).toLocaleString('it-IT', {minimumFractionDigits: 2})}`, pw - margin, tableY, { align: 'right' });
+            doc.setTextColor(...mid);
+            doc.text('Subtotal', pw - m - 52, tY);
+            doc.setTextColor(...ink);
+            doc.text(fmtAmount(invoice.total), pw - m, tY, { align: 'right' });
 
-            tableY += 10;
+            // Total box
+            tY += 12;
+            doc.setFillColor(...ink);
+            doc.roundedRect(pw / 2 + 10, tY - 6, pw / 2 - 10 - m, 20, 3, 3, 'F');
 
-            // Total with green accent
-            doc.setFillColor(...green);
-            doc.roundedRect(pw / 2, tableY - 5, pw / 2 - margin, 18, 3, 3, 'F');
+            // Green accent on total box
+            doc.setFillColor(...accent);
+            doc.roundedRect(pw / 2 + 10, tY - 6, 4, 20, 3, 0, 'F');
+            doc.setFillColor(...ink);
+            doc.rect(pw / 2 + 13, tY - 6, 2, 20, 'F');
 
-            doc.setFontSize(10);
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(...white);
-            doc.text('TOTAL', pw - margin - 50, tableY + 5);
+            doc.text('T O T A L', pw / 2 + 22, tY + 5);
 
-            doc.setFontSize(16);
-            doc.text(`${symbol} ${parseFloat(invoice.total).toLocaleString('it-IT', {minimumFractionDigits: 2})}`, pw - margin - 3, tableY + 6, { align: 'right' });
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text(fmtAmount(invoice.total), pw - m - 5, tY + 7, { align: 'right' });
 
-            // === PAYMENT INFO ===
+            // ─── PAYMENT INFO ─────────────────────────────
             const paymentInfo = company.payment_info || company.payment;
             if (paymentInfo) {
-                tableY += 28;
-                doc.setFillColor(...veryLightGray);
-                const paymentLines = doc.splitTextToSize(paymentInfo, pw - margin * 2 - 16);
-                const boxH = paymentLines.length * 5 + 18;
-                doc.roundedRect(margin, tableY - 5, pw - margin * 2, boxH, 3, 3, 'F');
+                tY += 30;
+                const payLines = doc.splitTextToSize(paymentInfo, pw - m * 2 - 20);
+                const boxH = payLines.length * 5 + 16;
 
-                doc.setFontSize(8);
+                doc.setDrawColor(...line);
+                doc.setLineWidth(0.3);
+                doc.roundedRect(m, tY - 5, pw - m * 2, boxH, 2, 2, 'S');
+
+                // Green left accent
+                doc.setFillColor(...accent);
+                doc.roundedRect(m, tY - 5, 3, boxH, 2, 0, 'F');
+                doc.setFillColor(255, 255, 255);
+                doc.rect(m + 2, tY - 4, 2, boxH - 2, 'F');
+
+                doc.setFontSize(7.5);
                 doc.setFont('helvetica', 'bold');
-                doc.setTextColor(...medGray);
-                doc.text('PAYMENT DETAILS', margin + 8, tableY + 2);
+                doc.setTextColor(...mid);
+                doc.text('P A Y M E N T   D E T A I L S', m + 10, tY + 2);
 
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(9);
-                doc.setTextColor(...darkGray);
-                let py = tableY + 9;
-                paymentLines.forEach(line => { doc.text(line, margin + 8, py); py += 5; });
+                doc.setTextColor(...dark);
+                let py = tY + 9;
+                payLines.forEach(l => { doc.text(l, m + 10, py); py += 5; });
             }
 
-            // === FOOTER ===
-            doc.setDrawColor(...lightGray);
-            doc.setLineWidth(0.2);
-            doc.line(margin, 275, pw - margin, 275);
+            // ─── FOOTER ──────────────────────────────────
+            doc.setDrawColor(...line);
+            doc.setLineWidth(0.15);
+            doc.line(m, ph - 18, pw - m, ph - 18);
 
-            doc.setTextColor(...medGray);
-            doc.setFontSize(8);
+            doc.setTextColor(...soft);
+            doc.setFontSize(7.5);
             doc.setFont('helvetica', 'normal');
-            doc.text('Thank you for your business', pw / 2, 281, { align: 'center' });
+            doc.text('Thank you for your business.', pw / 2, ph - 12, { align: 'center' });
 
-            // Green bottom accent
-            doc.setFillColor(...green);
-            doc.rect(0, 293, pw, 4, 'F');
+            // Bottom accent
+            doc.setFillColor(...accent);
+            doc.rect(0, ph - 3, pw, 3, 'F');
 
             // Save
-            doc.save(`Invoice_${invoiceNum}_${customer.name.replace(/\s+/g, '_')}_${invoiceDate.toISOString().split('T')[0]}.pdf`);
+            doc.save(`Invoice_${customer.name.replace(/\s+/g, '_')}_${invoiceDate.toISOString().split('T')[0]}.pdf`);
         }
 
         // EXPENSES
@@ -3961,6 +4066,16 @@
             document.getElementById('expenseNoteId').value = '';
             document.getElementById('expenseNoteCustomerGroup').style.display = 'none';
 
+            // Popola dropdown clienti
+            const custSelect = document.getElementById('expenseNoteCustomer');
+            custSelect.innerHTML = '<option value="">Seleziona cliente...</option>';
+            customers.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                custSelect.appendChild(opt);
+            });
+
             if (noteId) {
                 const note = expenseNotes.find(n => n.id == noteId);
                 if (!note) return;
@@ -4048,8 +4163,10 @@
 
             sorted.forEach(note => {
                 const date = note.date || note.created_at;
+                const noteCustomer = customers.find(c => c.id == note.customer_name);
+                const customerLabel = noteCustomer ? noteCustomer.name : (note.customer_name || '?');
                 const actionLabel = note.action_type === 'invoice'
-                    ? `Fatturare a ${note.customer_name || '?'}`
+                    ? `Fatturare a ${customerLabel}`
                     : actionLabels[note.action_type] || 'Da rimborsare';
                 const statusBadge = note.completed
                     ? '<span class="badge badge-paid">Completato</span>'
