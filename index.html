@@ -3086,6 +3086,7 @@
                     <td>${customer ? customer.name : 'Cliente eliminato'}</td>
                     <td><strong>${formatCurrency(invoice.total, symbol)}</strong></td>
                     <td class="action-btns">
+                        <button class="btn btn-secondary" onclick="viewInvoicePDF(${invoice.id})">Visualizza</button>
                         <button class="btn btn-secondary" onclick="regeneratePDF(${invoice.id})">PDF</button>
                         <button class="btn btn-secondary" onclick="openInvoiceModal(${invoice.id})">Modifica</button>
                         <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Elimina</button>
@@ -3107,7 +3108,7 @@
             }
         }
 
-        function regeneratePDF(invoiceId) {
+        function regeneratePDF(invoiceId, viewMode = false) {
             const invoice = invoices.find(i => i.id == invoiceId);
             if (invoice) {
                 const cid = invoice.customer_id || invoice.customerId;
@@ -3122,12 +3123,16 @@
                     total: parseFloat(invoice.total),
                     currency: invoice.currency || 'EUR'
                 };
-                generatePDF(pdfData);
+                generatePDF(pdfData, viewMode);
             }
         }
 
+        function viewInvoicePDF(invoiceId) {
+            regeneratePDF(invoiceId, true);
+        }
+
         // PDF GENERATION
-        function generatePDF(invoice) {
+        function generatePDF(invoice, viewMode = false) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const pw = doc.internal.pageSize.getWidth();
@@ -3364,8 +3369,15 @@
             doc.setFillColor(...accent);
             doc.rect(0, ph - 3, pw, 3, 'F');
 
-            // Save
-            doc.save(`Invoice_${customer.name.replace(/\s+/g, '_')}_${invoiceDate.toISOString().split('T')[0]}.pdf`);
+            // Save o Visualizza
+            const fileName = `Invoice_${customer.name.replace(/\s+/g, '_')}_${invoiceDate.toISOString().split('T')[0]}.pdf`;
+            if (viewMode) {
+                const blobUrl = doc.output('bloburl');
+                window.open(blobUrl, '_blank');
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+            } else {
+                doc.save(fileName);
+            }
         }
 
         // EXPENSES
