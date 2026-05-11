@@ -208,6 +208,35 @@ class NumbersAPI {
         });
         return this.handleResponse(response);
     }
+
+    // ===== EXPENSE NOTE RECEIPTS =====
+    async getReceipts(noteId) {
+        const response = await fetch(`${this.baseURL}/expense-notes/${noteId}/receipts`, {
+            headers: this.getHeaders()
+        });
+        return this.handleResponse(response);
+    }
+
+    async uploadReceipts(noteId, files) {
+        const formData = new FormData();
+        for (const f of files) formData.append('files', f);
+        const headers = {};
+        if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+        const response = await fetch(`${this.baseURL}/expense-notes/${noteId}/receipts`, {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+        return this.handleResponse(response);
+    }
+
+    async deleteReceipt(receiptId) {
+        const response = await fetch(`${this.baseURL}/receipts/${receiptId}`, {
+            method: 'DELETE',
+            headers: this.getHeaders()
+        });
+        return this.handleResponse(response);
+    }
 }
 
 // Initialize API client

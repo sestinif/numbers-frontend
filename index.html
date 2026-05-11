@@ -1878,6 +1878,12 @@
                     <input type="text" id="expenseNoteNotes" placeholder="Dettagli opzionali...">
                 </div>
 
+                <div class="form-group">
+                    <label>Ricevute (immagini o PDF, max 5MB ognuno)</label>
+                    <input type="file" id="expenseNoteFiles" multiple accept="image/*,application/pdf" style="padding: 8px; background: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: 6px; width: 100%;">
+                    <div id="expenseNoteReceiptsList" style="margin-top: 10px;"></div>
+                </div>
+
                 <button type="submit" class="btn btn-primary">Salva</button>
                 <button type="button" class="btn btn-secondary" onclick="closeExpenseNoteModal()">Annulla</button>
             </form>
@@ -4053,6 +4059,7 @@
             const form = document.getElementById('expenseNoteForm');
             form.reset();
             document.getElementById('expenseNoteId').value = '';
+            document.getElementById('expenseNoteReceiptsList').innerHTML = '';
             // Popola dropdown clienti
             const custSelect = document.getElementById('expenseNoteCustomer');
             custSelect.innerHTML = '<option value="">Seleziona cliente...</option>';
@@ -4073,12 +4080,89 @@
                 document.getElementById('expenseNoteDescription').value = note.description;
                 document.getElementById('expenseNoteCustomer').value = note.customer_name || '';
                 document.getElementById('expenseNoteNotes').value = note.notes || '';
+                loadReceiptsList(note.id);
             } else {
                 document.getElementById('expenseNoteModalTitle').textContent = 'Nuova Nota Spesa';
                 document.getElementById('expenseNoteDate').value = new Date().toISOString().split('T')[0];
             }
 
             modal.classList.add('active');
+        }
+
+        async function loadReceiptsList(noteId) {
+            const container = document.getElementById('expenseNoteReceiptsList');
+            try {
+                const receipts = await apiCall('GET', `/expense-notes/${noteId}/receipts`) || [];
+                if (receipts.length === 0) {
+                    container.innerHTML = '<div style="font-size:12px;color:var(--text-secondary);">Nessuna ricevuta caricata</div>';
+                    return;
+                }
+                container.innerHTML = receipts.map(r => `
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:6px;margin-bottom:6px;">
+                        <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:10px;">📎 ${escapeHtml(r.filename)} <small style="color:var(--text-secondary)">(${formatBytes(r.size_bytes)})</small></span>
+                        <div>
+                            <button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:12px;" onclick="viewReceipt(${r.id})">Vedi</button>
+                            <button type="button" class="btn btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteReceipt(${r.id}, ${noteId})">Elimina</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                container.innerHTML = '<div style="color:var(--danger);font-size:12px;">Errore caricamento ricevute</div>';
+            }
+        }
+
+        function escapeHtml(s) {
+            return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function formatBytes(b) {
+            if (!b) return '0 B';
+            if (b < 1024) return b + ' B';
+            if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+            return (b/(1024*1024)).toFixed(1) + ' MB';
+        }
+
+        async function viewReceipt(receiptId) {
+            try {
+                const response = await fetch(`${API_BASE}/receipts/${receiptId}`, { headers: getHeaders() });
+                if (!response.ok) throw new Error('Impossibile aprire la ricevuta');
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank');
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+            } catch(e) {
+                alert('Errore: ' + e.message);
+            }
+        }
+
+        async function deleteReceipt(receiptId, noteId) {
+            if (!confirm('Eliminare questa ricevuta?')) return;
+            try {
+                await apiCall('DELETE', `/receipts/${receiptId}`);
+                loadReceiptsList(noteId);
+                expenseNotes = await apiCall('GET', `/companies/${currentCompanyId}/expense-notes`) || [];
+                loadExpenseNotes();
+            } catch(e) {
+                alert('Errore: ' + e.message);
+            }
+        }
+
+        async function uploadReceiptFiles(noteId, fileList) {
+            if (!fileList || fileList.length === 0) return;
+            const formData = new FormData();
+            for (const f of fileList) formData.append('files', f);
+            const headers = {};
+            const token = getToken();
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const response = await fetch(`${API_BASE}/expense-notes/${noteId}/receipts`, {
+                method: 'POST',
+                headers,
+                body: formData
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || 'Errore upload ricevute');
+            }
         }
 
         function closeExpenseNoteModal() {
@@ -4098,12 +4182,20 @@
                     notes: document.getElementById('expenseNoteNotes').value || null
                 };
 
+                let savedNoteId = noteId;
                 if (noteId) {
                     const existing = expenseNotes.find(n => n.id == noteId);
                     noteData.completed = existing ? existing.completed : false;
                     await apiCall('PUT', `/expense-notes/${noteId}`, noteData);
                 } else {
-                    await apiCall('POST', `/companies/${currentCompanyId}/expense-notes`, noteData);
+                    const created = await apiCall('POST', `/companies/${currentCompanyId}/expense-notes`, noteData);
+                    savedNoteId = created.id;
+                }
+
+                // Upload nuove ricevute selezionate (se presenti)
+                const fileInput = document.getElementById('expenseNoteFiles');
+                if (fileInput.files && fileInput.files.length > 0) {
+                    await uploadReceiptFiles(savedNoteId, fileInput.files);
                 }
 
                 expenseNotes = await apiCall('GET', `/companies/${currentCompanyId}/expense-notes`) || [];
@@ -4154,9 +4246,13 @@
 
                 const row = tbody.insertRow();
                 if (note.completed) row.style.opacity = '0.5';
+                const receiptsBadge = note.receipts_count > 0
+                    ? ` <span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;background:var(--bg-secondary);border-radius:10px;font-size:11px;color:var(--text-secondary);cursor:pointer;" onclick="openExpenseNoteModal(${note.id})" title="Vedi ricevute">📎 ${note.receipts_count}</span>`
+                    : '';
                 row.innerHTML = `
                     <td>${date ? new Date(date).toLocaleDateString('it-IT') : '-'}</td>
-                    <td><strong>${note.description}</strong>${note.notes ? '<br><small style="color:var(--text-secondary)">' + note.notes + '</small>' : ''}</td>
+                    <td><strong>${note.description}</strong>${receiptsBadge}${note.notes ? '<br><small style="color:var(--text-secondary)">' + note.notes + '</small>' : ''}</td>
+
                     <td>${customerLabel}</td>
                     <td><strong>${formatCurrency(note.amount)}</strong></td>
                     <td>${statusBadge}</td>
