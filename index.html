@@ -1977,13 +1977,14 @@
     <!-- INVOICE MODAL -->
     <div id="invoiceModal" class="modal">
         <div class="modal-content">
-            <h2>Nuova Fattura</h2>
+            <h2 id="invoiceModalTitle">Nuova Fattura</h2>
             <form id="invoiceForm">
+                <input type="hidden" id="invoiceId">
                 <div class="form-row">
                     <div class="form-group">
                         <label>Numero Fattura *</label>
                         <input type="number" id="invoiceNumber" required readonly>
-                        <small style="color: var(--text-secondary);">Progressivo automatico</small>
+                        <small style="color: var(--text-secondary);">Progressivo automatico (non modificabile)</small>
                     </div>
                     <div class="form-group">
                         <label>Data *</label>
@@ -2020,7 +2021,7 @@
                     <label><strong>Totale: <span id="currencySymbol">&euro;</span><span id="invoiceTotal">0.00</span></strong></label>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Crea Fattura e Genera PDF</button>
+                <button type="submit" class="btn btn-primary" id="invoiceSubmitBtn">Crea Fattura e Genera PDF</button>
                 <button type="button" class="btn btn-secondary" onclick="closeInvoiceModal()">Annulla</button>
             </form>
         </div>
@@ -2874,7 +2875,7 @@
             document.getElementById('invoiceTotal').textContent = total.toFixed(2);
         }
 
-        function openInvoiceModal() {
+        function openInvoiceModal(invoiceId = null) {
             if (!currentCompanyId) {
                 alert('Seleziona prima un\'azienda!');
                 return;
@@ -2892,16 +2893,45 @@
             setupInvoiceDate();
             document.getElementById('invoiceItemsContainer').innerHTML = '';
             updateCustomerSelects();
-
-            const nextNumber = getNextInvoiceNumber();
-            document.getElementById('invoiceNumber').value = nextNumber;
-
-            addInvoiceItem();
+            document.getElementById('invoiceId').value = '';
 
             // Reset note IDs e nascondi container
             delete modal.dataset.fromNoteIds;
             delete modal.dataset.fromNoteId;
             document.getElementById('pendingNotesContainer').style.display = 'none';
+
+            if (invoiceId) {
+                // MODALITA' MODIFICA
+                const inv = invoices.find(i => i.id == invoiceId);
+                if (!inv) { alert('Fattura non trovata'); return; }
+                document.getElementById('invoiceModalTitle').textContent = 'Modifica Fattura';
+                document.getElementById('invoiceSubmitBtn').textContent = 'Salva Modifiche';
+                document.getElementById('invoiceId').value = inv.id;
+                document.getElementById('invoiceNumber').value = inv.invoice_number || inv.number;
+                document.getElementById('invoiceDate').value = (inv.date || inv.invoice_date || '').split('T')[0];
+                document.getElementById('invoiceCustomer').value = inv.customer_id || inv.customerId || '';
+                document.getElementById('invoiceCurrency').value = inv.currency || 'EUR';
+                const items = Array.isArray(inv.items) ? inv.items : (typeof inv.items === 'string' ? JSON.parse(inv.items) : []);
+                if (items.length === 0) {
+                    addInvoiceItem();
+                } else {
+                    items.forEach(it => {
+                        addInvoiceItem();
+                        const lastItem = document.getElementById(`item-${invoiceItemCounter - 1}`);
+                        if (lastItem) {
+                            lastItem.querySelector('.item-description').value = it.description || '';
+                            lastItem.querySelector('.item-amount').value = parseFloat(it.amount || 0).toFixed(2);
+                        }
+                    });
+                    calculateInvoiceTotal();
+                }
+            } else {
+                // MODALITA' CREAZIONE
+                document.getElementById('invoiceModalTitle').textContent = 'Nuova Fattura';
+                document.getElementById('invoiceSubmitBtn').textContent = 'Crea Fattura e Genera PDF';
+                document.getElementById('invoiceNumber').value = getNextInvoiceNumber();
+                addInvoiceItem();
+            }
 
             modal.classList.add('active');
 
@@ -2916,8 +2946,11 @@
         document.getElementById('invoiceForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             try {
-                // Forza sempre il numero progressivo corretto
-                const invoiceNumber = getNextInvoiceNumber();
+                const editingId = document.getElementById('invoiceId').value;
+                // In creazione: forza numero progressivo. In modifica: mantieni numero esistente
+                const invoiceNumber = editingId
+                    ? document.getElementById('invoiceNumber').value
+                    : getNextInvoiceNumber();
                 document.getElementById('invoiceNumber').value = invoiceNumber;
 
                 const items = [];
@@ -2940,21 +2973,28 @@
                     total: total
                 };
 
-                const newInvoice = await apiCall('POST', `/companies/${currentCompanyId}/invoices`, invoiceData);
+                let savedInvoice;
+                if (editingId) {
+                    savedInvoice = await apiCall('PUT', `/invoices/${editingId}`, invoiceData);
+                } else {
+                    savedInvoice = await apiCall('POST', `/companies/${currentCompanyId}/invoices`, invoiceData);
+                }
                 invoices = await apiCall('GET', `/companies/${currentCompanyId}/invoices`) || [];
 
-                // Genera PDF con i dati locali
-                const pdfData = {
-                    ...newInvoice,
-                    number: invoiceNumber.toString(),
-                    date: invoiceData.date,
-                    customerId: invoiceData.customer_id,
-                    companyId: currentCompanyId,
-                    items: items,
-                    total: total,
-                    currency: invoiceData.currency
-                };
-                generatePDF(pdfData);
+                // Genera PDF solo in creazione (in modifica usa il bottone PDF della tabella)
+                if (!editingId) {
+                    const pdfData = {
+                        ...savedInvoice,
+                        number: invoiceNumber.toString(),
+                        date: invoiceData.date,
+                        customerId: invoiceData.customer_id,
+                        companyId: currentCompanyId,
+                        items: items,
+                        total: total,
+                        currency: invoiceData.currency
+                    };
+                    generatePDF(pdfData);
+                }
 
                 // Segna come completate le note spese aggiunte alla fattura
                 const noteIdsStr = document.getElementById('invoiceModal').dataset.fromNoteIds;
@@ -3047,6 +3087,7 @@
                     <td><strong>${formatCurrency(invoice.total, symbol)}</strong></td>
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="regeneratePDF(${invoice.id})">PDF</button>
+                        <button class="btn btn-secondary" onclick="openInvoiceModal(${invoice.id})">Modifica</button>
                         <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Elimina</button>
                     </td>
                 `;
