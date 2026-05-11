@@ -4102,6 +4102,7 @@
                         <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:10px;">📎 ${escapeHtml(r.filename)} <small style="color:var(--text-secondary)">(${formatBytes(r.size_bytes)})</small></span>
                         <div>
                             <button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:12px;" onclick="viewReceipt(${r.id})">Vedi</button>
+                            <button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:12px;" onclick="downloadReceipt(${r.id}, '${escapeHtml(r.filename).replace(/'/g, "\\'")}')">Scarica</button>
                             <button type="button" class="btn btn-danger" style="padding:4px 10px;font-size:12px;" onclick="deleteReceipt(${r.id}, ${noteId})">Elimina</button>
                         </div>
                     </div>
@@ -4120,6 +4121,24 @@
             if (b < 1024) return b + ' B';
             if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
             return (b/(1024*1024)).toFixed(1) + ' MB';
+        }
+
+        async function downloadReceipt(receiptId, filename) {
+            try {
+                const response = await fetch(`${API_BASE}/receipts/${receiptId}`, { headers: getHeaders() });
+                if (!response.ok) throw new Error('Impossibile scaricare la ricevuta');
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename || `ricevuta-${receiptId}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            } catch(e) {
+                alert('Errore: ' + e.message);
+            }
         }
 
         async function viewReceipt(receiptId) {
