@@ -2825,7 +2825,7 @@
                         <span style="color:var(--text-secondary); font-size:12px; margin-left:8px;">${formatCurrency(note.amount)}</span>
                         ${note.notes ? '<br><small style="color:var(--text-secondary);">' + note.notes + '</small>' : ''}
                     </div>
-                    <button type="button" class="btn btn-primary" style="padding:6px 14px; font-size:11px; margin:0;" onclick="addNoteToInvoice(${note.id})">+ Aggiungi</button>
+                    <button type="button" class="btn btn-primary" style="padding:6px 14px; font-size:11px; margin:0;" onclick="addNoteToInvoice(${note.id}, this.parentElement)">+ Aggiungi</button>
                 `;
                 list.appendChild(div);
             });
@@ -2837,7 +2837,7 @@
             visibleNotes.forEach(div => {
                 const btn = div.querySelector('button[onclick^="addNoteToInvoice"]');
                 if (btn) {
-                    const match = btn.getAttribute('onclick').match(/addNoteToInvoice\((\d+)\)/);
+                    const match = btn.getAttribute('onclick').match(/addNoteToInvoice\((\d+)/);
                     if (match) addNoteToInvoice(parseInt(match[1]), div);
                 }
             });
@@ -2862,9 +2862,8 @@
             noteIds.push(noteId);
             modal.dataset.fromNoteIds = JSON.stringify(noteIds);
 
-            // Nascondi la nota dalla lista (gia' aggiunta)
-            const rowToHide = noteDiv || (typeof event !== 'undefined' && event ? event.target.parentElement.parentElement : null);
-            if (rowToHide) rowToHide.style.display = 'none';
+            // Nascondi SOLO la nota appena aggiunta (le altre restano disponibili)
+            if (noteDiv) noteDiv.style.display = 'none';
 
             // Se non ci sono piu' note visibili, nascondi il container
             const visibleNotes = document.querySelectorAll('#pendingNotesList > div:not([style*="display: none"])');
