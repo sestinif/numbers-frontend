@@ -4369,7 +4369,7 @@
                     ? `Fatturare a ${customerLabel}`
                     : actionLabels[note.action_type] || 'Da rimborsare';
                 const statusBadge = note.completed
-                    ? '<span class="badge badge-paid">Completato</span>'
+                    ? `<span class="badge badge-paid">${note.action_type === 'invoice' ? 'Fatturato' : 'Rimborsato'}</span>`
                     : '<span class="badge badge-pending">In sospeso</span>';
 
                 const row = tbody.insertRow();
