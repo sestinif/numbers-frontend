@@ -3022,7 +3022,14 @@
                 }
                 delete modalEl.dataset.fromNoteIds;
                 delete modalEl.dataset.fromNoteId;
-                expenseNotes = await apiCall('GET', `/companies/${currentCompanyId}/expense-notes`) || [];
+                // Ricarica note e spese (il backend crea le spese-rimborso automatiche)
+                [expenseNotes, expenses] = await Promise.all([
+                    apiCall('GET', `/companies/${currentCompanyId}/expense-notes`),
+                    apiCall('GET', `/companies/${currentCompanyId}/expenses`)
+                ]);
+                expenseNotes = expenseNotes || [];
+                expenses = expenses || [];
+                if (typeof loadExpenses === 'function') loadExpenses();
 
                 // Genera PDF solo in creazione (con ricevute in ZIP se presenti)
                 if (!editingId) {
@@ -3116,8 +3123,17 @@
             if (confirm('ATTENZIONE: Eliminare questa fattura compromettera la numerazione progressiva!\n\nSei sicuro?')) {
                 try {
                     await apiCall('DELETE', `/invoices/${invoiceId}`);
-                    invoices = await apiCall('GET', `/companies/${currentCompanyId}/invoices`) || [];
+                    [invoices, expenses, expenseNotes] = await Promise.all([
+                        apiCall('GET', `/companies/${currentCompanyId}/invoices`),
+                        apiCall('GET', `/companies/${currentCompanyId}/expenses`),
+                        apiCall('GET', `/companies/${currentCompanyId}/expense-notes`)
+                    ]);
+                    invoices = invoices || [];
+                    expenses = expenses || [];
+                    expenseNotes = expenseNotes || [];
                     loadInvoices();
+                    if (typeof loadExpenses === 'function') loadExpenses();
+                    if (typeof loadExpenseNotes === 'function') loadExpenseNotes();
                     updateDashboard();
                 } catch(e) {
                     alert('Errore: ' + e.message);
@@ -3742,12 +3758,11 @@
             const companyExpenses = expenses;
 
             const totalRevenue = companyInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
-            const directExpenses = companyExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
-            // Rimborsi fatturati: note spese da fatturare gia' completate (sono costi di passaggio)
-            const billedReimbursements = (expenseNotes || [])
-                .filter(n => n.completed && n.action_type === 'invoice')
-                .reduce((sum, n) => sum + parseFloat(n.amount || 0), 0);
-            const totalExpensesAmount = directExpenses + billedReimbursements;
+            // Le spese includono gia' i rimborsi fatturati (voci auto-create con categoria 'Rimborso fatturato')
+            const totalExpensesAmount = companyExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+            const billedReimbursements = companyExpenses
+                .filter(exp => exp.category === 'Rimborso fatturato')
+                .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
             const netRevenue = totalRevenue - totalExpensesAmount;
 
             const currentMonth = new Date().getMonth();
@@ -3783,7 +3798,7 @@
             if (expTrend) {
                 expTrend.textContent = billedReimbursements > 0
                     ? `di cui ${formatCurrency(billedReimbursements)} rimborsi fatturati`
-                    : `${formatCurrency(directExpenses)} spese dirette`;
+                    : `${formatCurrency(totalExpensesAmount)} spese dirette`;
             }
             if (netTrend) netTrend.textContent = netRevenue >= 0 ? 'Positivo' : 'In perdita';
             if (monthTrend) monthTrend.textContent = `su ${companyInvoices.length} totali`;
@@ -3825,18 +3840,8 @@
                     })
                     .reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
 
-                // Rimborsi fatturati del mese (costi di passaggio)
-                const monthReimbursements = (expenseNotes || [])
-                    .filter(n => {
-                        if (!n.completed || n.action_type !== 'invoice') return false;
-                        const d = new Date(n.date || n.created_at);
-                        return d.getMonth() === date.getMonth() &&
-                               d.getFullYear() === date.getFullYear();
-                    })
-                    .reduce((sum, n) => sum + parseFloat(n.amount || 0), 0);
-
                 revenues.push(monthRevenue);
-                expensesData.push(monthExpenses + monthReimbursements);
+                expensesData.push(monthExpenses);
             }
 
             window.financeChartInstance = new Chart(ctx, {
@@ -4414,8 +4419,15 @@
                     ...note,
                     completed: true
                 });
-                expenseNotes = await apiCall('GET', `/companies/${currentCompanyId}/expense-notes`) || [];
+                [expenseNotes, expenses] = await Promise.all([
+                    apiCall('GET', `/companies/${currentCompanyId}/expense-notes`),
+                    apiCall('GET', `/companies/${currentCompanyId}/expenses`)
+                ]);
+                expenseNotes = expenseNotes || [];
+                expenses = expenses || [];
                 loadExpenseNotes();
+                loadExpenses();
+                updateDashboard();
             } catch(e) {
                 alert('Errore: ' + e.message);
             }
@@ -4425,8 +4437,15 @@
             if (confirm('Sei sicuro di voler eliminare questa nota spesa?')) {
                 try {
                     await apiCall('DELETE', `/expense-notes/${noteId}`);
-                    expenseNotes = await apiCall('GET', `/companies/${currentCompanyId}/expense-notes`) || [];
+                    [expenseNotes, expenses] = await Promise.all([
+                        apiCall('GET', `/companies/${currentCompanyId}/expense-notes`),
+                        apiCall('GET', `/companies/${currentCompanyId}/expenses`)
+                    ]);
+                    expenseNotes = expenseNotes || [];
+                    expenses = expenses || [];
                     loadExpenseNotes();
+                    loadExpenses();
+                    updateDashboard();
                 } catch(e) {
                     alert('Errore: ' + e.message);
                 }
