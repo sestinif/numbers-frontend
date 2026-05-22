@@ -2009,7 +2009,10 @@
                 </div>
 
                 <div id="pendingNotesContainer" style="display:none; margin: 16px 0; padding: 14px; background: rgba(0,255,0,0.04); border: 1px solid rgba(0,255,0,0.15); border-radius: 10px;">
-                    <div style="font-size: 12px; font-weight: 600; color: var(--primary-green); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Note spese da fatturare</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                        <div style="font-size: 12px; font-weight: 600; color: var(--primary-green); text-transform: uppercase; letter-spacing: 0.5px;">Note spese da fatturare</div>
+                        <button type="button" class="btn btn-primary" style="padding:6px 14px; font-size:11px; margin:0;" onclick="addAllNotesToInvoice()">+ Aggiungi tutte</button>
+                    </div>
                     <div id="pendingNotesList"></div>
                 </div>
 
@@ -2828,8 +2831,20 @@
             });
         }
 
+        // Aggiunge TUTTE le note spese pendenti come voci fattura
+        function addAllNotesToInvoice() {
+            const visibleNotes = document.querySelectorAll('#pendingNotesList > div:not([style*="display: none"])');
+            visibleNotes.forEach(div => {
+                const btn = div.querySelector('button[onclick^="addNoteToInvoice"]');
+                if (btn) {
+                    const match = btn.getAttribute('onclick').match(/addNoteToInvoice\((\d+)\)/);
+                    if (match) addNoteToInvoice(parseInt(match[1]), div);
+                }
+            });
+        }
+
         // Aggiunge una nota spesa come voce fattura
-        function addNoteToInvoice(noteId) {
+        function addNoteToInvoice(noteId, noteDiv = null) {
             const note = expenseNotes.find(n => n.id == noteId);
             if (!note) return;
 
@@ -2848,8 +2863,8 @@
             modal.dataset.fromNoteIds = JSON.stringify(noteIds);
 
             // Nascondi la nota dalla lista (gia' aggiunta)
-            const btn = event.target;
-            btn.parentElement.parentElement.style.display = 'none';
+            const rowToHide = noteDiv || (typeof event !== 'undefined' && event ? event.target.parentElement.parentElement : null);
+            if (rowToHide) rowToHide.style.display = 'none';
 
             // Se non ci sono piu' note visibili, nascondi il container
             const visibleNotes = document.querySelectorAll('#pendingNotesList > div:not([style*="display: none"])');
