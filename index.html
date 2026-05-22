@@ -3742,7 +3742,12 @@
             const companyExpenses = expenses;
 
             const totalRevenue = companyInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
-            const totalExpensesAmount = companyExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+            const directExpenses = companyExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+            // Rimborsi fatturati: note spese da fatturare gia' completate (sono costi di passaggio)
+            const billedReimbursements = (expenseNotes || [])
+                .filter(n => n.completed && n.action_type === 'invoice')
+                .reduce((sum, n) => sum + parseFloat(n.amount || 0), 0);
+            const totalExpensesAmount = directExpenses + billedReimbursements;
             const netRevenue = totalRevenue - totalExpensesAmount;
 
             const currentMonth = new Date().getMonth();
@@ -3776,11 +3781,9 @@
 
             if (revTrend) revTrend.textContent = `${monthInvoices.length} fatture questo mese`;
             if (expTrend) {
-                const currentMonthExp = companyExpenses.filter(exp => {
-                    const d = new Date(exp.expense_date || exp.date);
-                    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-                }).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
-                expTrend.textContent = `${formatCurrency(currentMonthExp)} questo mese`;
+                expTrend.textContent = billedReimbursements > 0
+                    ? `di cui ${formatCurrency(billedReimbursements)} rimborsi fatturati`
+                    : `${formatCurrency(directExpenses)} spese dirette`;
             }
             if (netTrend) netTrend.textContent = netRevenue >= 0 ? 'Positivo' : 'In perdita';
             if (monthTrend) monthTrend.textContent = `su ${companyInvoices.length} totali`;
@@ -3822,8 +3825,18 @@
                     })
                     .reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
 
+                // Rimborsi fatturati del mese (costi di passaggio)
+                const monthReimbursements = (expenseNotes || [])
+                    .filter(n => {
+                        if (!n.completed || n.action_type !== 'invoice') return false;
+                        const d = new Date(n.date || n.created_at);
+                        return d.getMonth() === date.getMonth() &&
+                               d.getFullYear() === date.getFullYear();
+                    })
+                    .reduce((sum, n) => sum + parseFloat(n.amount || 0), 0);
+
                 revenues.push(monthRevenue);
-                expensesData.push(monthExpenses);
+                expensesData.push(monthExpenses + monthReimbursements);
             }
 
             window.financeChartInstance = new Chart(ctx, {
