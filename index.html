@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         :root {
@@ -2995,35 +2996,37 @@
                 }
                 invoices = await apiCall('GET', `/companies/${currentCompanyId}/invoices`) || [];
 
-                // Genera PDF solo in creazione (in modifica usa il bottone PDF della tabella)
-                if (!editingId) {
-                    const pdfData = {
-                        ...savedInvoice,
-                        number: invoiceNumber.toString(),
-                        date: invoiceData.date,
-                        customerId: invoiceData.customer_id,
-                        companyId: currentCompanyId,
-                        items: items,
-                        total: total,
-                        currency: invoiceData.currency
-                    };
-                    generatePDF(pdfData);
-                }
+                // Collega le note spese alla fattura (completed + invoice_id) per riscaricarle insieme
+                const modalEl = document.getElementById('invoiceModal');
+                let linkedNoteIds = [];
+                const noteIdsStr = modalEl.dataset.fromNoteIds;
+                if (noteIdsStr) linkedNoteIds = JSON.parse(noteIdsStr);
+                const fromNoteId = modalEl.dataset.fromNoteId; // legacy singolo
+                if (fromNoteId) linkedNoteIds.push(parseInt(fromNoteId));
 
-                // Segna come completate le note spese aggiunte alla fattura
-                const noteIdsStr = document.getElementById('invoiceModal').dataset.fromNoteIds;
-                if (noteIdsStr) {
-                    const noteIds = JSON.parse(noteIdsStr);
-                    for (const nid of noteIds) {
-                        try { await completeExpenseNote(parseInt(nid)); } catch(err) { console.error('Errore completamento nota:', err); }
-                    }
-                    delete document.getElementById('invoiceModal').dataset.fromNoteIds;
+                for (const nid of linkedNoteIds) {
+                    const note = expenseNotes.find(n => n.id == nid);
+                    if (!note) continue;
+                    try {
+                        await apiCall('PUT', `/expense-notes/${nid}`, {
+                            description: note.description,
+                            amount: note.amount,
+                            action_type: note.action_type,
+                            customer_name: note.customer_name,
+                            date: (note.date || '').split('T')[0] || null,
+                            notes: note.notes,
+                            completed: true,
+                            invoice_id: savedInvoice.id
+                        });
+                    } catch(err) { console.error('Errore collegamento nota:', err); }
                 }
-                // Legacy: supporto singolo ID
-                const fromNoteId = document.getElementById('invoiceModal').dataset.fromNoteId;
-                if (fromNoteId) {
-                    try { await completeExpenseNote(parseInt(fromNoteId)); } catch(err) {}
-                    delete document.getElementById('invoiceModal').dataset.fromNoteId;
+                delete modalEl.dataset.fromNoteIds;
+                delete modalEl.dataset.fromNoteId;
+                expenseNotes = await apiCall('GET', `/companies/${currentCompanyId}/expense-notes`) || [];
+
+                // Genera PDF solo in creazione (con ricevute in ZIP se presenti)
+                if (!editingId) {
+                    await regeneratePDF(savedInvoice.id);
                 }
 
                 loadInvoices();
@@ -3122,31 +3125,68 @@
             }
         }
 
-        function regeneratePDF(invoiceId, viewMode = false) {
-            const invoice = invoices.find(i => i.id == invoiceId);
-            if (invoice) {
-                const cid = invoice.customer_id || invoice.customerId;
-                const customer = customers.find(c => c.id == cid);
-                const company = companies.find(c => c.id == currentCompanyId);
-                const pdfData = {
-                    number: invoice.invoice_number || invoice.number,
-                    date: invoice.invoice_date || invoice.date,
-                    customerId: cid,
-                    companyId: currentCompanyId,
-                    items: invoice.items || [],
-                    total: parseFloat(invoice.total),
-                    currency: invoice.currency || 'EUR'
-                };
-                generatePDF(pdfData, viewMode);
-            }
+        function buildInvoicePdfData(invoice) {
+            const cid = invoice.customer_id || invoice.customerId;
+            return {
+                number: invoice.invoice_number || invoice.number,
+                date: invoice.invoice_date || invoice.date,
+                customerId: cid,
+                companyId: currentCompanyId,
+                items: invoice.items || [],
+                total: parseFloat(invoice.total),
+                currency: invoice.currency || 'EUR'
+            };
         }
 
         function viewInvoicePDF(invoiceId) {
-            regeneratePDF(invoiceId, true);
+            const invoice = invoices.find(i => i.id == invoiceId);
+            if (invoice) generatePDF(buildInvoicePdfData(invoice), 'view');
         }
 
-        // PDF GENERATION
-        function generatePDF(invoice, viewMode = false) {
+        // Scarica fattura: se ci sono ricevute collegate -> ZIP (PDF + ricevute), altrimenti solo PDF
+        async function regeneratePDF(invoiceId) {
+            const invoice = invoices.find(i => i.id == invoiceId);
+            if (!invoice) return;
+            const pdfData = buildInvoicePdfData(invoice);
+
+            let receipts = [];
+            try { receipts = await apiCall('GET', `/invoices/${invoiceId}/receipts`) || []; } catch(e) { receipts = []; }
+
+            // Nessuna ricevuta: scarica solo il PDF
+            if (!receipts.length) {
+                generatePDF(pdfData, 'download');
+                return;
+            }
+
+            // Con ricevute: costruisci uno ZIP
+            try {
+                const { blob, fileName } = generatePDF(pdfData, 'blob');
+                const zip = new JSZip();
+                zip.file(fileName, blob);
+                for (const r of receipts) {
+                    const resp = await fetch(`${API_BASE}/receipts/${r.id}`, { headers: getHeaders() });
+                    if (!resp.ok) continue;
+                    const rb = await resp.blob();
+                    zip.file(`Ricevute/${r.filename}`, rb);
+                }
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(zipBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName.replace(/\.pdf$/i, '') + '_con_ricevute.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 2000);
+            } catch(e) {
+                alert('Errore creazione ZIP: ' + e.message + '\nScarico solo il PDF.');
+                generatePDF(pdfData, 'download');
+            }
+        }
+
+        // PDF GENERATION - outputMode: 'download' | 'view' | 'blob'
+        function generatePDF(invoice, outputMode = 'download') {
+            if (outputMode === true) outputMode = 'view'; // retrocompatibilità
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const pw = doc.internal.pageSize.getWidth();
@@ -3383,12 +3423,14 @@
             doc.setFillColor(...accent);
             doc.rect(0, ph - 3, pw, 3, 'F');
 
-            // Save o Visualizza
+            // Output secondo la modalità richiesta
             const fileName = `Invoice_${customer.name.replace(/\s+/g, '_')}_${invoiceDate.toISOString().split('T')[0]}.pdf`;
-            if (viewMode) {
+            if (outputMode === 'view') {
                 const blobUrl = doc.output('bloburl');
                 window.open(blobUrl, '_blank');
                 setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+            } else if (outputMode === 'blob') {
+                return { blob: doc.output('blob'), fileName };
             } else {
                 doc.save(fileName);
             }
