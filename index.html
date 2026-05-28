@@ -241,6 +241,81 @@
         .dropzone__icon svg, .dropzone__icon i { width: 28px; height: 28px; }
         .dropzone.dragover .dropzone__icon { color: var(--primary-green); }
 
+        /* ===== AURORA BORDER (card/stat hover) ===== */
+        .card::after, .stat-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            padding: 1px;
+            background: linear-gradient(130deg, rgba(var(--green-rgb), 0.55), transparent 38%, transparent 62%, rgba(var(--green-rgb), 0.30));
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+                    mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+        .card:hover::after, .stat-card:hover::after { opacity: 1; }
+
+        /* ===== HERO NUMBERS (gradient) ===== */
+        .stat-card .value {
+            background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.72) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ===== TREND PILLS ===== */
+        .stat-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px 3px 7px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-secondary);
+        }
+        .stat-trend.up { background: rgba(var(--green-rgb), 0.12); color: var(--primary-green); }
+        .stat-trend.down { background: rgba(239,68,68,0.12); color: var(--danger); }
+        .stat-trend svg, .stat-trend i { width: 13px; height: 13px; }
+
+        /* ===== NAV SLIDING INDICATOR ===== */
+        .sidebar-nav { position: relative; }
+        .nav-indicator {
+            position: absolute;
+            left: 8px; right: 8px;
+            height: 0; top: 0;
+            border-radius: 10px;
+            background: rgba(var(--green-rgb), 0.10);
+            box-shadow: inset 3px 0 0 var(--primary-green);
+            transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), height 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0;
+        }
+        .sidebar-nav-item { position: relative; z-index: 1; background: transparent !important; }
+        .sidebar-nav-item.active { box-shadow: none !important; background: transparent !important; }
+
+        /* ===== SECTION TRANSITION ===== */
+        @keyframes sectionIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .section.active { animation: sectionIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        /* ===== FROSTED TOPBAR ON SCROLL ===== */
+        .main-header {
+            transition: box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+        }
+        .main-header.scrolled {
+            background: rgba(10, 10, 10, 0.72);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+            border-bottom-color: rgba(255,255,255,0.10);
+        }
+
         /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
@@ -1655,33 +1730,34 @@
 
             <!-- Navigation -->
             <nav class="sidebar-nav">
+                <div class="nav-indicator" id="navIndicator"></div>
                 <button class="sidebar-nav-item active" onclick="showSection('dashboard', this)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    <i data-lucide="layout-dashboard"></i>
                     <span>Dashboard</span>
                     <span class="reminder-badge" id="reminderBadge" style="display:none;">0</span>
                 </button>
                 <button class="sidebar-nav-item" onclick="showSection('invoices', this)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    <i data-lucide="file-text"></i>
                     <span>Fatture</span>
                 </button>
                 <button class="sidebar-nav-item" onclick="showSection('customers', this)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <i data-lucide="users"></i>
                     <span>Clienti</span>
                 </button>
                 <button class="sidebar-nav-item" onclick="showSection('expenses', this)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    <i data-lucide="credit-card"></i>
                     <span>Spese</span>
                 </button>
                 <button class="sidebar-nav-item" onclick="showSection('reminders', this)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <i data-lucide="calendar-clock"></i>
                     <span>Scadenze</span>
                 </button>
                 <button class="sidebar-nav-item" onclick="showSection('expense-notes', this)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                    <i data-lucide="receipt"></i>
                     <span>Note Spese</span>
                 </button>
                 <button class="sidebar-nav-item" onclick="showSection('reports', this)">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+                    <i data-lucide="bar-chart-3"></i>
                     <span>Report</span>
                 </button>
             </nav>
@@ -1698,11 +1774,11 @@
             <!-- Footer: Settings + Logout -->
             <div class="sidebar-footer">
                 <button class="sidebar-footer-btn" onclick="openCompanySettings()">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <i data-lucide="settings"></i>
                     Impostazioni
                 </button>
                 <button class="sidebar-footer-btn" onclick="logout()">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <i data-lucide="log-out"></i>
                     Esci
                 </button>
             </div>
@@ -2586,15 +2662,38 @@
                 const symbol = currencySymbols[this.value] || '\u20AC';
                 document.getElementById('currencySymbol').textContent = symbol;
             });
+
+            // Indicatore nav posizionato sulla voce attiva
+            setTimeout(() => moveNavIndicator(document.querySelector('.sidebar-nav-item.active')), 60);
+
+            // Top bar frosted allo scroll
+            window.addEventListener('scroll', () => {
+                const hdr = document.querySelector('.main-header');
+                if (hdr) hdr.classList.toggle('scrolled', window.scrollY > 8);
+            }, { passive: true });
         });
+
+        // Indicatore nav scorrevole
+        function moveNavIndicator(btn) {
+            const ind = document.getElementById('navIndicator');
+            if (!ind || !btn) return;
+            ind.style.transform = `translateY(${btn.offsetTop}px)`;
+            ind.style.height = btn.offsetHeight + 'px';
+            ind.style.opacity = '1';
+        }
 
         // Navigation
         function showSection(sectionId, btn) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
 
-            document.getElementById(sectionId).classList.add('active');
+            const sec = document.getElementById(sectionId);
+            sec.classList.add('active');
             btn.classList.add('active');
+            // Re-trigger animazione di transizione sezione
+            sec.style.animation = 'none'; void sec.offsetWidth; sec.style.animation = '';
+            // Sposta l'indicatore della nav sotto la voce attiva
+            moveNavIndicator(btn);
 
             // Update main header title
             const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', reminders: 'Scadenze', 'expense-notes': 'Note Spese', reports: 'Report', companies: 'Aziende' };
@@ -2733,13 +2832,41 @@
                 generateReports();
                 populateYearFilters();
                 checkReminders();
+                // Pre-render delle tabelle (sostituisce gli skeleton, navigazione istantanea)
+                loadInvoices();
+                loadExpenses();
+                loadCustomers();
+                loadReminders();
+                loadExpenseNotes();
             } catch(e) {
                 console.error('Errore inizializzazione:', e);
             }
         }
 
+        // Mostra righe skeleton shimmer in una tabella durante il caricamento
+        function showTableSkeleton(tableId, cols, rows = 5) {
+            const tbody = document.querySelector(`#${tableId} tbody`);
+            if (!tbody) return;
+            let html = '';
+            for (let r = 0; r < rows; r++) {
+                html += '<tr>';
+                for (let c = 0; c < cols; c++) {
+                    const w = 40 + Math.round(Math.random() * 45);
+                    html += `<td><span class="skeleton" style="display:inline-block;height:12px;width:${w}%;border-radius:6px;">&nbsp;</span></td>`;
+                }
+                html += '</tr>';
+            }
+            tbody.innerHTML = html;
+        }
+
         async function loadAllData() {
             if (!currentCompanyId) return;
+            // Skeleton mentre carica
+            showTableSkeleton('invoicesTable', 5);
+            showTableSkeleton('expensesTable', 5);
+            showTableSkeleton('customersTable', 3);
+            showTableSkeleton('expenseNotesTable', 6);
+            showTableSkeleton('remindersTable', 5);
             try {
                 [customers, invoices, expenses, reminders, expenseNotes] = await Promise.all([
                     apiCall('GET', `/companies/${currentCompanyId}/customers`),
@@ -2777,6 +2904,7 @@
             loadInvoices();
             loadExpenses();
             loadReminders();
+            loadExpenseNotes();
             updateDashboard();
             generateReports();
             populateYearFilters();
@@ -4138,20 +4266,47 @@
             const prevMonthRevenue = prevMonthInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
             const currentMonthRevenue = monthInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
 
-            // Set trends
-            const revTrend = document.getElementById('totalRevenueTrend');
-            const expTrend = document.getElementById('totalExpensesTrend');
-            const netTrend = document.getElementById('netRevenueTrend');
-            const monthTrend = document.getElementById('monthInvoicesTrend');
+            // Delta % mese su mese per il fatturato
+            const prevMonthExp = expenses.filter(exp => {
+                const d = new Date(exp.expense_date || exp.date);
+                return d.getMonth() === prevMonth.getMonth() && d.getFullYear() === prevMonth.getFullYear();
+            }).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+            const currentMonthExp = expenses.filter(exp => {
+                const d = new Date(exp.expense_date || exp.date);
+                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            }).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
 
-            if (revTrend) revTrend.textContent = `${monthInvoices.length} fatture questo mese`;
-            if (expTrend) {
-                expTrend.textContent = billedReimbursements > 0
-                    ? `di cui ${formatCurrency(billedReimbursements)} rimborsi fatturati`
-                    : `${formatCurrency(totalExpensesAmount)} spese dirette`;
+            // Helper: pillola trend con freccia e %
+            const pill = (el, cur, prev, invert) => {
+                if (!el) return;
+                let cls = 'flat', arrow = '→', txt = 'stabile';
+                if (prev > 0) {
+                    const d = ((cur - prev) / prev) * 100;
+                    const rounded = Math.round(Math.abs(d));
+                    if (rounded >= 1) {
+                        const positive = d > 0;
+                        arrow = positive ? '↑' : '↓';
+                        txt = rounded + '% vs mese scorso';
+                        // invert: per le spese, salire è "negativo"
+                        cls = (positive ? !invert : invert) ? 'up' : 'down';
+                    }
+                } else if (cur > 0) {
+                    arrow = '↑'; txt = 'nuovo'; cls = invert ? 'down' : 'up';
+                }
+                el.className = 'stat-trend ' + cls;
+                el.innerHTML = `<span style="font-weight:700;">${arrow}</span> ${txt}`;
+            };
+
+            // Set trends
+            pill(document.getElementById('totalRevenueTrend'), currentMonthRevenue, prevMonthRevenue, false);
+            pill(document.getElementById('totalExpensesTrend'), currentMonthExp, prevMonthExp, true);
+            const netTrend = document.getElementById('netRevenueTrend');
+            if (netTrend) {
+                netTrend.className = 'stat-trend ' + (netRevenue >= 0 ? 'up' : 'down');
+                netTrend.innerHTML = `<span style="font-weight:700;">${netRevenue >= 0 ? '↑' : '↓'}</span> ${netRevenue >= 0 ? 'In utile' : 'In perdita'}`;
             }
-            if (netTrend) netTrend.textContent = netRevenue >= 0 ? 'Positivo' : 'In perdita';
-            if (monthTrend) monthTrend.textContent = `su ${companyInvoices.length} totali`;
+            const monthTrend = document.getElementById('monthInvoicesTrend');
+            if (monthTrend) { monthTrend.className = 'stat-trend'; monthTrend.textContent = `su ${companyInvoices.length} totali`; }
 
             updateFinanceChart();
         }
@@ -4194,6 +4349,16 @@
                 expensesData.push(monthExpenses);
             }
 
+            // Gradienti area (depth)
+            const h = canvas.height || 320;
+            const gRev = ctx.createLinearGradient(0, 0, 0, h);
+            gRev.addColorStop(0, 'rgba(0, 210, 106, 0.38)');
+            gRev.addColorStop(0.5, 'rgba(0, 210, 106, 0.10)');
+            gRev.addColorStop(1, 'rgba(0, 210, 106, 0)');
+            const gExp = ctx.createLinearGradient(0, 0, 0, h);
+            gExp.addColorStop(0, 'rgba(255, 255, 255, 0.10)');
+            gExp.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
             window.financeChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -4203,29 +4368,30 @@
                             label: 'Fatturato (\u20AC)',
                             data: revenues,
                             borderColor: 'rgb(0, 210, 106)',
-                            backgroundColor: 'rgba(0, 210, 106, 0.15)',
-                            tension: 0.4,
+                            backgroundColor: gRev,
+                            tension: 0.42,
                             fill: true,
-                            borderWidth: 3,
+                            borderWidth: 2.5,
                             pointRadius: 0,
                             pointHoverRadius: 6,
                             pointHoverBackgroundColor: 'rgb(0, 210, 106)',
-                            pointHoverBorderColor: '#fff',
-                            pointHoverBorderWidth: 2
+                            pointHoverBorderColor: 'rgba(0,0,0,0.9)',
+                            pointHoverBorderWidth: 3,
+                            pointStyle: 'circle'
                         },
                         {
                             label: 'Spese (\u20AC)',
                             data: expensesData,
-                            borderColor: 'rgba(255, 255, 255, 0.6)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                            tension: 0.4,
+                            borderColor: 'rgba(255, 255, 255, 0.55)',
+                            backgroundColor: gExp,
+                            tension: 0.42,
                             fill: true,
                             borderWidth: 2,
-                            borderDash: [5, 5],
+                            borderDash: [4, 4],
                             pointRadius: 0,
-                            pointHoverRadius: 6,
-                            pointHoverBackgroundColor: 'rgba(255, 255, 255, 0.8)',
-                            pointHoverBorderColor: '#000',
+                            pointHoverRadius: 5,
+                            pointHoverBackgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            pointHoverBorderColor: 'rgba(0,0,0,0.9)',
                             pointHoverBorderWidth: 2
                         }
                     ]
@@ -4273,22 +4439,23 @@
                             }
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                            titleColor: 'rgba(255, 255, 255, 0.9)',
-                            bodyColor: 'rgba(255, 255, 255, 0.8)',
-                            borderColor: 'rgba(0, 210, 106, 0.3)',
+                            backgroundColor: 'rgba(18, 18, 20, 0.92)',
+                            titleColor: 'rgba(255, 255, 255, 0.6)',
+                            bodyColor: 'rgba(255, 255, 255, 0.95)',
+                            borderColor: 'rgba(255, 255, 255, 0.08)',
                             borderWidth: 1,
-                            padding: 12,
+                            padding: 14,
+                            cornerRadius: 12,
                             displayColors: true,
-                            titleFont: {
-                                family: 'Inter',
-                                size: 13,
-                                weight: '700'
-                            },
-                            bodyFont: {
-                                family: 'Inter',
-                                size: 12,
-                                weight: '600'
+                            usePointStyle: true,
+                            boxPadding: 6,
+                            titleFont: { family: 'Inter', size: 11, weight: '700' },
+                            bodyFont: { family: 'Inter', size: 13, weight: '700' },
+                            callbacks: {
+                                label: function(ctx) {
+                                    const v = ctx.parsed.y || 0;
+                                    return '  ' + ctx.dataset.label.replace(' (€)', '') + ': €' + v.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                                }
                             }
                         }
                     },
