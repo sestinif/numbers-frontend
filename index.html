@@ -785,7 +785,8 @@
             font-family: var(--font-body);
             position: relative;
             overflow: hidden;
-            letter-spacing: 0.2px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
         }
 
         .btn-primary {
@@ -1289,8 +1290,10 @@
             border-radius: 10px;
             color: var(--text-secondary);
             font-family: var(--font-body);
-            font-size: 13px;
-            font-weight: 500;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
             cursor: pointer;
             transition: all 0.25s ease;
         }
@@ -4263,18 +4266,16 @@
                 const d = new Date(inv.invoice_date || inv.date);
                 return d.getMonth() === prevMonth.getMonth() && d.getFullYear() === prevMonth.getFullYear();
             });
-            const prevMonthRevenue = prevMonthInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
-            const currentMonthRevenue = monthInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
+            // Confronto ANNO su ANNO (i totali sono storici, ha senso vs anno scorso)
+            const sumYear = (arr, dateKeys, amountKey, year) => arr.filter(x => {
+                const d = new Date(x[dateKeys[0]] || x[dateKeys[1]]);
+                return d.getFullYear() === year;
+            }).reduce((s, x) => s + parseFloat(x[amountKey] || 0), 0);
 
-            // Delta % mese su mese per il fatturato
-            const prevMonthExp = expenses.filter(exp => {
-                const d = new Date(exp.expense_date || exp.date);
-                return d.getMonth() === prevMonth.getMonth() && d.getFullYear() === prevMonth.getFullYear();
-            }).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-            const currentMonthExp = expenses.filter(exp => {
-                const d = new Date(exp.expense_date || exp.date);
-                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-            }).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+            const curYearRevenue = sumYear(companyInvoices, ['invoice_date', 'date'], 'total', currentYear);
+            const prevYearRevenue = sumYear(companyInvoices, ['invoice_date', 'date'], 'total', currentYear - 1);
+            const curYearExp = sumYear(expenses, ['expense_date', 'date'], 'amount', currentYear);
+            const prevYearExp = sumYear(expenses, ['expense_date', 'date'], 'amount', currentYear - 1);
 
             // Helper: pillola trend con freccia e %
             const pill = (el, cur, prev, invert) => {
@@ -4286,20 +4287,20 @@
                     if (rounded >= 1) {
                         const positive = d > 0;
                         arrow = positive ? '↑' : '↓';
-                        txt = rounded + '% vs mese scorso';
+                        txt = rounded + '% vs anno scorso';
                         // invert: per le spese, salire è "negativo"
                         cls = (positive ? !invert : invert) ? 'up' : 'down';
                     }
                 } else if (cur > 0) {
-                    arrow = '↑'; txt = 'nuovo'; cls = invert ? 'down' : 'up';
+                    arrow = '↑'; txt = `€${Math.round(cur).toLocaleString('it-IT')} nel ${currentYear}`; cls = invert ? 'down' : 'up';
                 }
                 el.className = 'stat-trend ' + cls;
                 el.innerHTML = `<span style="font-weight:700;">${arrow}</span> ${txt}`;
             };
 
             // Set trends
-            pill(document.getElementById('totalRevenueTrend'), currentMonthRevenue, prevMonthRevenue, false);
-            pill(document.getElementById('totalExpensesTrend'), currentMonthExp, prevMonthExp, true);
+            pill(document.getElementById('totalRevenueTrend'), curYearRevenue, prevYearRevenue, false);
+            pill(document.getElementById('totalExpensesTrend'), curYearExp, prevYearExp, true);
             const netTrend = document.getElementById('netRevenueTrend');
             if (netTrend) {
                 netTrend.className = 'stat-trend ' + (netRevenue >= 0 ? 'up' : 'down');
