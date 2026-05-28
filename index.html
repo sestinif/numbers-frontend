@@ -316,6 +316,56 @@
             border-bottom-color: rgba(255,255,255,0.10);
         }
 
+        /* ===== TABLE TOOLS (ricerca + chip) ===== */
+        .table-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .table-search {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+        .table-search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-secondary); }
+        .table-search input {
+            width: 100%;
+            padding: 9px 12px 9px 34px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 13px;
+        }
+        .chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .chip {
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+            background: rgba(255,255,255,0.03);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .chip:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
+        .chip.active {
+            background: rgba(var(--green-rgb), 0.12);
+            border-color: rgba(var(--green-rgb), 0.4);
+            color: var(--primary-green);
+        }
+        /* Header ordinabili */
+        th.sortable { cursor: pointer; user-select: none; white-space: nowrap; transition: color 0.2s ease; }
+        th.sortable:hover { color: var(--text-primary); }
+        th.sortable .sort-caret { opacity: 0.35; margin-left: 5px; font-size: 10px; }
+        th.sortable.sorted .sort-caret { opacity: 1; color: var(--primary-green); }
+
         /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
@@ -2666,6 +2716,18 @@
                 document.getElementById('currencySymbol').textContent = symbol;
             });
 
+            // Strumenti tabella (ricerca + ordinamento + chip)
+            initTableTools();
+
+            // Esc per chiudere modali e dialog
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const conf = document.getElementById('confirmOverlay');
+                    if (conf && conf.classList.contains('active')) { document.getElementById('confirmCancel').click(); return; }
+                    document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+                }
+            });
+
             // Indicatore nav posizionato sulla voce attiva
             setTimeout(() => moveNavIndicator(document.querySelector('.sidebar-nav-item.active')), 60);
 
@@ -2675,6 +2737,134 @@
                 if (hdr) hdr.classList.toggle('scrolled', window.scrollY > 8);
             }, { passive: true });
         });
+
+        // ===== TABLE TOOLS: ricerca + ordinamento + chip =====
+        function parseCellNumber(t) {
+            if (!/[0-9]/.test(t)) return NaN;
+            let s = String(t).replace(/[^0-9.,-]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.');
+            return parseFloat(s);
+        }
+        function parseCellDate(t) {
+            const m = String(t).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            return m ? new Date(+m[3], +m[2] - 1, +m[1]).getTime() : null;
+        }
+        function sortTableBy(table, colIdx, dir) {
+            const tbody = table.tBodies[0];
+            if (!tbody) return;
+            const rows = [...tbody.rows].filter(r => !r.querySelector('.empty-state'));
+            rows.sort((a, b) => {
+                const xa = (a.cells[colIdx] ? a.cells[colIdx].innerText : '').trim();
+                const xb = (b.cells[colIdx] ? b.cells[colIdx].innerText : '').trim();
+                const na = parseCellNumber(xa), nb = parseCellNumber(xb);
+                let cmp;
+                if (!isNaN(na) && !isNaN(nb)) cmp = na - nb;
+                else {
+                    const da = parseCellDate(xa), db = parseCellDate(xb);
+                    if (da != null && db != null) cmp = da - db;
+                    else cmp = xa.localeCompare(xb, 'it', { numeric: true });
+                }
+                return dir === 'asc' ? cmp : -cmp;
+            });
+            rows.forEach(r => tbody.appendChild(r));
+        }
+        function applyTableFilter(table) {
+            const tools = table._tools;
+            if (!tools) return;
+            const q = (tools.search ? tools.search.value : '').toLowerCase().trim();
+            const status = tools.status || 'all';
+            [...table.tBodies[0].rows].forEach(r => {
+                if (r.querySelector('.empty-state')) return;
+                const text = r.innerText.toLowerCase();
+                let ok = !q || text.includes(q);
+                if (ok && status !== 'all') {
+                    const isPending = /in sospeso/i.test(r.innerText);
+                    ok = status === 'pending' ? isPending : !isPending;
+                }
+                r.style.display = ok ? '' : 'none';
+            });
+        }
+        function initTableTools() {
+            const configs = [
+                { id: 'invoicesTable', ph: 'Cerca fattura o cliente…', sort: [0,1,2,3] },
+                { id: 'expensesTable', ph: 'Cerca spesa…', sort: [0,1,2,3] },
+                { id: 'customersTable', ph: 'Cerca cliente…', sort: [0,1] },
+                { id: 'remindersTable', ph: 'Cerca scadenza…', sort: [0,1] },
+                { id: 'expenseNotesTable', ph: 'Cerca nota spesa…', sort: [0,1,2,3], chips: true }
+            ];
+            configs.forEach(cfg => {
+                const table = document.getElementById(cfg.id);
+                if (!table || table._tools) return;
+                const container = table.closest('.table-container');
+                if (!container) return;
+                const tools = document.createElement('div');
+                tools.className = 'table-tools';
+                const chipsHtml = cfg.chips ? `
+                    <div class="chip-group" data-for="${cfg.id}">
+                        <button type="button" class="chip active" data-status="all">Tutte</button>
+                        <button type="button" class="chip" data-status="pending">In sospeso</button>
+                        <button type="button" class="chip" data-status="done">Completate</button>
+                    </div>` : '';
+                tools.innerHTML = `
+                    <div class="table-search"><i data-lucide="search"></i><input type="text" placeholder="${cfg.ph}"></div>
+                    ${chipsHtml}`;
+                container.parentElement.insertBefore(tools, container);
+                const searchInput = tools.querySelector('.table-search input');
+                table._tools = { search: searchInput, status: 'all' };
+                searchInput.addEventListener('input', () => applyTableFilter(table));
+                if (cfg.chips) {
+                    tools.querySelectorAll('.chip').forEach(chip => {
+                        chip.addEventListener('click', () => {
+                            tools.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                            chip.classList.add('active');
+                            table._tools.status = chip.dataset.status;
+                            applyTableFilter(table);
+                        });
+                    });
+                }
+                // Header ordinabili
+                const ths = table.tHead ? table.tHead.rows[0].cells : [];
+                cfg.sort.forEach(idx => {
+                    const th = ths[idx];
+                    if (!th) return;
+                    th.classList.add('sortable');
+                    th.innerHTML = th.innerHTML + ' <span class="sort-caret">↕</span>';
+                    th.addEventListener('click', () => {
+                        const dir = th._dir === 'asc' ? 'desc' : 'asc';
+                        [...ths].forEach(o => { o.classList.remove('sorted'); const c = o.querySelector('.sort-caret'); if (c) c.textContent = '↕'; o._dir = null; });
+                        th._dir = dir;
+                        th.classList.add('sorted');
+                        const caret = th.querySelector('.sort-caret');
+                        if (caret) caret.textContent = dir === 'asc' ? '↑' : '↓';
+                        sortTableBy(table, idx, dir);
+                    });
+                });
+            });
+            renderIcons();
+        }
+
+        // Duplica fattura
+        function duplicateInvoice(invoiceId) {
+            const inv = invoices.find(i => i.id == invoiceId);
+            if (!inv) return;
+            openInvoiceModal();
+            document.getElementById('invoiceCustomer').value = inv.customer_id || inv.customerId || '';
+            document.getElementById('invoiceCurrency').value = inv.currency || 'EUR';
+            document.getElementById('currencySymbol').textContent = currencySymbols[inv.currency] || '€';
+            const container = document.getElementById('invoiceItemsContainer');
+            container.innerHTML = '';
+            const items = Array.isArray(inv.items) ? inv.items : (typeof inv.items === 'string' ? JSON.parse(inv.items) : []);
+            if (!items.length) addInvoiceItem();
+            else items.forEach(it => {
+                addInvoiceItem();
+                const last = document.getElementById(`item-${invoiceItemCounter - 1}`);
+                if (last) {
+                    last.querySelector('.item-description').value = it.description || '';
+                    last.querySelector('.item-amount').value = parseFloat(it.amount || 0).toFixed(2);
+                }
+            });
+            calculateInvoiceTotal();
+            showToast('Fattura duplicata: rivedi e salva', 'info');
+        }
 
         // Indicatore nav scorrevole
         function moveNavIndicator(btn) {
@@ -3593,6 +3783,7 @@
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="viewInvoicePDF(${invoice.id})">Visualizza</button>
                         <button class="btn btn-secondary" onclick="regeneratePDF(${invoice.id})">PDF</button>
+                        <button class="btn btn-secondary" onclick="duplicateInvoice(${invoice.id})">Duplica</button>
                         <button class="btn btn-secondary" onclick="openInvoiceModal(${invoice.id})">Modifica</button>
                         <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Elimina</button>
                     </td>
