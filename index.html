@@ -13,12 +13,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         :root {
-            --primary-green: #00FF00;
-            --green-hover: #00DD00;
-            --green-light: rgba(0, 255, 0, 0.1);
-            --green-border: rgba(0, 255, 0, 0.3);
-            --green-glow: 0 0 20px rgba(0, 255, 0, 0.15), 0 0 60px rgba(0, 255, 0, 0.05);
-            --green-glow-strong: 0 0 20px rgba(0, 255, 0, 0.3), 0 0 60px rgba(0, 255, 0, 0.1);
+            --primary-green: #00D26A;
+            --green-hover: #00BD5F;
+            --green-rgb: 0, 210, 106;
+            --green-light: rgba(0, 210, 106, 0.1);
+            --green-border: rgba(0, 210, 106, 0.3);
+            /* Glow attenuati: accento sottile, non neon */
+            --green-glow: 0 0 0 1px rgba(0, 210, 106, 0.12), 0 4px 16px rgba(0, 210, 106, 0.10);
+            --green-glow-strong: 0 0 0 1px rgba(0, 210, 106, 0.20), 0 6px 22px rgba(0, 210, 106, 0.18);
+            /* Elevation: ombre morbide a strati (premium) */
+            --elev-1: 0 1px 2px rgba(0,0,0,0.30), 0 1px 1px rgba(0,0,0,0.20);
+            --elev-2: 0 2px 4px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.25);
+            --elev-3: 0 8px 24px rgba(0,0,0,0.40), 0 2px 6px rgba(0,0,0,0.30);
+            --elev-4: 0 16px 48px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35);
             --bg-primary: #0A0A0A;
             --bg-secondary: #111111;
             --bg-card: rgba(26, 26, 26, 0.6);
@@ -26,7 +33,7 @@
             --bg-hover: #252525;
             --bg-glass: rgba(20, 20, 20, 0.7);
             --border-color: rgba(255, 255, 255, 0.06);
-            --border-glow: rgba(0, 255, 0, 0.15);
+            --border-glow: rgba(0, 210, 106, 0.15);
             --text-primary: #FFFFFF;
             --text-secondary: #8A8F98;
             --text-tertiary: #555555;
@@ -43,12 +50,12 @@
         }
 
         ::selection {
-            background: rgba(0, 255, 0, 0.3);
+            background: rgba(0, 210, 106, 0.3);
             color: var(--text-primary);
         }
 
         ::-moz-selection {
-            background: rgba(0, 255, 0, 0.3);
+            background: rgba(0, 210, 106, 0.3);
             color: var(--text-primary);
         }
 
@@ -59,12 +66,69 @@
             color: var(--text-primary);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
+
+        /* Cifre tabulari: importi e numeri sempre allineati (premium per app finanziaria) */
+        .value, .stat-card .value, td, th, .badge,
+        input[type="number"], .mini-stat-value, #invoiceTotal, .toolbar-stat {
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum" 1, "cv01" 1;
+        }
+
+        /* ===== TOAST ===== */
+        #toastContainer {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 4000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 280px;
+            max-width: 380px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: rgba(28, 28, 30, 0.85);
+            backdrop-filter: blur(18px) saturate(160%);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: var(--elev-4);
+            color: var(--text-primary);
+            font-size: 13.5px;
+            font-weight: 500;
+            line-height: 1.4;
+            pointer-events: auto;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+        }
+        .toast.show { transform: translateX(0); opacity: 1; }
+        .toast.hide { transform: translateX(120%); opacity: 0; }
+        .toast__icon {
+            flex-shrink: 0;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700;
+        }
+        .toast--success { border-left: 3px solid var(--primary-green); }
+        .toast--success .toast__icon { background: rgba(var(--green-rgb), 0.15); color: var(--primary-green); }
+        .toast--error { border-left: 3px solid var(--danger); }
+        .toast--error .toast__icon { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .toast--info { border-left: 3px solid var(--warning); }
+        .toast--info .toast__icon { background: rgba(245,158,11,0.15); color: var(--warning); }
 
         /* ===== GLOW & GLASS KEYFRAMES ===== */
         @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 0, 0.3); }
-            50% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), 0 0 60px rgba(0, 255, 0, 0.15); }
+            0%, 100% { box-shadow: 0 0 0 1px rgba(0, 210, 106, 0.18); }
+            50% { box-shadow: 0 0 0 1px rgba(0, 210, 106, 0.32), 0 4px 18px rgba(0, 210, 106, 0.14); }
         }
 
         @keyframes shimmer {
@@ -107,7 +171,7 @@
             right: 0;
             bottom: 0;
             width: 1px;
-            background: linear-gradient(180deg, transparent, rgba(0, 255, 0, 0.1), transparent);
+            background: linear-gradient(180deg, transparent, rgba(0, 210, 106, 0.1), transparent);
             pointer-events: none;
         }
 
@@ -123,7 +187,7 @@
         .logo-icon {
             width: 38px;
             height: 38px;
-            background: linear-gradient(135deg, #00FF00 0%, #00CC00 100%);
+            background: linear-gradient(135deg, #00D26A 0%, #00CC00 100%);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -193,14 +257,14 @@
         }
 
         .sidebar-nav-item.active {
-            background: rgba(0, 255, 0, 0.06);
+            background: rgba(0, 210, 106, 0.06);
             color: var(--primary-green);
             box-shadow: inset 3px 0 0 var(--primary-green);
             font-weight: 600;
         }
 
         .sidebar-nav-item.active svg {
-            filter: drop-shadow(0 0 4px rgba(0, 255, 0, 0.4));
+            filter: drop-shadow(0 0 4px rgba(0, 210, 106, 0.4));
         }
 
         .sidebar-nav-item svg {
@@ -420,7 +484,7 @@
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, rgba(0, 255, 0, 0.3) 0%, var(--border-color) 100%);
+            background: linear-gradient(180deg, rgba(0, 210, 106, 0.3) 0%, var(--border-color) 100%);
         }
 
         /* ===== CARDS ===== */
@@ -432,8 +496,8 @@
             border-radius: 16px;
             padding: 28px;
             margin-bottom: 24px;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s ease;
+            box-shadow: var(--elev-2), inset 0 1px 0 rgba(255,255,255,0.03);
             position: relative;
             overflow: hidden;
         }
@@ -449,8 +513,8 @@
         }
 
         .card:hover {
-            border-color: var(--border-glow);
-            box-shadow: 0 8px 40px rgba(0,0,0,0.3), var(--green-glow);
+            border-color: rgba(255,255,255,0.10);
+            box-shadow: var(--elev-3), inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .card h2 {
@@ -507,8 +571,8 @@
         .form-group select:focus {
             outline: none;
             border-color: var(--primary-green);
-            box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.08), 0 0 20px rgba(0, 255, 0, 0.08);
-            background: rgba(0, 255, 0, 0.02);
+            box-shadow: 0 0 0 3px rgba(0, 210, 106, 0.08), 0 0 20px rgba(0, 210, 106, 0.08);
+            background: rgba(0, 210, 106, 0.02);
         }
 
         /* ===== BUTTONS ===== */
@@ -529,21 +593,21 @@
         }
 
         .btn-primary {
-            background: var(--primary-green);
-            color: #000000;
-            border: 1px solid var(--primary-green);
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.15);
+            background: linear-gradient(180deg, #00E074 0%, var(--primary-green) 100%);
+            color: #062a16;
+            border: 1px solid rgba(0, 210, 106, 0.6);
+            box-shadow: var(--elev-1), inset 0 1px 0 rgba(255,255,255,0.25);
         }
 
         .btn-primary:hover {
-            background: #00DD00;
+            background: linear-gradient(180deg, #00C964 0%, #00BD5F 100%);
             transform: translateY(-1px);
-            box-shadow: var(--green-glow-strong);
+            box-shadow: var(--elev-2), var(--green-glow), inset 0 1px 0 rgba(255,255,255,0.25);
         }
 
         .btn-primary:active {
             transform: translateY(0);
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            box-shadow: var(--elev-1), inset 0 1px 2px rgba(0,0,0,0.2);
         }
 
         .btn-secondary {
@@ -626,8 +690,12 @@
             transition: background 0.2s ease;
         }
 
+        tbody tr {
+            transition: background 0.18s ease, box-shadow 0.18s ease;
+        }
         tr:hover {
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(255, 255, 255, 0.035);
+            box-shadow: inset 3px 0 0 rgba(var(--green-rgb), 0.6);
         }
 
         tbody tr:last-child td {
@@ -652,8 +720,8 @@
             border: 1px solid var(--border-color);
             position: relative;
             overflow: hidden;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s ease;
+            box-shadow: var(--elev-2), inset 0 1px 0 rgba(255,255,255,0.03);
         }
 
         .stat-card::before {
@@ -663,15 +731,15 @@
             left: 0;
             right: 0;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 0, 0.2), transparent);
+            background: linear-gradient(90deg, transparent, rgba(0, 210, 106, 0.2), transparent);
             opacity: 0;
             transition: opacity 0.35s ease;
         }
 
         .stat-card:hover {
             transform: translateY(-3px);
-            border-color: var(--border-glow);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.3), var(--green-glow);
+            border-color: rgba(255,255,255,0.10);
+            box-shadow: var(--elev-4), inset 0 1px 0 rgba(255,255,255,0.04);
         }
 
         .stat-card:hover::before {
@@ -694,7 +762,6 @@
             font-weight: 700;
             letter-spacing: -1.5px;
             color: var(--text-primary);
-            text-shadow: 0 0 40px rgba(0, 255, 0, 0.15);
         }
 
         .stat-trend {
@@ -828,21 +895,21 @@
         }
 
         .company-option:hover {
-            background: linear-gradient(90deg, rgba(0, 255, 0, 0.15) 0%, rgba(0, 255, 0, 0.05) 100%);
-            border-left: 3px solid rgba(0, 255, 0, 0.5);
+            background: linear-gradient(90deg, rgba(0, 210, 106, 0.15) 0%, rgba(0, 210, 106, 0.05) 100%);
+            border-left: 3px solid rgba(0, 210, 106, 0.5);
             padding-left: 21px;
             cursor: pointer;
         }
 
         .company-option.active {
-            background: linear-gradient(90deg, var(--green-light) 0%, rgba(0, 255, 0, 0.05) 100%);
+            background: linear-gradient(90deg, var(--green-light) 0%, rgba(0, 210, 106, 0.05) 100%);
             color: var(--primary-green);
             font-weight: 600;
             border-left: 3px solid var(--primary-green);
         }
 
         .company-option.active:hover {
-            background: linear-gradient(90deg, rgba(0, 255, 0, 0.2) 0%, rgba(0, 255, 0, 0.08) 100%);
+            background: linear-gradient(90deg, rgba(0, 210, 106, 0.2) 0%, rgba(0, 210, 106, 0.08) 100%);
             border-left: 3px solid var(--primary-green);
         }
 
@@ -883,8 +950,8 @@
             max-height: 90vh;
             overflow-y: auto;
             animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 24px 80px rgba(0,0,0,0.5), var(--green-glow);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: var(--elev-4), inset 0 1px 0 rgba(255,255,255,0.05);
             position: relative;
         }
 
@@ -895,7 +962,7 @@
             left: 0;
             right: 0;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 0, 0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(0, 210, 106, 0.3), transparent);
         }
 
         @keyframes slideUp {
@@ -978,19 +1045,29 @@
 
         /* ===== BADGES ===== */
         .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 11px;
+            border-radius: 999px;
             font-size: 11px;
             font-weight: 600;
             font-family: var(--font-body);
             letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .badge::before {
+            content: '';
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 6px currentColor;
         }
 
         .badge-paid {
-            background: rgba(0, 255, 0, 0.1);
+            background: rgba(0, 210, 106, 0.1);
             color: var(--primary-green);
-            border: 1px solid rgba(0, 255, 0, 0.2);
+            border: 1px solid rgba(0, 210, 106, 0.2);
         }
 
         .badge-pending {
@@ -1023,7 +1100,7 @@
         }
 
         .quick-action-btn:hover {
-            background: rgba(0, 255, 0, 0.05);
+            background: rgba(0, 210, 106, 0.05);
             border-color: var(--border-glow);
             color: var(--primary-green);
             border-style: solid;
@@ -1125,8 +1202,8 @@
         }
 
         .alert-info {
-            background: rgba(0, 255, 0, 0.04);
-            border-color: rgba(0, 255, 0, 0.15);
+            background: rgba(0, 210, 106, 0.04);
+            border-color: rgba(0, 210, 106, 0.15);
             color: var(--primary-green);
         }
 
@@ -1427,6 +1504,7 @@
     </style>
 </head>
 <body>
+    <div id="toastContainer"></div>
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <div class="mobile-header">
@@ -2009,7 +2087,7 @@
                     </div>
                 </div>
 
-                <div id="pendingNotesContainer" style="display:none; margin: 16px 0; padding: 14px; background: rgba(0,255,0,0.04); border: 1px solid rgba(0,255,0,0.15); border-radius: 10px;">
+                <div id="pendingNotesContainer" style="display:none; margin: 16px 0; padding: 14px; background: rgba(0,210,106,0.04); border: 1px solid rgba(0,210,106,0.15); border-radius: 10px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
                         <div style="font-size: 12px; font-weight: 600; color: var(--primary-green); text-transform: uppercase; letter-spacing: 0.5px;">Note spese da fatturare</div>
                         <button type="button" class="btn btn-primary" style="padding:6px 14px; font-size:11px; margin:0;" onclick="addAllNotesToInvoice()">+ Aggiungi tutte</button>
@@ -2169,6 +2247,32 @@
                 'Authorization': `Bearer ${getToken()}`
             };
         }
+
+        // ===== TOAST =====
+        function showToast(message, type) {
+            const msg = String(message == null ? '' : message);
+            // Inferisci il tipo dal messaggio se non specificato
+            if (!type) {
+                if (/errore|error|impossibile|non valido|non trovat/i.test(msg)) type = 'error';
+                else if (/seleziona|devi |prima /i.test(msg)) type = 'info';
+                else type = 'success';
+            }
+            const icons = { success: '✓', error: '!', info: 'i' };
+            const container = document.getElementById('toastContainer');
+            if (!container) { return; }
+            const el = document.createElement('div');
+            el.className = `toast toast--${type}`;
+            el.innerHTML = `<span class="toast__icon">${icons[type] || 'i'}</span><span>${escapeHtml(msg)}</span>`;
+            container.appendChild(el);
+            requestAnimationFrame(() => el.classList.add('show'));
+            const ttl = type === 'error' ? 5000 : 3200;
+            setTimeout(() => {
+                el.classList.add('hide');
+                setTimeout(() => el.remove(), 500);
+            }, ttl);
+        }
+        // Reindirizza i vecchi alert() ai toast (mantiene retrocompatibilità)
+        window.alert = function(m) { showToast(m); };
 
         async function apiCall(method, endpoint, data = null) {
             const options = {
@@ -3039,8 +3143,9 @@
                 loadInvoices();
                 closeInvoiceModal();
                 updateDashboard();
+                showToast(editingId ? 'Fattura aggiornata' : 'Fattura creata', 'success');
             } catch(e) {
-                alert('Errore creazione fattura: ' + e.message);
+                showToast('Errore creazione fattura: ' + e.message, 'error');
             }
         });
 
@@ -3852,14 +3957,14 @@
                         {
                             label: 'Fatturato (\u20AC)',
                             data: revenues,
-                            borderColor: 'rgb(0, 255, 0)',
-                            backgroundColor: 'rgba(0, 255, 0, 0.15)',
+                            borderColor: 'rgb(0, 210, 106)',
+                            backgroundColor: 'rgba(0, 210, 106, 0.15)',
                             tension: 0.4,
                             fill: true,
                             borderWidth: 3,
                             pointRadius: 0,
                             pointHoverRadius: 6,
-                            pointHoverBackgroundColor: 'rgb(0, 255, 0)',
+                            pointHoverBackgroundColor: 'rgb(0, 210, 106)',
                             pointHoverBorderColor: '#fff',
                             pointHoverBorderWidth: 2
                         },
@@ -3926,7 +4031,7 @@
                             backgroundColor: 'rgba(0, 0, 0, 0.9)',
                             titleColor: 'rgba(255, 255, 255, 0.9)',
                             bodyColor: 'rgba(255, 255, 255, 0.8)',
-                            borderColor: 'rgba(0, 255, 0, 0.3)',
+                            borderColor: 'rgba(0, 210, 106, 0.3)',
                             borderWidth: 1,
                             padding: 12,
                             displayColors: true,
@@ -4017,8 +4122,8 @@
                     datasets: [{
                         label: 'Fatturato (\u20AC)',
                         data: data,
-                        backgroundColor: 'rgba(0, 255, 0, 0.8)',
-                        borderColor: 'rgb(0, 255, 0)',
+                        backgroundColor: 'rgba(0, 210, 106, 0.8)',
+                        borderColor: 'rgb(0, 210, 106)',
                         borderWidth: 2
                     }]
                 },
@@ -4347,8 +4452,9 @@
                 expenseNotes = await apiCall('GET', `/companies/${currentCompanyId}/expense-notes`) || [];
                 loadExpenseNotes();
                 closeExpenseNoteModal();
+                showToast('Nota spesa salvata', 'success');
             } catch(e) {
-                alert('Errore: ' + e.message);
+                showToast('Errore: ' + e.message, 'error');
             }
         });
 
