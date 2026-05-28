@@ -3889,46 +3889,59 @@
             const fmtAmount = (n) => `${symbol} ${parseFloat(n).toLocaleString('it-IT', {minimumFractionDigits: 2})}`;
 
             // Palette
-            const ink = [20, 20, 20];
-            const dark = [50, 50, 50];
-            const mid = [130, 130, 130];
-            const soft = [180, 180, 180];
-            const line = [220, 220, 220];
-            const bg = [248, 248, 248];
-            const accent = [0, 190, 0];
+            const ink = [22, 22, 24];
+            const dark = [70, 70, 74];
+            const mid = [140, 143, 148];
+            const soft = [188, 190, 194];
+            const line = [226, 227, 230];
+            const bg = [247, 248, 249];
+            const accent = [0, 178, 92];
             const white = [255, 255, 255];
             const m = 25; // margin
+            const invNumber = invoice.number || invoice.invoice_number || '';
 
             // ─── HEADER ───────────────────────────────────
             // Thin accent line top
             doc.setFillColor(...accent);
             doc.rect(0, 0, pw, 2.5, 'F');
 
-            // Company name - large, bold, uppercase
-            doc.setTextColor(...ink);
-            doc.setFontSize(26);
+            // Logo tile (N) + company name
+            doc.setFillColor(...ink);
+            doc.roundedRect(m, 13, 11, 11, 2.5, 2.5, 'F');
+            doc.setTextColor(...accent);
+            doc.setFontSize(13);
             doc.setFont('helvetica', 'bold');
-            doc.text(company.name.toUpperCase(), m, 22);
+            doc.text('N', m + 5.5, 21, { align: 'center' });
 
-            // "INVOICE" - right side, light
-            doc.setTextColor(...soft);
-            doc.setFontSize(36);
+            doc.setTextColor(...ink);
+            doc.setFontSize(15);
             doc.setFont('helvetica', 'bold');
-            doc.text('INVOICE', pw - m, 24, { align: 'right' });
+            doc.text(company.name.toUpperCase(), m + 16, 21.5);
+
+            // Right side: FATTURA + numero + data
+            doc.setTextColor(...mid);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('F A T T U R A', pw - m, 15, { align: 'right' });
+
+            doc.setTextColor(...ink);
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text('N. ' + invNumber, pw - m, 24, { align: 'right' });
 
             // ─── SEPARATOR ────────────────────────────────
             doc.setDrawColor(...line);
             doc.setLineWidth(0.4);
-            doc.line(m, 30, pw - m, 30);
+            doc.line(m, 32, pw - m, 32);
 
             // ─── INFO COLUMNS ─────────────────────────────
-            let y = 42;
+            let y = 44;
 
-            // LEFT: From
+            // LEFT: Da
             doc.setFontSize(7.5);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(...mid);
-            doc.text('F R O M', m, y);
+            doc.text('D A', m, y);
 
             y += 7;
             doc.setFontSize(11);
@@ -3948,12 +3961,12 @@
             const taxId = company.tax_id || company.vat_number || company.taxId;
             if (taxId) { doc.text(taxId, m, y); y += 4.5; }
 
-            // RIGHT: Bill To
-            let ry = 42;
+            // RIGHT: Fattura a
+            let ry = 44;
             doc.setFontSize(7.5);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(...mid);
-            doc.text('B I L L   T O', 125, ry);
+            doc.text('F A T T U R A   A', 125, ry);
 
             ry += 7;
             doc.setFontSize(11);
@@ -3979,8 +3992,8 @@
             doc.setFontSize(7.5);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(...mid);
-            doc.text('D A T E', m + 8, detY + 2);
-            doc.text('C U R R E N C Y', m + 80, detY + 2);
+            doc.text('D A T A', m + 8, detY + 2);
+            doc.text('V A L U T A', m + 80, detY + 2);
 
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
@@ -3995,8 +4008,8 @@
             doc.setFontSize(7.5);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(...mid);
-            doc.text('D E S C R I P T I O N', m, tY);
-            doc.text('A M O U N T', pw - m, tY, { align: 'right' });
+            doc.text('D E S C R I Z I O N E', m, tY);
+            doc.text('I M P O R T O', pw - m, tY, { align: 'right' });
 
             tY += 4;
             doc.setDrawColor(...accent);
@@ -4044,7 +4057,7 @@
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(...mid);
-            doc.text('Subtotal', pw - m - 52, tY);
+            doc.text('Subtotale', pw - m - 52, tY);
             doc.setTextColor(...ink);
             doc.text(fmtAmount(invoice.total), pw - m, tY, { align: 'right' });
 
@@ -4062,7 +4075,7 @@
             doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(...white);
-            doc.text('T O T A L', pw / 2 + 22, tY + 5);
+            doc.text('T O T A L E', pw / 2 + 22, tY + 5);
 
             doc.setFontSize(18);
             doc.setFont('helvetica', 'bold');
@@ -4088,7 +4101,7 @@
                 doc.setFontSize(7.5);
                 doc.setFont('helvetica', 'bold');
                 doc.setTextColor(...mid);
-                doc.text('P A Y M E N T   D E T A I L S', m + 10, tY + 2);
+                doc.text('E S T R E M I   D I   P A G A M E N T O', m + 10, tY + 2);
 
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(9);
@@ -4105,14 +4118,14 @@
             doc.setTextColor(...soft);
             doc.setFontSize(7.5);
             doc.setFont('helvetica', 'normal');
-            doc.text('Thank you for your business.', pw / 2, ph - 12, { align: 'center' });
+            doc.text('Grazie per la collaborazione.', pw / 2, ph - 12, { align: 'center' });
 
             // Bottom accent
             doc.setFillColor(...accent);
             doc.rect(0, ph - 3, pw, 3, 'F');
 
             // Output secondo la modalità richiesta
-            const fileName = `Invoice_${customer.name.replace(/\s+/g, '_')}_${invoiceDate.toISOString().split('T')[0]}.pdf`;
+            const fileName = `Fattura_N${invNumber}_${customer.name.replace(/\s+/g, '_')}.pdf`;
             if (outputMode === 'view') {
                 const blobUrl = doc.output('bloburl');
                 window.open(blobUrl, '_blank');
