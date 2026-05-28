@@ -4546,8 +4546,26 @@
             gExp.addColorStop(0, 'rgba(255, 255, 255, 0.10)');
             gExp.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
+            // Plugin: glow morbido sotto la linea del fatturato
+            const lineGlow = {
+                id: 'lineGlow',
+                beforeDatasetDraw(chart, args) {
+                    if (args.index === 0) {
+                        const c = chart.ctx;
+                        c.save();
+                        c.shadowColor = 'rgba(0, 210, 106, 0.55)';
+                        c.shadowBlur = 16;
+                        c.shadowOffsetY = 3;
+                    }
+                },
+                afterDatasetDraw(chart, args) {
+                    if (args.index === 0) chart.ctx.restore();
+                }
+            };
+
             window.financeChartInstance = new Chart(ctx, {
                 type: 'line',
+                plugins: [lineGlow],
                 data: {
                     labels: months,
                     datasets: [
@@ -4556,29 +4574,34 @@
                             data: revenues,
                             borderColor: 'rgb(0, 210, 106)',
                             backgroundColor: gRev,
-                            tension: 0.42,
+                            cubicInterpolationMode: 'monotone',
+                            tension: 0.4,
                             fill: true,
-                            borderWidth: 2.5,
+                            borderWidth: 3,
+                            borderCapStyle: 'round',
+                            borderJoinStyle: 'round',
                             pointRadius: 0,
                             pointHoverRadius: 6,
                             pointHoverBackgroundColor: 'rgb(0, 210, 106)',
-                            pointHoverBorderColor: 'rgba(0,0,0,0.9)',
+                            pointHoverBorderColor: '#0A0A0A',
                             pointHoverBorderWidth: 3,
                             pointStyle: 'circle'
                         },
                         {
                             label: 'Spese (\u20AC)',
                             data: expensesData,
-                            borderColor: 'rgba(255, 255, 255, 0.55)',
+                            borderColor: 'rgba(255, 255, 255, 0.45)',
                             backgroundColor: gExp,
-                            tension: 0.42,
+                            cubicInterpolationMode: 'monotone',
+                            tension: 0.4,
                             fill: true,
-                            borderWidth: 2,
-                            borderDash: [4, 4],
+                            borderWidth: 1.5,
+                            borderDash: [3, 4],
+                            borderCapStyle: 'round',
                             pointRadius: 0,
                             pointHoverRadius: 5,
                             pointHoverBackgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            pointHoverBorderColor: 'rgba(0,0,0,0.9)',
+                            pointHoverBorderColor: '#0A0A0A',
                             pointHoverBorderWidth: 2
                         }
                     ]
@@ -4586,6 +4609,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: { padding: { top: 8, right: 8, bottom: 4 } },
                     interaction: {
                         intersect: false,
                         mode: 'index'
@@ -4596,33 +4620,13 @@
                             position: 'top',
                             align: 'end',
                             labels: {
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                font: {
-                                    family: 'Inter',
-                                    size: 12,
-                                    weight: '700'
-                                },
-                                padding: 16,
-                                usePointStyle: false,
-                                boxWidth: 12,
-                                boxHeight: 12,
-                                borderRadius: 3,
-                                generateLabels: function(chart) {
-                                    const datasets = chart.data.datasets;
-                                    return datasets.map((dataset, i) => ({
-                                        text: dataset.label,
-                                        fillStyle: dataset.borderColor,
-                                        hidden: !chart.isDatasetVisible(i),
-                                        lineCap: dataset.borderCapStyle,
-                                        lineDash: dataset.borderDash || [],
-                                        lineDashOffset: dataset.borderDashOffset,
-                                        lineJoin: dataset.borderJoinStyle,
-                                        lineWidth: 3,
-                                        strokeStyle: dataset.borderColor,
-                                        pointStyle: 'rect',
-                                        datasetIndex: i
-                                    }));
-                                }
+                                color: 'rgba(255, 255, 255, 0.85)',
+                                font: { family: 'Inter', size: 12, weight: '600' },
+                                padding: 18,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                boxWidth: 8,
+                                boxHeight: 8
                             }
                         },
                         tooltip: {
@@ -4648,32 +4652,30 @@
                     },
                     scales: {
                         x: {
-                            grid: {
-                                display: false
-                            },
+                            grid: { display: false },
+                            border: { display: false },
                             ticks: {
-                                color: 'rgba(255, 255, 255, 0.5)',
-                                font: {
-                                    family: 'Inter',
-                                    size: 11,
-                                    weight: '600'
-                                }
+                                color: 'rgba(255, 255, 255, 0.4)',
+                                font: { family: 'Inter', size: 11, weight: '500' },
+                                padding: 8,
+                                maxRotation: 0,
+                                autoSkipPadding: 16
                             }
                         },
                         y: {
                             beginAtZero: true,
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.05)',
+                                color: 'rgba(255, 255, 255, 0.04)',
                                 drawBorder: false
                             },
+                            border: { display: false },
                             ticks: {
-                                color: 'rgba(255, 255, 255, 0.5)',
-                                font: {
-                                    family: 'Inter',
-                                    size: 11,
-                                    weight: '600'
-                                },
+                                color: 'rgba(255, 255, 255, 0.4)',
+                                font: { family: 'Inter', size: 11, weight: '500' },
+                                padding: 10,
+                                maxTicksLimit: 6,
                                 callback: function(value) {
+                                    if (value >= 1000) return '\u20AC' + (value / 1000) + 'k';
                                     return '\u20AC' + value.toLocaleString('it-IT');
                                 }
                             }
