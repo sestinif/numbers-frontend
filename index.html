@@ -3918,16 +3918,11 @@
             doc.setFont('helvetica', 'bold');
             doc.text(company.name.toUpperCase(), m + 16, 21.5);
 
-            // Right side: FATTURA + numero + data
-            doc.setTextColor(...mid);
-            doc.setFontSize(8);
+            // Right side: titolo FATTURA (nessun numero stampato)
+            doc.setTextColor(...soft);
+            doc.setFontSize(30);
             doc.setFont('helvetica', 'bold');
-            doc.text('F A T T U R A', pw - m, 15, { align: 'right' });
-
-            doc.setTextColor(...ink);
-            doc.setFontSize(22);
-            doc.setFont('helvetica', 'bold');
-            doc.text('N. ' + invNumber, pw - m, 24, { align: 'right' });
+            doc.text('FATTURA', pw - m, 24, { align: 'right' });
 
             // ─── SEPARATOR ────────────────────────────────
             doc.setDrawColor(...line);
@@ -4125,7 +4120,7 @@
             doc.rect(0, ph - 3, pw, 3, 'F');
 
             // Output secondo la modalità richiesta
-            const fileName = `Fattura_N${invNumber}_${customer.name.replace(/\s+/g, '_')}.pdf`;
+            const fileName = `Fattura_${customer.name.replace(/\s+/g, '_')}_${invoiceDate.toISOString().split('T')[0]}.pdf`;
             if (outputMode === 'view') {
                 const blobUrl = doc.output('bloburl');
                 window.open(blobUrl, '_blank');
