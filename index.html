@@ -4471,7 +4471,7 @@
             // Helper: pillola trend con freccia e %
             const pill = (el, cur, prev, invert) => {
                 if (!el) return;
-                let cls = 'flat', arrow = '→', txt = 'stabile';
+                let cls = 'flat', arrow = '', txt = '';
                 if (prev > 0) {
                     const d = ((cur - prev) / prev) * 100;
                     const rounded = Math.round(Math.abs(d));
@@ -4481,12 +4481,15 @@
                         txt = rounded + '% vs anno scorso';
                         // invert: per le spese, salire è "negativo"
                         cls = (positive ? !invert : invert) ? 'up' : 'down';
+                    } else {
+                        arrow = '→'; txt = 'stabile vs anno scorso';
                     }
-                } else if (cur > 0) {
-                    arrow = '↑'; txt = `€${Math.round(cur).toLocaleString('it-IT')} nel ${currentYear}`; cls = invert ? 'down' : 'up';
+                } else {
+                    // Nessun dato dell'anno precedente: pillola neutra, no colore fuorviante
+                    txt = `nessun confronto · ${currentYear - 1}`;
                 }
                 el.className = 'stat-trend ' + cls;
-                el.innerHTML = `<span style="font-weight:700;">${arrow}</span> ${txt}`;
+                el.innerHTML = (arrow ? `<span style="font-weight:700;">${arrow}</span> ` : '') + txt;
             };
 
             // Set trends
