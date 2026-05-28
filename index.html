@@ -11,6 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
             --primary-green: #00D26A;
@@ -124,6 +125,126 @@
         .toast--error .toast__icon { background: rgba(239,68,68,0.15); color: var(--danger); }
         .toast--info { border-left: 3px solid var(--warning); }
         .toast--info .toast__icon { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .toast__icon svg, .toast__icon i { width: 13px; height: 13px; }
+
+        /* ===== AMBIENT BACKGROUND (depth) ===== */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background:
+                radial-gradient(900px 500px at 78% -8%, rgba(var(--green-rgb), 0.07), transparent 60%),
+                radial-gradient(700px 500px at 8% 4%, rgba(80, 120, 255, 0.04), transparent 55%);
+            pointer-events: none;
+        }
+        /* Grana sottile */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            opacity: 0.035;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        /* ===== ENTRANCE ANIMATIONS ===== */
+        @keyframes enterUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .anim-enter {
+            opacity: 0;
+            animation: enterUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* ===== SKELETON ===== */
+        @keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 37%, rgba(255,255,255,0.04) 63%);
+            background-size: 936px 100%;
+            animation: shimmer 1.4s ease-in-out infinite;
+            border-radius: 8px;
+            color: transparent !important;
+        }
+        .skeleton * { visibility: hidden; }
+
+        /* ===== FOCUS RINGS ===== */
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: rgba(var(--green-rgb), 0.55) !important;
+            box-shadow: 0 0 0 3px rgba(var(--green-rgb), 0.15) !important;
+        }
+
+        /* ===== TOP PROGRESS BAR ===== */
+        #topProgress {
+            position: fixed;
+            top: 0; left: 0;
+            height: 2.5px;
+            width: 100%;
+            transform: scaleX(0);
+            transform-origin: 0 50%;
+            background: linear-gradient(90deg, var(--primary-green), #5cffb0);
+            box-shadow: 0 0 10px rgba(var(--green-rgb), 0.6);
+            z-index: 5000;
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        #topProgress.active { opacity: 1; }
+
+        /* ===== CONFIRM DIALOG ===== */
+        #confirmOverlay {
+            position: fixed; inset: 0; z-index: 4500;
+            display: none; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        }
+        #confirmOverlay.active { display: flex; animation: fadeIn 0.25s; }
+        .confirm-box {
+            width: 90%; max-width: 420px;
+            background: rgba(22,22,22,0.96);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: var(--elev-4), inset 0 1px 0 rgba(255,255,255,0.05);
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            text-align: center;
+        }
+        .confirm-box__icon {
+            width: 52px; height: 52px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+            background: rgba(239,68,68,0.12); color: var(--danger);
+        }
+        .confirm-box__icon svg, .confirm-box__icon i { width: 26px; height: 26px; }
+        .confirm-box h3 { font-family: var(--font-display); font-size: 18px; margin-bottom: 8px; }
+        .confirm-box p { color: var(--text-secondary); font-size: 14px; line-height: 1.5; margin-bottom: 24px; white-space: pre-line; }
+        .confirm-box__actions { display: flex; gap: 10px; }
+        .confirm-box__actions .btn { flex: 1; margin: 0; }
+
+        /* ===== DROPZONE ===== */
+        .dropzone {
+            border: 1.5px dashed rgba(255,255,255,0.14);
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(255,255,255,0.02);
+        }
+        .dropzone:hover { border-color: rgba(var(--green-rgb), 0.4); background: rgba(var(--green-rgb), 0.04); }
+        .dropzone.dragover { border-color: var(--primary-green); background: rgba(var(--green-rgb), 0.08); color: var(--text-primary); }
+        .dropzone__icon { display:flex; justify-content:center; margin-bottom: 8px; color: var(--text-secondary); }
+        .dropzone__icon svg, .dropzone__icon i { width: 28px; height: 28px; }
+        .dropzone.dragover .dropzone__icon { color: var(--primary-green); }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+        }
 
         /* ===== GLOW & GLASS KEYFRAMES ===== */
         @keyframes pulseGlow {
@@ -1504,7 +1625,19 @@
     </style>
 </head>
 <body>
+    <div id="topProgress"></div>
     <div id="toastContainer"></div>
+    <div id="confirmOverlay">
+        <div class="confirm-box">
+            <div class="confirm-box__icon"><i data-lucide="alert-triangle"></i></div>
+            <h3 id="confirmTitle">Sei sicuro?</h3>
+            <p id="confirmMessage"></p>
+            <div class="confirm-box__actions">
+                <button type="button" class="btn btn-secondary" id="confirmCancel">Annulla</button>
+                <button type="button" class="btn btn-danger" id="confirmOk">Elimina</button>
+            </div>
+        </div>
+    </div>
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <div class="mobile-header">
@@ -1959,7 +2092,11 @@
 
                 <div class="form-group">
                     <label>Ricevute (immagini o PDF, max 5MB ognuno)</label>
-                    <input type="file" id="expenseNoteFiles" multiple accept="image/*,application/pdf" style="padding: 8px; background: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: 6px; width: 100%;">
+                    <div class="dropzone" id="expenseNoteDropzone" onclick="document.getElementById('expenseNoteFiles').click()">
+                        <div class="dropzone__icon"><i data-lucide="upload-cloud"></i></div>
+                        <div id="dropzoneText">Trascina qui i file o <span style="color:var(--primary-green);">sfoglia</span></div>
+                    </div>
+                    <input type="file" id="expenseNoteFiles" multiple accept="image/*,application/pdf" style="display:none;">
                     <div id="expenseNoteReceiptsList" style="margin-top: 10px;"></div>
                 </div>
 
@@ -1972,7 +2109,7 @@
     <!-- NO COMPANY MODAL (forced, no close button) -->
     <div id="noCompanyModal" class="modal">
         <div class="modal-content" style="max-width: 460px; text-align: center;">
-            <div style="font-size: 48px; margin-bottom: 16px;">&#127970;</div>
+            <div style="display:flex;justify-content:center;margin-bottom:16px;color:var(--primary-green);"><i data-lucide="building-2" style="width:44px;height:44px;"></i></div>
             <h2 style="margin-bottom: 8px;">Benvenuto in Numbers</h2>
             <p style="color: var(--text-secondary); margin-bottom: 32px; font-size: 14px; line-height: 1.6;">
                 Per iniziare, crea la tua prima azienda.<br>Potrai aggiungere clienti, fatture e spese.
@@ -2274,7 +2411,81 @@
         // Reindirizza i vecchi alert() ai toast (mantiene retrocompatibilità)
         window.alert = function(m) { showToast(m); };
 
+        // ===== ICONE LUCIDE =====
+        function renderIcons() {
+            try { if (window.lucide) lucide.createIcons(); } catch(e) {}
+        }
+
+        // ===== CONFIRM DIALOG (promise) =====
+        function showConfirm(message, opts = {}) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('confirmOverlay');
+                document.getElementById('confirmTitle').textContent = opts.title || 'Sei sicuro?';
+                document.getElementById('confirmMessage').textContent = message || '';
+                const okBtn = document.getElementById('confirmOk');
+                const cancelBtn = document.getElementById('confirmCancel');
+                okBtn.textContent = opts.okLabel || 'Elimina';
+                okBtn.className = 'btn ' + (opts.okClass || 'btn-danger');
+                overlay.classList.add('active');
+                renderIcons();
+                const cleanup = (val) => {
+                    overlay.classList.remove('active');
+                    okBtn.onclick = null; cancelBtn.onclick = null;
+                    resolve(val);
+                };
+                okBtn.onclick = () => cleanup(true);
+                cancelBtn.onclick = () => cleanup(false);
+                overlay.onclick = (e) => { if (e.target === overlay) cleanup(false); };
+            });
+        }
+
+        // ===== COUNT-UP NUMERI =====
+        function animateValue(el, target, formatter) {
+            if (!el) return;
+            const from = el._lastValue || 0;
+            const to = Number(target) || 0;
+            if (from === to) { el.textContent = formatter(to); el._lastValue = to; return; }
+            const dur = 700, start = performance.now();
+            const ease = t => 1 - Math.pow(1 - t, 3);
+            function frame(now) {
+                const p = Math.min((now - start) / dur, 1);
+                const val = from + (to - from) * ease(p);
+                el.textContent = formatter(val);
+                if (p < 1) requestAnimationFrame(frame);
+                else el._lastValue = to;
+            }
+            requestAnimationFrame(frame);
+        }
+
+        // ===== PROGRESS BAR =====
+        let _progressCount = 0;
+        function progressStart() {
+            _progressCount++;
+            const bar = document.getElementById('topProgress');
+            if (!bar) return;
+            bar.classList.add('active');
+            bar.style.transform = 'scaleX(0.3)';
+            requestAnimationFrame(() => { bar.style.transform = 'scaleX(0.7)'; });
+        }
+        function progressDone() {
+            _progressCount = Math.max(0, _progressCount - 1);
+            if (_progressCount > 0) return;
+            const bar = document.getElementById('topProgress');
+            if (!bar) return;
+            bar.style.transform = 'scaleX(1)';
+            setTimeout(() => { bar.classList.remove('active'); bar.style.transform = 'scaleX(0)'; }, 250);
+        }
+
         async function apiCall(method, endpoint, data = null) {
+            progressStart();
+            try {
+                return await _apiCall(method, endpoint, data);
+            } finally {
+                progressDone();
+            }
+        }
+
+        async function _apiCall(method, endpoint, data = null) {
             const options = {
                 method,
                 headers: getHeaders()
@@ -2322,9 +2533,42 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {
+            renderIcons();
             await initApp();
             setupInvoiceDate();
             setupExpenseDate();
+            renderIcons();
+            // Entrata scaglionata delle card del dashboard
+            document.querySelectorAll('#dashboard .stat-card, #dashboard .card').forEach((el, i) => {
+                el.classList.add('anim-enter');
+                el.style.animationDelay = (i * 70) + 'ms';
+            });
+
+            // Drag & drop ricevute
+            const dz = document.getElementById('expenseNoteDropzone');
+            const fileInput = document.getElementById('expenseNoteFiles');
+            const dzText = document.getElementById('dropzoneText');
+            if (dz && fileInput) {
+                const updateText = () => {
+                    const n = fileInput.files ? fileInput.files.length : 0;
+                    dzText.innerHTML = n > 0
+                        ? `<strong>${n}</strong> file selezionat${n === 1 ? 'o' : 'i'} — clicca per cambiare`
+                        : 'Trascina qui i file o <span style="color:var(--primary-green);">sfoglia</span>';
+                };
+                fileInput.addEventListener('change', updateText);
+                ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => {
+                    e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover');
+                }));
+                ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => {
+                    e.preventDefault(); e.stopPropagation(); dz.classList.remove('dragover');
+                }));
+                dz.addEventListener('drop', e => {
+                    if (e.dataTransfer && e.dataTransfer.files.length) {
+                        fileInput.files = e.dataTransfer.files;
+                        updateText();
+                    }
+                });
+            }
 
             // Chiudi dropdown quando clicchi fuori
             document.addEventListener('click', function(e) {
@@ -2387,8 +2631,8 @@
         }
 
         // Logout
-        function logout() {
-            if (confirm('Sei sicuro di voler uscire?')) {
+        async function logout() {
+            if (await showConfirm('Verrai disconnesso dall\'app.', { title: 'Uscire?', okLabel: 'Esci', okClass: 'btn-primary' })) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 localStorage.removeItem('currentCompanyId');
@@ -2637,7 +2881,7 @@
         }
 
         async function deleteCompany(companyId) {
-            if (confirm('Sei sicuro di voler eliminare questa azienda?')) {
+            if (await showConfirm('Questa azienda verrà eliminata.', { title: 'Eliminare azienda?' })) {
                 try {
                     await apiCall('DELETE', `/companies/${companyId}`);
                     companies = await apiCall('GET', '/companies') || [];
@@ -2703,7 +2947,7 @@
 
         async function deleteCurrentCompany() {
             if (!currentCompanyId) return;
-            if (confirm('ATTENZIONE: Eliminando questa azienda verranno eliminati anche tutti i dati associati. Continuare?')) {
+            if (await showConfirm('Verranno eliminati anche TUTTI i dati associati (fatture, clienti, spese, note). Operazione irreversibile.', { title: 'Eliminare azienda e dati?' })) {
                 try {
                     await apiCall('DELETE', `/companies/${currentCompanyId}`);
                     companies = await apiCall('GET', '/companies') || [];
@@ -2821,7 +3065,7 @@
         }
 
         async function deleteCustomer(customerId) {
-            if (confirm('Sei sicuro di voler eliminare questo cliente?')) {
+            if (await showConfirm('Questo cliente verrà eliminato.', { title: 'Eliminare cliente?' })) {
                 try {
                     await apiCall('DELETE', `/customers/${customerId}`);
                     customers = await apiCall('GET', `/companies/${currentCompanyId}/customers`) || [];
@@ -2887,12 +3131,13 @@
                 </div>
                 <div class="form-group">
                     <label>&nbsp;</label>
-                    <button type="button" class="btn btn-danger" onclick="removeInvoiceItem(${invoiceItemCounter})">&#10005;</button>
+                    <button type="button" class="btn btn-danger" onclick="removeInvoiceItem(${invoiceItemCounter})"><i data-lucide="x" style="width:15px;height:15px;vertical-align:-2px;"></i></button>
                 </div>
             `;
             container.appendChild(itemDiv);
             invoiceItemCounter++;
             calculateInvoiceTotal();
+            renderIcons();
         }
 
         // Mostra note spese pendenti per il cliente selezionato
@@ -3225,7 +3470,7 @@
         }
 
         async function deleteInvoice(invoiceId) {
-            if (confirm('ATTENZIONE: Eliminare questa fattura compromettera la numerazione progressiva!\n\nSei sicuro?')) {
+            if (await showConfirm('Eliminare questa fattura comprometterà la numerazione progressiva. Le note collegate torneranno "in sospeso".', { title: 'Eliminare fattura?' })) {
                 try {
                     await apiCall('DELETE', `/invoices/${invoiceId}`);
                     [invoices, expenses, expenseNotes] = await Promise.all([
@@ -3663,7 +3908,7 @@
         }
 
         async function deleteExpense(expenseId) {
-            if (confirm('Sei sicuro di voler eliminare questa spesa?')) {
+            if (await showConfirm('Questa spesa verrà eliminata.', { title: 'Eliminare spesa?' })) {
                 try {
                     await apiCall('DELETE', `/expenses/${expenseId}`);
                     expenses = await apiCall('GET', `/companies/${currentCompanyId}/expenses`) || [];
@@ -3805,7 +4050,7 @@
         }
 
         async function deleteReminder(reminderId) {
-            if (confirm('Sei sicuro di voler eliminare questa scadenza?')) {
+            if (await showConfirm('Questa scadenza verrà eliminata.', { title: 'Eliminare scadenza?' })) {
                 try {
                     await apiCall('DELETE', `/reminders/${reminderId}`);
                     reminders = await apiCall('GET', `/companies/${currentCompanyId}/reminders`) || [];
@@ -3878,10 +4123,10 @@
                 return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
             });
 
-            document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
-            document.getElementById('totalExpenses').textContent = formatCurrency(totalExpensesAmount);
-            document.getElementById('netRevenue').textContent = formatCurrency(netRevenue);
-            document.getElementById('monthInvoices').textContent = monthInvoices.length;
+            animateValue(document.getElementById('totalRevenue'), totalRevenue, v => formatCurrency(v));
+            animateValue(document.getElementById('totalExpenses'), totalExpensesAmount, v => formatCurrency(v));
+            animateValue(document.getElementById('netRevenue'), netRevenue, v => formatCurrency(v));
+            animateValue(document.getElementById('monthInvoices'), monthInvoices.length, v => String(Math.round(v)));
 
             // Calculate trends
             const prevMonth = new Date();
@@ -4292,6 +4537,8 @@
             form.reset();
             document.getElementById('expenseNoteId').value = '';
             document.getElementById('expenseNoteReceiptsList').innerHTML = '';
+            const dzText = document.getElementById('dropzoneText');
+            if (dzText) dzText.innerHTML = 'Trascina qui i file o <span style="color:var(--primary-green);">sfoglia</span>';
             // Popola dropdown clienti
             const custSelect = document.getElementById('expenseNoteCustomer');
             custSelect.innerHTML = '<option value="">Seleziona cliente...</option>';
@@ -4331,7 +4578,7 @@
                 }
                 container.innerHTML = receipts.map(r => `
                     <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:6px;margin-bottom:6px;">
-                        <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:10px;">📎 ${escapeHtml(r.filename)} <small style="color:var(--text-secondary)">(${formatBytes(r.size_bytes)})</small></span>
+                        <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:10px;"><i data-lucide="paperclip" style="width:13px;height:13px;vertical-align:-2px;"></i> ${escapeHtml(r.filename)} <small style="color:var(--text-secondary)">(${formatBytes(r.size_bytes)})</small></span>
                         <div>
                             <button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:12px;" onclick="viewReceipt(${r.id})">Vedi</button>
                             <button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:12px;" onclick="downloadReceipt(${r.id}, '${escapeHtml(r.filename).replace(/'/g, "\\'")}')">Scarica</button>
@@ -4339,6 +4586,7 @@
                         </div>
                     </div>
                 `).join('');
+                renderIcons();
             } catch(e) {
                 container.innerHTML = '<div style="color:var(--danger);font-size:12px;">Errore caricamento ricevute</div>';
             }
@@ -4387,7 +4635,7 @@
         }
 
         async function deleteReceipt(receiptId, noteId) {
-            if (!confirm('Eliminare questa ricevuta?')) return;
+            if (!(await showConfirm('Questa ricevuta verrà eliminata.', { title: 'Eliminare ricevuta?' }))) return;
             try {
                 await apiCall('DELETE', `/receipts/${receiptId}`);
                 loadReceiptsList(noteId);
@@ -4499,7 +4747,7 @@
                 const row = tbody.insertRow();
                 if (note.completed) row.style.opacity = '0.5';
                 const receiptsBadge = note.receipts_count > 0
-                    ? ` <span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;background:var(--bg-secondary);border-radius:10px;font-size:11px;color:var(--text-secondary);cursor:pointer;" onclick="openExpenseNoteModal(${note.id})" title="Vedi ricevute">📎 ${note.receipts_count}</span>`
+                    ? ` <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--bg-secondary);border-radius:10px;font-size:11px;color:var(--text-secondary);cursor:pointer;" onclick="openExpenseNoteModal(${note.id})" title="Vedi ricevute"><i data-lucide="paperclip" style="width:12px;height:12px;"></i>${note.receipts_count}</span>`
                     : '';
                 row.innerHTML = `
                     <td>${date ? new Date(date).toLocaleDateString('it-IT') : '-'}</td>
@@ -4515,6 +4763,7 @@
                     </td>
                 `;
             });
+            renderIcons();
         }
 
         async function completeExpenseNote(noteId) {
@@ -4540,7 +4789,7 @@
         }
 
         async function deleteExpenseNote(noteId) {
-            if (confirm('Sei sicuro di voler eliminare questa nota spesa?')) {
+            if (await showConfirm('Questa nota spesa verrà eliminata.', { title: 'Eliminare nota spesa?' })) {
                 try {
                     await apiCall('DELETE', `/expense-notes/${noteId}`);
                     [expenseNotes, expenses] = await Promise.all([
