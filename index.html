@@ -3896,18 +3896,11 @@
             doc.setFillColor(...accent);
             doc.rect(0, 0, pw, 2.5, 'F');
 
-            // Logo tile (N) + company name
-            doc.setFillColor(...ink);
-            doc.roundedRect(m, 13, 11, 11, 2.5, 2.5, 'F');
-            doc.setTextColor(...accent);
-            doc.setFontSize(13);
-            doc.setFont('helvetica', 'bold');
-            doc.text('N', m + 5.5, 21, { align: 'center' });
-
+            // Nome azienda
             doc.setTextColor(...ink);
-            doc.setFontSize(15);
+            doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
-            doc.text(company.name.toUpperCase(), m + 16, 21.5);
+            doc.text(company.name.toUpperCase(), m, 21.5);
 
             // Right side: titolo FATTURA (nessun numero stampato)
             doc.setTextColor(...soft);
