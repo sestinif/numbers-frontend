@@ -1,8 +1,9 @@
 :root {
-    --primary-green: #00FF00;
-    --green-hover: #00DD00;
-    --green-light: rgba(0, 255, 0, 0.1);
-    --green-glow: 0 0 20px rgba(0, 255, 0, 0.15), 0 0 60px rgba(0, 255, 0, 0.05);
+    --primary-green: #00D26A;
+    --green-hover: #00BD5F;
+    --green-rgb: 0, 210, 106;
+    --green-light: rgba(0, 210, 106, 0.1);
+    --green-glow: 0 0 20px rgba(0, 210, 106, 0.15), 0 0 60px rgba(0, 210, 106, 0.05);
     --bg-primary: #0A0A0A;
     --bg-secondary: #111111;
     --bg-card: rgba(26, 26, 26, 0.6);
@@ -52,8 +53,8 @@ body {
 }
 
 @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 0, 0.3); }
-    50% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), 0 0 60px rgba(0, 255, 0, 0.15); }
+    0%, 100% { box-shadow: 0 0 0 1px rgba(0, 210, 106, 0.18), 0 6px 20px rgba(0, 210, 106, 0.10); }
+    50% { box-shadow: 0 0 0 1px rgba(0, 210, 106, 0.30), 0 8px 28px rgba(0, 210, 106, 0.18); }
 }
 
 @keyframes shimmer {
@@ -69,7 +70,10 @@ body {
 .logo-icon {
     width: 56px;
     height: 56px;
-    background: linear-gradient(135deg, #00FF00 0%, #00CC00 100%);
+    background:
+        radial-gradient(circle at 50% 42%, rgba(var(--green-rgb), 0.38), transparent 62%),
+        linear-gradient(180deg, #1c1f24 0%, #0d0e11 100%);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: 14px;
     display: inline-flex;
     align-items: center;
@@ -77,24 +81,11 @@ body {
     font-size: 32px;
     font-weight: 900;
     font-family: var(--font-display);
-    color: #000000;
+    color: var(--primary-green);
     animation: pulseGlow 3s ease-in-out infinite;
     margin-bottom: 16px;
     position: relative;
     overflow: hidden;
-}
-
-.logo-icon::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    right: 0;
-    bottom: 0;
-    width: 200%;
-    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
-    animation: shimmer 3s ease-in-out infinite;
-    border-radius: 14px;
 }
 
 .logo-text {
@@ -173,8 +164,8 @@ input {
 input:focus {
     outline: none;
     border-color: var(--primary-green);
-    box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.08), 0 0 20px rgba(0, 255, 0, 0.08);
-    background: rgba(0, 255, 0, 0.02);
+    box-shadow: 0 0 0 3px rgba(0, 210, 106, 0.08), 0 0 20px rgba(0, 210, 106, 0.08);
+    background: rgba(0, 210, 106, 0.02);
 }
 
 input::placeholder {
@@ -202,7 +193,7 @@ input::placeholder {
 .btn:hover {
     background: var(--green-hover);
     transform: translateY(-1px);
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.3), 0 0 60px rgba(0, 255, 0, 0.1);
+    box-shadow: 0 0 20px rgba(0, 210, 106, 0.3), 0 0 60px rgba(0, 210, 106, 0.1);
 }
 
 .btn:active {
@@ -234,8 +225,8 @@ input::placeholder {
 
 .message.success,
 .success-message {
-    background: rgba(0, 255, 0, 0.06);
-    border: 1px solid rgba(0, 255, 0, 0.15);
+    background: rgba(0, 210, 106, 0.06);
+    border: 1px solid rgba(0, 210, 106, 0.15);
     color: var(--primary-green);
 }
 
@@ -275,6 +266,6 @@ input::placeholder {
 .helper-text a:hover,
 .link:hover {
     color: var(--green-hover);
-    text-shadow: 0 0 12px rgba(0, 255, 0, 0.3);
+    text-shadow: 0 0 12px rgba(0, 210, 106, 0.3);
     text-decoration: none;
 }
