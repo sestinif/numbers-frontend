@@ -177,6 +177,14 @@
             box-shadow: 0 0 0 3px rgba(var(--green-rgb), 0.15) !important;
         }
 
+        .btn:focus-visible,
+        .chip:focus-visible,
+        .sidebar-nav-item:focus-visible,
+        th.sortable:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(var(--green-rgb), 0.45);
+        }
+
         /* ===== TOP PROGRESS BAR ===== */
         #topProgress {
             position: fixed;
@@ -892,11 +900,14 @@
 
         table {
             width: 100%;
+            min-width: 640px;
             border-collapse: collapse;
             background: transparent;
             border-radius: 12px;
             overflow: hidden;
         }
+
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
 
         th {
             background: rgba(255, 255, 255, 0.02);
@@ -1745,7 +1756,7 @@
 </head>
 <body>
     <div id="topProgress"></div>
-    <div id="toastContainer"></div>
+    <div id="toastContainer" aria-live="polite"></div>
     <div id="confirmOverlay">
         <div class="confirm-box">
             <div class="confirm-box__icon"><i data-lucide="alert-triangle"></i></div>
@@ -1934,7 +1945,7 @@
                                 <thead>
                                     <tr>
                                         <th>Cliente</th>
-                                        <th>Fatturato Totale</th>
+                                        <th class="num">Fatturato Totale</th>
                                         <th>Azioni</th>
                                     </tr>
                                 </thead>
@@ -1999,7 +2010,7 @@
                                         <th>N.</th>
                                         <th>Data</th>
                                         <th>Cliente</th>
-                                        <th>Importo</th>
+                                        <th class="num">Importo</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -2039,7 +2050,7 @@
                                         <th>Data</th>
                                         <th>Descrizione</th>
                                         <th>Categoria</th>
-                                        <th>Importo</th>
+                                        <th class="num">Importo</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -2103,9 +2114,9 @@
                                         <tr>
                                             <th>Mese</th>
                                             <th>Fatture</th>
-                                            <th>Fatturato</th>
-                                            <th>Spese</th>
-                                            <th>Netto</th>
+                                            <th class="num">Fatturato</th>
+                                            <th class="num">Spese</th>
+                                            <th class="num">Netto</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -2160,7 +2171,7 @@
                                         <th>Data</th>
                                         <th>Descrizione</th>
                                         <th>Cliente</th>
-                                        <th>Importo</th>
+                                        <th class="num">Importo</th>
                                         <th>Stato</th>
                                         <th></th>
                                     </tr>
@@ -3356,7 +3367,7 @@
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td><strong>${escapeHtml(customer.name)}</strong></td>
-                    <td><strong>${formatCurrency(revenue)}</strong></td>
+                    <td class="num"><strong>${formatCurrency(revenue)}</strong></td>
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="openCustomerModal('${customer.id}')">Modifica</button>
                         <button class="btn btn-danger" onclick="deleteCustomer('${customer.id}')">Elimina</button>
@@ -3770,7 +3781,7 @@
                     <td><strong>${escapeHtml(number)}</strong></td>
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
                     <td>${customer ? escapeHtml(customer.name) : 'Cliente eliminato'}</td>
-                    <td><strong>${formatCurrency(invoice.total, symbol)}</strong></td>
+                    <td class="num"><strong>${formatCurrency(invoice.total, symbol)}</strong></td>
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="viewInvoicePDF(${invoice.id})">Visualizza</button>
                         <button class="btn btn-secondary" onclick="regeneratePDF(${invoice.id})">PDF</button>
@@ -4201,7 +4212,7 @@
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
                     <td>${escapeHtml(expense.description)}</td>
                     <td>${expense.category ? escapeHtml(expense.category) : '-'}</td>
-                    <td><strong>${formatCurrency(expense.amount)}</strong></td>
+                    <td class="num"><strong>${formatCurrency(expense.amount)}</strong></td>
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="openExpenseModal(${expense.id})">Modifica</button>
                         <button class="btn btn-danger" onclick="deleteExpense(${expense.id})">Elimina</button>
@@ -4318,7 +4329,7 @@
                 const date = reminder.due_date || reminder.date;
                 const isCompleted = reminder.completed;
                 const statusBadge = isCompleted ?
-                    '<span style="color: var(--success); font-weight: 600;">&#10003; Fatto</span>' :
+                    '<span style="color: var(--primary-green); font-weight: 600;">&#10003; Fatto</span>' :
                     '<span style="color: var(--warning); font-weight: 600;">&#9201; In attesa</span>';
 
                 const row = tbody.insertRow();
@@ -4827,9 +4838,9 @@
                 row.innerHTML = `
                     <td><strong>${monthNames[month]}</strong></td>
                     <td>${monthInvoices.length}</td>
-                    <td><strong>${formatCurrency(monthRevenue)}</strong></td>
-                    <td><strong>${formatCurrency(monthExpenseTotal)}</strong></td>
-                    <td><strong>${formatCurrency(monthNet)}</strong></td>
+                    <td class="num"><strong>${formatCurrency(monthRevenue)}</strong></td>
+                    <td class="num"><strong>${formatCurrency(monthExpenseTotal)}</strong></td>
+                    <td class="num"><strong>${formatCurrency(monthNet)}</strong></td>
                 `;
             }
 
@@ -4841,9 +4852,9 @@
             totalRow.innerHTML = `
                 <td><strong>TOTALE ${year}</strong></td>
                 <td>${yearInvoices}</td>
-                <td><strong>${formatCurrency(yearTotal)}</strong></td>
-                <td><strong>${formatCurrency(yearExpenses)}</strong></td>
-                <td><strong>${formatCurrency(yearTotal - yearExpenses)}</strong></td>
+                <td class="num"><strong>${formatCurrency(yearTotal)}</strong></td>
+                <td class="num"><strong>${formatCurrency(yearExpenses)}</strong></td>
+                <td class="num"><strong>${formatCurrency(yearTotal - yearExpenses)}</strong></td>
             `;
         }
 
@@ -5110,7 +5121,7 @@
                     <td><strong>${escapeHtml(note.description)}</strong>${receiptsBadge}${note.notes ? '<br><small style="color:var(--text-secondary)">' + escapeHtml(note.notes) + '</small>' : ''}</td>
 
                     <td>${escapeHtml(customerLabel)}</td>
-                    <td><strong>${formatCurrency(note.amount)}</strong></td>
+                    <td class="num"><strong>${formatCurrency(note.amount)}</strong></td>
                     <td>${statusBadge}</td>
                     <td class="action-btns">
                         ${!note.completed ? `<button class="btn btn-success" onclick="completeExpenseNote(${note.id})">Fatto</button>` : ''}
