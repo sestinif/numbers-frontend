@@ -3180,9 +3180,9 @@
             companies.forEach(company => {
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td><strong>${company.name}</strong></td>
-                    <td>${company.address || '-'}</td>
-                    <td>${company.email || '-'}</td>
+                    <td><strong>${escapeHtml(company.name)}</strong></td>
+                    <td>${company.address ? escapeHtml(company.address) : '-'}</td>
+                    <td>${company.email ? escapeHtml(company.email) : '-'}</td>
                     <td class="action-btns">
                         <button class="btn btn-primary" onclick="selectCompany('${company.id}')">Seleziona</button>
                         <button class="btn btn-secondary" onclick="openCompanyModal('${company.id}')">Modifica</button>
@@ -3355,7 +3355,7 @@
                 const revenue = customerRevenues[customer.id] || 0;
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td><strong>${customer.name}</strong></td>
+                    <td><strong>${escapeHtml(customer.name)}</strong></td>
                     <td><strong>${formatCurrency(revenue)}</strong></td>
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="openCustomerModal('${customer.id}')">Modifica</button>
@@ -3483,9 +3483,9 @@
                 div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);';
                 div.innerHTML = `
                     <div>
-                        <strong style="font-size:13px;">${note.description}</strong>
+                        <strong style="font-size:13px;">${escapeHtml(note.description)}</strong>
                         <span style="color:var(--text-secondary); font-size:12px; margin-left:8px;">${formatCurrency(note.amount)}</span>
-                        ${note.notes ? '<br><small style="color:var(--text-secondary);">' + note.notes + '</small>' : ''}
+                        ${note.notes ? '<br><small style="color:var(--text-secondary);">' + escapeHtml(note.notes) + '</small>' : ''}
                     </div>
                     <button type="button" class="btn btn-primary" style="padding:6px 14px; font-size:11px; margin:0;" onclick="addNoteToInvoice(${note.id}, this.parentElement)">+ Aggiungi</button>
                 `;
@@ -3767,9 +3767,9 @@
                 const number = invoice.invoice_number || invoice.number;
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td><strong>${number}</strong></td>
+                    <td><strong>${escapeHtml(number)}</strong></td>
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
-                    <td>${customer ? customer.name : 'Cliente eliminato'}</td>
+                    <td>${customer ? escapeHtml(customer.name) : 'Cliente eliminato'}</td>
                     <td><strong>${formatCurrency(invoice.total, symbol)}</strong></td>
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="viewInvoicePDF(${invoice.id})">Visualizza</button>
@@ -4199,8 +4199,8 @@
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
-                    <td>${expense.description}</td>
-                    <td>${expense.category || '-'}</td>
+                    <td>${escapeHtml(expense.description)}</td>
+                    <td>${expense.category ? escapeHtml(expense.category) : '-'}</td>
                     <td><strong>${formatCurrency(expense.amount)}</strong></td>
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="openExpenseModal(${expense.id})">Modifica</button>
@@ -4323,7 +4323,7 @@
 
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td>${reminder.title || reminder.description}</td>
+                    <td>${escapeHtml(reminder.title || reminder.description)}</td>
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
                     <td>${recurrenceLabels[reminder.recurrence] || 'Una volta'}</td>
                     <td>${statusBadge}</td>
@@ -4399,7 +4399,7 @@
                     alert.className = 'alert alert-warning';
                     alert.innerHTML = `
                         <div>
-                            <strong>Scadenza:</strong> ${reminder.title || reminder.description} -
+                            <strong>Scadenza:</strong> ${escapeHtml(reminder.title || reminder.description)} -
                             <strong>${daysUntil} giorni</strong> (${new Date(reminder.due_date || reminder.date).toLocaleDateString('it-IT')})
                         </div>
                         <button class="btn btn-success" onclick="markReminderDone(${reminder.id})">Fatto</button>
@@ -4875,7 +4875,7 @@
 
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td><strong>${customer ? customer.name : 'Cliente eliminato'}</strong></td>
+                    <td><strong>${customer ? escapeHtml(customer.name) : 'Cliente eliminato'}</strong></td>
                     <td>${data.count}</td>
                     <td><strong>${formatCurrency(data.total)}</strong></td>
                     <td>${formatCurrency(average)}</td>
@@ -5107,9 +5107,9 @@
                     : '';
                 row.innerHTML = `
                     <td>${date ? new Date(date).toLocaleDateString('it-IT') : '-'}</td>
-                    <td><strong>${note.description}</strong>${receiptsBadge}${note.notes ? '<br><small style="color:var(--text-secondary)">' + note.notes + '</small>' : ''}</td>
+                    <td><strong>${escapeHtml(note.description)}</strong>${receiptsBadge}${note.notes ? '<br><small style="color:var(--text-secondary)">' + escapeHtml(note.notes) + '</small>' : ''}</td>
 
-                    <td>${customerLabel}</td>
+                    <td>${escapeHtml(customerLabel)}</td>
                     <td><strong>${formatCurrency(note.amount)}</strong></td>
                     <td>${statusBadge}</td>
                     <td class="action-btns">
