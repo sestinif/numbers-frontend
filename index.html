@@ -1325,6 +1325,15 @@
             border: 1px solid rgba(245, 158, 11, 0.2);
         }
 
+        .badge-auto {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            margin-left: 8px;
+            cursor: help;
+        }
+        .badge-auto::before { box-shadow: none; }
+
         /* ===== QUICK ACTIONS ===== */
         .quick-actions {
             display: flex;
@@ -4210,7 +4219,7 @@
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
-                    <td>${escapeHtml(expense.description)}</td>
+                    <td>${escapeHtml(expense.description)}${expense.auto_source ? `<span class="badge badge-auto" title="${escapeHtml(expense.notes || 'Si aggiorna da sola')}">Auto</span>` : ''}</td>
                     <td>${expense.category ? escapeHtml(expense.category) : '-'}</td>
                     <td class="num"><strong>${formatCurrency(expense.amount)}</strong></td>
                     <td class="action-btns">
