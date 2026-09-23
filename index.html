@@ -3096,7 +3096,8 @@
                 generateReports();
                 populateYearFilters();
                 checkReminders();
-                loadCustomers(); loadInvoices(); loadExpenses(); loadReminders(); loadCompanies();
+                loadCustomers(); loadInvoices(); loadExpenses(); loadReminders(); loadCompanies(); loadNotes();
+                checkNotesAlert();
                 document.getElementById('noCompanyForm').reset();
             } catch(e) {
                 alert('Errore: ' + e.message);
@@ -3126,6 +3127,8 @@
                 loadCustomers();
                 loadReminders();
                 loadExpenseNotes();
+                loadNotes();
+                checkNotesAlert();
             } catch(e) {
                 console.error('Errore inizializzazione:', e);
             }
@@ -3201,6 +3204,7 @@
             generateReports();
             populateYearFilters();
             checkReminders();
+            checkNotesAlert();
         }
 
         function updateCompanyDisplay() {
@@ -4500,6 +4504,107 @@
                 } catch(err) {
                     showToast('Errore: ' + err.message);
                 }
+            }
+        }
+
+        // L'alert si apre una volta sola per caricamento di pagina: cambiare azienda
+        // o ricaricare i dati non deve rifarlo saltare in faccia.
+        let notesAlertShown = false;
+
+        function updateNotesBadge() {
+            const badge = document.getElementById('notesBadge');
+            if (!badge) return;
+            const n = NotesLogic.countBadgeNotes(notes, NotesLogic.todayISO());
+            badge.textContent = n;
+            badge.style.display = n > 0 ? 'inline-flex' : 'none';
+        }
+
+        function checkNotesAlert() {
+            updateNotesBadge();
+            if (notesAlertShown) return;
+
+            const today = NotesLogic.todayISO();
+            const due = NotesLogic.selectNotesForAlert(notes, today);
+            if (due.length === 0) return;
+
+            renderNotesAlertList(due, today);
+            notesAlertShown = true;
+            document.getElementById('noteAlertModal').classList.add('active');
+            renderIcons();
+        }
+
+        // Disegna il contenuto del popup. Separata da checkNotesAlert perche' serve
+        // anche per ridisegnare la lista dopo che una nota e' stata chiusa o rinviata.
+        function renderNotesAlertList(due, today) {
+            const list = document.getElementById('noteAlertList');
+            list.innerHTML = due.map(note => {
+                const d = NotesLogic.toISODate(note.due_date);
+                const quando = NotesLogic.formatDueLabel(d, today);
+                // pre-wrap: la mail incollata mantiene gli a capo.
+                const corpo = note.body
+                    ? `<div style="white-space: pre-wrap; margin: 12px 0; padding: 12px; border-radius: 8px; background: rgba(255,255,255,.04); font-size: .92rem; line-height: 1.55;">${escapeHtml(note.body)}</div>`
+                    : '';
+                return `
+                    <div style="padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,.08);">
+                        <div style="font-weight: 600; font-size: 1.05rem;">${escapeHtml(note.title)}</div>
+                        <div style="color: var(--warning); font-size: .85rem; margin-top: 4px;">${escapeHtml(quando)} &middot; ${formatNoteDate(d)}</div>
+                        ${corpo}
+                        <div class="action-btns" style="margin-top: 10px;">
+                            <button class="btn btn-success" onclick="markNoteDoneFromAlert(${note.id})">Fatto</button>
+                            <button class="btn btn-secondary" onclick="snoozeNote(${note.id})">Rimanda a domani</button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        // Dopo un "Fatto" o un rinvio: se non resta niente chiude il popup,
+        // altrimenti ridisegna la lista con quello che e' rimasto.
+        function refreshNotesAlert() {
+            const today = NotesLogic.todayISO();
+            const left = NotesLogic.selectNotesForAlert(notes, today);
+            if (left.length === 0) {
+                document.getElementById('noteAlertModal').classList.remove('active');
+                return;
+            }
+            renderNotesAlertList(left, today);
+            renderIcons();
+        }
+
+        async function markNoteDoneFromAlert(noteId) {
+            try {
+                await apiCall('PUT', `/notes/${noteId}`, { done: true });
+                await refreshNotes();
+                refreshNotesAlert();
+                showToast('Nota chiusa');
+            } catch(err) {
+                showToast('Errore: ' + err.message);
+            }
+        }
+
+        async function snoozeNote(noteId) {
+            try {
+                const domani = NotesLogic.tomorrowISO(NotesLogic.todayISO());
+                await apiCall('PUT', `/notes/${noteId}`, { snoozed_until: domani });
+                await refreshNotes();
+                refreshNotesAlert();
+                showToast('Te la rimetto davanti domani');
+            } catch(err) {
+                showToast('Errore: ' + err.message);
+            }
+        }
+
+        // Chiudere il popup vale come rinvio a domani per tutte le note mostrate:
+        // cosi' ricaricare la pagina quattro volte non lo fa comparire quattro volte.
+        async function closeNotesAlert() {
+            document.getElementById('noteAlertModal').classList.remove('active');
+            const today = NotesLogic.todayISO();
+            const domani = NotesLogic.tomorrowISO(today);
+            const da = NotesLogic.selectNotesForAlert(notes, today);
+            try {
+                await Promise.all(da.map(n => apiCall('PUT', `/notes/${n.id}`, { snoozed_until: domani })));
+                await refreshNotes();
+            } catch(err) {
+                console.error('Errore nel rinvio note:', err);
             }
         }
 
