@@ -2475,8 +2475,9 @@
     <!-- REMINDER MODAL -->
     <div id="reminderModal" class="modal">
         <div class="modal-content">
-            <h2>Nuova scadenza</h2>
+            <h2 id="reminderModalTitle">Nuova scadenza</h2>
             <form id="reminderForm">
+                <input type="hidden" id="reminderId">
                 <div class="form-group">
                     <label>Descrizione *</label>
                     <input type="text" id="reminderDescription" required placeholder="Es: Dichiarazione IVA trimestrale">
@@ -4609,12 +4610,19 @@
         }
 
         // REMINDERS
-        function openReminderModal() {
+        function openReminderModal(reminderId) {
             const modal = document.getElementById('reminderModal');
             const form = document.getElementById('reminderForm');
-
             form.reset();
 
+            const r = reminderId ? reminders.find(x => x.id == reminderId) : null;
+            document.getElementById('reminderId').value = r ? r.id : '';
+            document.getElementById('reminderModalTitle').textContent = r ? 'Modifica scadenza' : 'Nuova scadenza';
+            if (r) {
+                document.getElementById('reminderDescription').value = r.title || r.description || '';
+                document.getElementById('reminderDate').value = NotesLogic.toISODate(r.due_date);
+                document.getElementById('reminderRecurrence').value = r.recurrence || 'once';
+            }
             modal.classList.add('active');
         }
 
@@ -4624,20 +4632,27 @@
 
         document.getElementById('reminderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            if (!currentCompanyId) { alert('Seleziona prima un\'azienda!'); return; }
+            if (!currentCompanyId) { showToast('Seleziona prima un\'azienda!'); return; }
+            const id = document.getElementById('reminderId').value;
+            const payload = {
+                title: document.getElementById('reminderDescription').value,
+                description: document.getElementById('reminderDescription').value,
+                due_date: document.getElementById('reminderDate').value,
+                recurrence: document.getElementById('reminderRecurrence').value
+            };
             try {
-                await apiCall('POST', `/companies/${currentCompanyId}/reminders`, {
-                    title: document.getElementById('reminderDescription').value,
-                    description: document.getElementById('reminderDescription').value,
-                    due_date: document.getElementById('reminderDate').value,
-                    recurrence: document.getElementById('reminderRecurrence').value
-                });
+                if (id) {
+                    await apiCall('PUT', `/reminders/${id}`, payload);
+                } else {
+                    await apiCall('POST', `/companies/${currentCompanyId}/reminders`, payload);
+                }
                 reminders = await apiCall('GET', `/companies/${currentCompanyId}/reminders`) || [];
                 loadReminders();
                 closeReminderModal();
                 checkReminders();
-            } catch(e) {
-                alert('Errore: ' + e.message);
+                showToast(id ? 'Scadenza aggiornata' : 'Scadenza salvata');
+            } catch(err) {
+                showToast('Errore: ' + err.message);
             }
         });
 
@@ -4668,7 +4683,7 @@
 
                 const row = tbody.insertRow();
                 row.innerHTML = `
-                    <td>${escapeHtml(reminder.title || reminder.description)}</td>
+                    <td><a href="#" onclick="openReminderModal(${reminder.id}); return false;" style="color: inherit; text-decoration: underline; text-underline-offset: 3px;">${escapeHtml(reminder.title || reminder.description)}</a></td>
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
                     <td>${recurrenceLabels[reminder.recurrence] || 'Una volta'}</td>
                     <td>${statusBadge}</td>
@@ -4697,7 +4712,8 @@
                 await apiCall('PUT', `/reminders/${reminderId}`, {
                     title: reminder.title,
                     description: reminder.description,
-                    due_date: reminder.due_date,
+                    due_date: NotesLogic.toISODate(reminder.due_date),
+                    recurrence: reminder.recurrence || 'once',
                     completed: true
                 });
                 reminders = await apiCall('GET', `/companies/${currentCompanyId}/reminders`) || [];
