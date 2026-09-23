@@ -1816,6 +1816,11 @@
                     <i data-lucide="calendar-clock"></i>
                     <span>Scadenze</span>
                 </button>
+                <button class="sidebar-nav-item" onclick="showSection('notes', this)">
+                    <i data-lucide="sticky-note"></i>
+                    <span>Note</span>
+                    <span class="reminder-badge" id="notesBadge" style="display:none;">0</span>
+                </button>
                 <button class="sidebar-nav-item" onclick="showSection('expense-notes', this)">
                     <i data-lucide="receipt"></i>
                     <span>Note Spese</span>
@@ -2098,6 +2103,44 @@
                                         <th>Descrizione</th>
                                         <th>Scadenza</th>
                                         <th>Ricorrenza</th>
+                                        <th>Stato</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NOTE -->
+                <div id="notes" class="section">
+                    <div class="section-toolbar">
+                        <div class="mini-stats-bar">
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">In sospeso</span>
+                                <span class="mini-stat-value" id="miniNotePending">0</span>
+                            </div>
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Fatte</span>
+                                <span class="mini-stat-value" id="miniNoteDone">0</span>
+                            </div>
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Prossima scadenza</span>
+                                <span class="mini-stat-value" id="miniNoteNext">-</span>
+                            </div>
+                        </div>
+                        <div class="toolbar-actions">
+                            <button class="btn btn-primary" onclick="openNoteModal()">+ Nota</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table id="notesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Titolo</th>
+                                        <th>Scadenza</th>
                                         <th>Stato</th>
                                         <th></th>
                                     </tr>
@@ -2461,6 +2504,42 @@
         </div>
     </div>
 
+    <!-- NOTE MODAL -->
+    <div id="noteModal" class="modal">
+        <div class="modal-content">
+            <h2 id="noteModalTitle">Nuova nota</h2>
+            <form id="noteForm">
+                <input type="hidden" id="noteId">
+                <div class="form-group">
+                    <label>Titolo *</label>
+                    <input type="text" id="noteTitle" required maxlength="255" placeholder="Es: Provvigioni Deb agosto da recuperare">
+                </div>
+
+                <div class="form-group">
+                    <label>Testo</label>
+                    <textarea id="noteBody" rows="10" placeholder="Incolla qui la mail, gli importi, quello che ti serve avere sotto gli occhi quel giorno."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Data scadenza *</label>
+                    <input type="date" id="noteDate" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Salva nota</button>
+                <button type="button" class="btn btn-secondary" onclick="closeNoteModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- NOTE ALERT MODAL -->
+    <div id="noteAlertModal" class="modal">
+        <div class="modal-content" style="max-width: 640px;">
+            <h2>Ti eri segnato questo</h2>
+            <div id="noteAlertList"></div>
+            <button type="button" class="btn btn-secondary" onclick="closeNotesAlert()">Chiudi tutto per oggi</button>
+        </div>
+    </div>
+
     <!-- SETTINGS MODAL -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
@@ -2496,6 +2575,7 @@
     </div>
 
     <script src="config.js"></script>
+    <script src="notes-logic.js"></script>
     <script>
         // ==========================================
         // API CONFIGURATION - RENDER BACKEND
@@ -2661,6 +2741,7 @@
         let invoices = [];
         let expenses = [];
         let reminders = [];
+        let notes = [];
         let expenseNotes = [];
 
         // Currency symbols
@@ -2800,6 +2881,7 @@
                 { id: 'expensesTable', ph: 'Cerca spesa…', sort: [0,1,2,3] },
                 { id: 'customersTable', ph: 'Cerca cliente…', sort: [0,1] },
                 { id: 'remindersTable', ph: 'Cerca scadenza…', sort: [0,1] },
+                { id: 'notesTable', ph: 'Cerca nota…', sort: [0,1] },
                 { id: 'expenseNotesTable', ph: 'Cerca nota spesa…', sort: [0,1,2,3], chips: true }
             ];
             configs.forEach(cfg => {
@@ -2900,7 +2982,7 @@
             moveNavIndicator(btn);
 
             // Update main header title
-            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', reminders: 'Scadenze', 'expense-notes': 'Note Spese', reports: 'Report', companies: 'Aziende' };
+            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Note Spese', reports: 'Report', companies: 'Aziende' };
             document.getElementById('mainHeaderTitle').textContent = titles[sectionId] || sectionId;
 
             // Close sidebar on mobile
@@ -2922,6 +3004,8 @@
                 loadExpenses();
             } else if (sectionId === 'reminders') {
                 loadReminders();
+            } else if (sectionId === 'notes') {
+                loadNotes();
             } else if (sectionId === 'expense-notes') {
                 loadExpenseNotes();
             }
@@ -3071,19 +3155,22 @@
             showTableSkeleton('customersTable', 3);
             showTableSkeleton('expenseNotesTable', 6);
             showTableSkeleton('remindersTable', 5);
+            showTableSkeleton('notesTable', 4);
             try {
-                [customers, invoices, expenses, reminders, expenseNotes] = await Promise.all([
+                [customers, invoices, expenses, reminders, expenseNotes, notes] = await Promise.all([
                     apiCall('GET', `/companies/${currentCompanyId}/customers`),
                     apiCall('GET', `/companies/${currentCompanyId}/invoices`),
                     apiCall('GET', `/companies/${currentCompanyId}/expenses`),
                     apiCall('GET', `/companies/${currentCompanyId}/reminders`),
-                    apiCall('GET', `/companies/${currentCompanyId}/expense-notes`)
+                    apiCall('GET', `/companies/${currentCompanyId}/expense-notes`),
+                    apiCall('GET', `/companies/${currentCompanyId}/notes`)
                 ]);
                 customers = customers || [];
                 invoices = invoices || [];
                 expenses = expenses || [];
                 reminders = reminders || [];
                 expenseNotes = expenseNotes || [];
+                notes = notes || [];
             } catch(e) {
                 console.error('Errore caricamento dati:', e);
             }
@@ -3109,6 +3196,7 @@
             loadExpenses();
             loadReminders();
             loadExpenseNotes();
+            loadNotes();
             updateDashboard();
             generateReports();
             populateYearFilters();
@@ -4281,6 +4369,138 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }
+
+        // NOTE
+        function openNoteModal(noteId) {
+            const modal = document.getElementById('noteModal');
+            const form = document.getElementById('noteForm');
+            form.reset();
+
+            const note = noteId ? notes.find(n => n.id == noteId) : null;
+            document.getElementById('noteId').value = note ? note.id : '';
+            document.getElementById('noteModalTitle').textContent = note ? 'Modifica nota' : 'Nuova nota';
+            if (note) {
+                document.getElementById('noteTitle').value = note.title || '';
+                document.getElementById('noteBody').value = note.body || '';
+                document.getElementById('noteDate').value = NotesLogic.toISODate(note.due_date);
+            } else {
+                document.getElementById('noteDate').value = NotesLogic.todayISO();
+            }
+            modal.classList.add('active');
+        }
+
+        function closeNoteModal() {
+            document.getElementById('noteModal').classList.remove('active');
+        }
+
+        // Ricarica le note dal server e riallinea tabella, badge e mini-stat.
+        async function refreshNotes() {
+            notes = await apiCall('GET', `/companies/${currentCompanyId}/notes`) || [];
+            loadNotes();
+            updateNotesBadge();
+        }
+
+        document.getElementById('noteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!currentCompanyId) { showToast('Seleziona prima un\'azienda!'); return; }
+            const id = document.getElementById('noteId').value;
+            const payload = {
+                title: document.getElementById('noteTitle').value,
+                body: document.getElementById('noteBody').value,
+                due_date: document.getElementById('noteDate').value
+            };
+            try {
+                if (id) {
+                    await apiCall('PUT', `/notes/${id}`, payload);
+                } else {
+                    await apiCall('POST', `/companies/${currentCompanyId}/notes`, payload);
+                }
+                await refreshNotes();
+                closeNoteModal();
+                showToast(id ? 'Nota aggiornata' : 'Nota salvata');
+            } catch(err) {
+                showToast('Errore: ' + err.message);
+            }
+        });
+
+        // Formatta 'YYYY-MM-DD' come 'GG/MM/AAAA' senza passare da Date.
+        function formatNoteDate(iso) {
+            const d = NotesLogic.toISODate(iso);
+            return d ? d.slice(8,10) + '/' + d.slice(5,7) + '/' + d.slice(0,4) : '-';
+        }
+
+        function isNoteDone(note) {
+            return note.done === true || note.done === 't';
+        }
+
+        function loadNotes() {
+            if (!currentCompanyId) return;
+
+            const tbody = document.querySelector('#notesTable tbody');
+            tbody.innerHTML = '';
+
+            if (notes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessuna nota. Aggiungi la prima!</td></tr>';
+                document.getElementById('miniNotePending').textContent = '0';
+                document.getElementById('miniNoteDone').textContent = '0';
+                document.getElementById('miniNoteNext').textContent = '-';
+                return;
+            }
+
+            const today = NotesLogic.todayISO();
+            const sorted = [...notes].sort((a, b) =>
+                NotesLogic.toISODate(a.due_date).localeCompare(NotesLogic.toISODate(b.due_date)));
+
+            sorted.forEach(note => {
+                const due = NotesLogic.toISODate(note.due_date);
+                const done = isNoteDone(note);
+                const isLate = !done && due && due <= today;
+                const statusBadge = done
+                    ? '<span style="color: var(--primary-green); font-weight: 600;">&#10003; Fatta</span>'
+                    : isLate
+                        ? `<span style="color: var(--danger); font-weight: 600;">&#9888; ${escapeHtml(NotesLogic.formatDueLabel(due, today))}</span>`
+                        : '<span style="color: var(--warning); font-weight: 600;">&#9201; In sospeso</span>';
+
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><a href="#" onclick="openNoteModal(${note.id}); return false;" style="color: inherit; text-decoration: underline; text-underline-offset: 3px;">${escapeHtml(note.title)}</a></td>
+                    <td>${formatNoteDate(due)}</td>
+                    <td>${statusBadge}</td>
+                    <td class="action-btns">
+                        ${!done ? `<button class="btn btn-success" onclick="markNoteDone(${note.id})">Fatto</button>` : ''}
+                        <button class="btn btn-danger" onclick="deleteNote(${note.id})">Elimina</button>
+                    </td>
+                `;
+            });
+
+            const pending = notes.filter(n => !isNoteDone(n)).length;
+            const next = sorted.find(n => !isNoteDone(n) && NotesLogic.toISODate(n.due_date) >= today);
+            document.getElementById('miniNotePending').textContent = pending;
+            document.getElementById('miniNoteDone').textContent = notes.length - pending;
+            document.getElementById('miniNoteNext').textContent = next ? formatNoteDate(next.due_date) : '-';
+        }
+
+        async function markNoteDone(noteId) {
+            try {
+                await apiCall('PUT', `/notes/${noteId}`, { done: true });
+                await refreshNotes();
+                showToast('Nota chiusa');
+            } catch(err) {
+                showToast('Errore: ' + err.message);
+            }
+        }
+
+        async function deleteNote(noteId) {
+            if (await showConfirm('Questa nota verrà eliminata.', { title: 'Eliminare nota?' })) {
+                try {
+                    await apiCall('DELETE', `/notes/${noteId}`);
+                    await refreshNotes();
+                    showToast('Nota eliminata');
+                } catch(err) {
+                    showToast('Errore: ' + err.message);
+                }
+            }
         }
 
         // REMINDERS
