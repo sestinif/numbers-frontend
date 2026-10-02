@@ -3226,6 +3226,7 @@
             const form = document.getElementById('companyForm');
 
             form.reset();
+            document.getElementById('companyId').value = '';
 
             if (companyId) {
                 const company = companies.find(c => c.id == companyId);
@@ -3402,6 +3403,8 @@
             const form = document.getElementById('customerForm');
 
             form.reset();
+            // form.reset() non svuota i campi hidden: senza questa riga "Aggiungi" sovrascrive l'ultimo cliente modificato
+            document.getElementById('customerId').value = '';
 
             if (customerId) {
                 const customer = customers.find(c => c.id == customerId);
