@@ -475,6 +475,18 @@
             gap: 2px;
         }
 
+        .nav-group-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            padding: 14px 16px 6px;
+            user-select: none;
+            pointer-events: none;
+        }
+        .nav-group-label:first-child { padding-top: 4px; }
+
         .sidebar-nav-item {
             display: flex;
             flex-direction: row;
@@ -1800,6 +1812,8 @@
                     <span>Dashboard</span>
                     <span class="reminder-badge" id="reminderBadge" style="display:none;">0</span>
                 </button>
+
+                <div class="nav-group-label">Vendite</div>
                 <button class="sidebar-nav-item" onclick="showSection('invoices', this)">
                     <i data-lucide="file-text"></i>
                     <span>Fatture</span>
@@ -1808,6 +1822,8 @@
                     <i data-lucide="users"></i>
                     <span>Clienti</span>
                 </button>
+
+                <div class="nav-group-label">Spese</div>
                 <button class="sidebar-nav-item" onclick="showSection('expenses', this)">
                     <i data-lucide="credit-card"></i>
                     <span>Spese</span>
@@ -1816,6 +1832,12 @@
                     <i data-lucide="repeat"></i>
                     <span>Ricorrenti</span>
                 </button>
+                <button class="sidebar-nav-item" onclick="showSection('expense-notes', this)">
+                    <i data-lucide="receipt"></i>
+                    <span>Rimborsi</span>
+                </button>
+
+                <div class="nav-group-label">Agenda</div>
                 <button class="sidebar-nav-item" onclick="showSection('reminders', this)">
                     <i data-lucide="calendar-clock"></i>
                     <span>Scadenze</span>
@@ -1825,10 +1847,8 @@
                     <span>Note</span>
                     <span class="reminder-badge" id="notesBadge" style="display:none;">0</span>
                 </button>
-                <button class="sidebar-nav-item" onclick="showSection('expense-notes', this)">
-                    <i data-lucide="receipt"></i>
-                    <span>Note Spese</span>
-                </button>
+
+                <div class="nav-group-label">Analisi</div>
                 <button class="sidebar-nav-item" onclick="showSection('reports', this)">
                     <i data-lucide="bar-chart-3"></i>
                     <span>Report</span>
@@ -2257,7 +2277,7 @@
                             </div>
                         </div>
                         <div class="toolbar-actions">
-                            <button class="btn btn-primary" onclick="openExpenseNoteModal()">+ Nota spesa</button>
+                            <button class="btn btn-primary" onclick="openExpenseNoteModal()">+ Rimborso</button>
                         </div>
                     </div>
                     <div class="card">
@@ -2285,7 +2305,7 @@
     <!-- EXPENSE NOTE MODAL -->
     <div id="expenseNoteModal" class="modal">
         <div class="modal-content">
-            <h2 id="expenseNoteModalTitle">Nuova nota spesa</h2>
+            <h2 id="expenseNoteModalTitle">Nuovo rimborso</h2>
             <form id="expenseNoteForm">
                 <input type="hidden" id="expenseNoteId">
                 <div class="form-row">
@@ -2454,7 +2474,7 @@
 
                 <div id="pendingNotesContainer" style="display:none; margin: 16px 0; padding: 14px; background: rgba(0,210,106,0.04); border: 1px solid rgba(0,210,106,0.15); border-radius: 10px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-                        <div style="font-size: 12px; font-weight: 600; color: var(--primary-green); text-transform: uppercase; letter-spacing: 0.5px;">Note spese da fatturare</div>
+                        <div style="font-size: 12px; font-weight: 600; color: var(--primary-green); text-transform: uppercase; letter-spacing: 0.5px;">Rimborsi da fatturare</div>
                         <button type="button" class="btn btn-primary" style="padding:6px 14px; font-size:11px; margin:0;" onclick="addAllNotesToInvoice()">+ Aggiungi tutte</button>
                     </div>
                     <div id="pendingNotesList"></div>
@@ -2987,7 +3007,7 @@
                 { id: 'customersTable', ph: 'Cerca cliente…', sort: [0,1] },
                 { id: 'remindersTable', ph: 'Cerca scadenza…', sort: [0,1] },
                 { id: 'notesTable', ph: 'Cerca nota…', sort: [0,1] },
-                { id: 'expenseNotesTable', ph: 'Cerca nota spesa…', sort: [0,1,2,3], chips: true }
+                { id: 'expenseNotesTable', ph: 'Cerca rimborso…', sort: [0,1,2,3], chips: true }
             ];
             configs.forEach(cfg => {
                 const table = document.getElementById(cfg.id);
@@ -3087,7 +3107,7 @@
             moveNavIndicator(btn);
 
             // Update main header title
-            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', recurring: 'Ricorrenti', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Note Spese', reports: 'Report', companies: 'Aziende' };
+            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', recurring: 'Ricorrenti', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Rimborsi', reports: 'Report', companies: 'Aziende' };
             document.getElementById('mainHeaderTitle').textContent = titles[sectionId] || sectionId;
 
             // Close sidebar on mobile
@@ -5519,7 +5539,7 @@
             if (noteId) {
                 const note = expenseNotes.find(n => n.id == noteId);
                 if (!note) return;
-                document.getElementById('expenseNoteModalTitle').textContent = 'Modifica nota spesa';
+                document.getElementById('expenseNoteModalTitle').textContent = 'Modifica rimborso';
                 document.getElementById('expenseNoteId').value = note.id;
                 document.getElementById('expenseNoteDate').value = (note.date || '').split('T')[0];
                 document.getElementById('expenseNoteAmount').value = note.amount;
@@ -5528,7 +5548,7 @@
                 document.getElementById('expenseNoteNotes').value = note.notes || '';
                 loadReceiptsList(note.id);
             } else {
-                document.getElementById('expenseNoteModalTitle').textContent = 'Nuova nota spesa';
+                document.getElementById('expenseNoteModalTitle').textContent = 'Nuovo rimborso';
                 document.getElementById('expenseNoteDate').value = new Date().toISOString().split('T')[0];
             }
 
@@ -5667,7 +5687,7 @@
                 expenseNotes = await apiCall('GET', `/companies/${currentCompanyId}/expense-notes`) || [];
                 loadExpenseNotes();
                 closeExpenseNoteModal();
-                showToast('Nota spesa salvata', 'success');
+                showToast('Rimborso salvato', 'success');
             } catch(e) {
                 showToast('Errore: ' + e.message, 'error');
             }
@@ -5688,7 +5708,7 @@
             document.getElementById('miniNotesDone').textContent = done.length;
 
             if (expenseNotes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna nota spesa. Aggiungi la prima!</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessun rimborso. Aggiungi il primo!</td></tr>';
                 return;
             }
 
@@ -5756,7 +5776,7 @@
         }
 
         async function deleteExpenseNote(noteId) {
-            if (await showConfirm('Questa nota spesa verrà eliminata.', { title: 'Eliminare nota spesa?' })) {
+            if (await showConfirm('Questo rimborso verrà eliminato.', { title: 'Eliminare il rimborso?' })) {
                 try {
                     await apiCall('DELETE', `/expense-notes/${noteId}`);
                     [expenseNotes, expenses] = await Promise.all([
