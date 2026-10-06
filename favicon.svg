@@ -1,9 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <defs>
-    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1c1f24"/>
-      <stop offset="1" stop-color="#0d0e11"/>
-    </linearGradient>
     <linearGradient id="n" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#2bff9e"/>
       <stop offset="1" stop-color="#00b85c"/>
@@ -13,9 +9,9 @@
       <stop offset="1" stop-color="#00d26a" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="32" height="32" rx="7.5" fill="url(#tile)"/>
-  <rect x="0.6" y="0.6" width="30.8" height="30.8" rx="7" fill="none" stroke="#ffffff" stroke-opacity="0.07"/>
+  <rect width="32" height="32" rx="7.5" fill="#1B1B24"/>
   <circle cx="16" cy="14" r="11" fill="url(#glow)"/>
+  <rect x="0.9" y="0.9" width="30.2" height="30.2" rx="6.7" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="1.6"/>
   <g fill="url(#n)">
     <path d="M9 8h3.5v16H9z"/>
     <path d="M19.5 8H23v16h-3.5z"/>
