@@ -1812,6 +1812,10 @@
                     <i data-lucide="credit-card"></i>
                     <span>Spese</span>
                 </button>
+                <button class="sidebar-nav-item" onclick="showSection('recurring', this)">
+                    <i data-lucide="repeat"></i>
+                    <span>Ricorrenti</span>
+                </button>
                 <button class="sidebar-nav-item" onclick="showSection('reminders', this)">
                     <i data-lucide="calendar-clock"></i>
                     <span>Scadenze</span>
@@ -2064,6 +2068,47 @@
                                         <th>Data</th>
                                         <th>Descrizione</th>
                                         <th>Categoria</th>
+                                        <th class="num">Importo</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RICORRENTI -->
+                <div id="recurring" class="section">
+                    <div class="section-toolbar">
+                        <div class="mini-stats-bar">
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Attive</span>
+                                <span class="mini-stat-value" id="miniRecurringActive">0</span>
+                            </div>
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Al mese</span>
+                                <span class="mini-stat-value" id="miniRecurringMonthly">€0</span>
+                            </div>
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Interrotte</span>
+                                <span class="mini-stat-value" id="miniRecurringStopped">0</span>
+                            </div>
+                        </div>
+                        <div class="toolbar-actions">
+                            <button class="btn btn-primary" onclick="openRecurringModal()">+ Ricorrente</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table id="recurringTable">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Categoria</th>
+                                        <th>Ogni</th>
+                                        <th>Dal</th>
+                                        <th>Stato</th>
                                         <th class="num">Importo</th>
                                         <th></th>
                                     </tr>
@@ -2472,6 +2517,64 @@
         </div>
     </div>
 
+    <div id="recurringModal" class="modal">
+        <div class="modal-content">
+            <h2 id="recurringModalTitle">Nuova spesa ricorrente</h2>
+            <form id="recurringForm">
+                <input type="hidden" id="recurringId">
+                <div class="form-group">
+                    <label>Nome *</label>
+                    <input type="text" id="recurringName" required placeholder="Es: Render, Vercel, abbonamento software">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Importo *</label>
+                        <input type="number" id="recurringAmount" step="0.01" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Ogni</label>
+                        <select id="recurringFrequency">
+                            <option value="monthly">Mese</option>
+                            <option value="yearly">Anno</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Giorno del mese</label>
+                        <input type="number" id="recurringDay" min="1" max="31" value="1" placeholder="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select id="recurringCategory">
+                            <option value="Software">Software e Abbonamenti</option>
+                            <option value="Ufficio">Ufficio e Materiali</option>
+                            <option value="Marketing">Marketing e Pubblicita</option>
+                            <option value="Trasporti">Trasporti e Viaggi</option>
+                            <option value="Consulenze">Consulenze Professionali</option>
+                            <option value="Utenze">Utenze e Servizi</option>
+                            <option value="Personale">Personale e Stipendi</option>
+                            <option value="Altro">Altro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Dal mese</label>
+                        <input type="month" id="recurringStart">
+                    </div>
+                    <div class="form-group">
+                        <label>Fino al mese <span style="color:var(--text-tertiary);font-weight:400">(vuoto = sempre)</span></label>
+                        <input type="month" id="recurringEnd">
+                    </div>
+                </div>
+                <p style="font-size:12px;color:var(--text-secondary);margin:4px 0 14px;line-height:1.5">Ogni mese si crea da sola una voce di spesa. Se interrompi, i mesi già segnati restano. Se cambi l'importo, vale solo per i mesi nuovi.</p>
+                <button type="submit" class="btn btn-primary">Salva ricorrente</button>
+                <button type="button" class="btn btn-secondary" onclick="closeRecurringModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
     <!-- REMINDER MODAL -->
     <div id="reminderModal" class="modal">
         <div class="modal-content">
@@ -2744,6 +2847,7 @@
         let reminders = [];
         let notes = [];
         let expenseNotes = [];
+        let recurringRules = [];
 
         // Currency symbols
         const currencySymbols = {
@@ -2983,7 +3087,7 @@
             moveNavIndicator(btn);
 
             // Update main header title
-            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Note Spese', reports: 'Report', companies: 'Aziende' };
+            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', recurring: 'Ricorrenti', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Note Spese', reports: 'Report', companies: 'Aziende' };
             document.getElementById('mainHeaderTitle').textContent = titles[sectionId] || sectionId;
 
             // Close sidebar on mobile
@@ -3003,6 +3107,8 @@
                 loadCompanies();
             } else if (sectionId === 'expenses') {
                 loadExpenses();
+            } else if (sectionId === 'recurring') {
+                loadRecurring();
             } else if (sectionId === 'reminders') {
                 loadReminders();
             } else if (sectionId === 'notes') {
@@ -3161,13 +3267,14 @@
             showTableSkeleton('remindersTable', 5);
             showTableSkeleton('notesTable', 4);
             try {
-                [customers, invoices, expenses, reminders, expenseNotes, notes] = await Promise.all([
+                [customers, invoices, expenses, reminders, expenseNotes, notes, recurringRules] = await Promise.all([
                     apiCall('GET', `/companies/${currentCompanyId}/customers`),
                     apiCall('GET', `/companies/${currentCompanyId}/invoices`),
                     apiCall('GET', `/companies/${currentCompanyId}/expenses`),
                     apiCall('GET', `/companies/${currentCompanyId}/reminders`),
                     apiCall('GET', `/companies/${currentCompanyId}/expense-notes`),
-                    apiCall('GET', `/companies/${currentCompanyId}/notes`)
+                    apiCall('GET', `/companies/${currentCompanyId}/notes`),
+                    apiCall('GET', `/companies/${currentCompanyId}/recurring`)
                 ]);
                 customers = customers || [];
                 invoices = invoices || [];
@@ -3175,6 +3282,7 @@
                 reminders = reminders || [];
                 expenseNotes = expenseNotes || [];
                 notes = notes || [];
+                recurringRules = recurringRules || [];
             } catch(e) {
                 console.error('Errore caricamento dati:', e);
             }
@@ -4315,7 +4423,7 @@
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
-                    <td>${escapeHtml(expense.description)}${expense.auto_source ? `<span class="badge badge-auto" title="${escapeHtml(expense.notes || 'Si aggiorna da sola')}">Auto</span>` : ''}</td>
+                    <td>${escapeHtml(expense.description)}${expense.auto_source ? `<span class="badge badge-auto" title="${escapeHtml(expense.notes || 'Si aggiorna da sola')}">${expense.auto_source.startsWith('rule:') ? 'Ricorrente' : 'Auto'}</span>` : ''}</td>
                     <td>${expense.category ? escapeHtml(expense.category) : '-'}</td>
                     <td class="num"><strong>${formatCurrency(expense.amount)}</strong></td>
                     <td class="action-btns">
@@ -4377,6 +4485,145 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }
+
+        // ===== SPESE RICORRENTI =====
+        function nowPeriod() {
+            const d = new Date();
+            return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+        }
+        function fmtPeriod(p) {
+            if (!p) return '-';
+            const [y, m] = p.split('-');
+            return `${m}/${y}`;
+        }
+        function ruleIsActive(rule) {
+            return !rule.end_period || rule.end_period >= nowPeriod();
+        }
+
+        function loadRecurring() {
+            if (!currentCompanyId) return;
+            const tbody = document.querySelector('#recurringTable tbody');
+            tbody.innerHTML = '';
+
+            if (recurringRules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Nessuna ricorrente. Aggiungi il primo abbonamento o costo fisso!</td></tr>';
+            } else {
+                const sorted = [...recurringRules].sort((a, b) => (ruleIsActive(b) - ruleIsActive(a)) || a.name.localeCompare(b.name));
+                sorted.forEach(rule => {
+                    const active = ruleIsActive(rule);
+                    const freq = rule.frequency === 'yearly' ? 'Anno' : 'Mese';
+                    const stato = active
+                        ? '<span class="badge badge-paid">Attiva</span>'
+                        : `<span class="badge badge-pending" title="Interrotta">Interrotta ${fmtPeriod(rule.end_period)}</span>`;
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${escapeHtml(rule.name)}</td>
+                        <td>${rule.category ? escapeHtml(rule.category) : '-'}</td>
+                        <td>${freq}</td>
+                        <td>${fmtPeriod(rule.start_period)}</td>
+                        <td>${stato}</td>
+                        <td class="num"><strong>${formatCurrency(rule.amount)}</strong></td>
+                        <td class="action-btns">
+                            <button class="btn btn-secondary" onclick="openRecurringModal(${rule.id})">Modifica</button>
+                            ${active ? `<button class="btn btn-secondary" onclick="stopRecurring(${rule.id})">Stoppa</button>` : ''}
+                            <button class="btn btn-danger" onclick="deleteRecurring(${rule.id})">Elimina</button>
+                        </td>
+                    `;
+                });
+            }
+
+            const active = recurringRules.filter(ruleIsActive);
+            const monthly = active.reduce((s, r) => s + (r.frequency === 'yearly' ? parseFloat(r.amount) / 12 : parseFloat(r.amount || 0)), 0);
+            document.getElementById('miniRecurringActive').textContent = active.length;
+            document.getElementById('miniRecurringMonthly').textContent = formatCurrency(monthly);
+            document.getElementById('miniRecurringStopped').textContent = recurringRules.length - active.length;
+        }
+
+        function openRecurringModal(ruleId = null) {
+            if (!currentCompanyId) { alert('Seleziona prima un\'azienda!'); return; }
+            const form = document.getElementById('recurringForm');
+            form.reset();
+            document.getElementById('recurringId').value = '';
+            const rule = ruleId ? recurringRules.find(r => r.id == ruleId) : null;
+            if (rule) {
+                document.getElementById('recurringModalTitle').textContent = 'Modifica ricorrente';
+                document.getElementById('recurringId').value = rule.id;
+                document.getElementById('recurringName').value = rule.name;
+                document.getElementById('recurringAmount').value = rule.amount;
+                document.getElementById('recurringFrequency').value = rule.frequency || 'monthly';
+                document.getElementById('recurringDay').value = rule.day_of_month || 1;
+                document.getElementById('recurringCategory').value = rule.category || 'Software';
+                document.getElementById('recurringStart').value = rule.start_period || nowPeriod();
+                document.getElementById('recurringEnd').value = rule.end_period || '';
+            } else {
+                document.getElementById('recurringModalTitle').textContent = 'Nuova spesa ricorrente';
+                document.getElementById('recurringStart').value = nowPeriod();
+            }
+            document.getElementById('recurringModal').classList.add('active');
+        }
+
+        function closeRecurringModal() {
+            document.getElementById('recurringModal').classList.remove('active');
+        }
+
+        async function refreshAfterRecurring() {
+            [recurringRules, expenses] = await Promise.all([
+                apiCall('GET', `/companies/${currentCompanyId}/recurring`),
+                apiCall('GET', `/companies/${currentCompanyId}/expenses`)
+            ]);
+            recurringRules = recurringRules || [];
+            expenses = expenses || [];
+            loadRecurring();
+            loadExpenses();
+            updateDashboard();
+        }
+
+        document.getElementById('recurringForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            try {
+                const id = document.getElementById('recurringId').value;
+                const data = {
+                    name: document.getElementById('recurringName').value,
+                    amount: parseFloat(document.getElementById('recurringAmount').value),
+                    frequency: document.getElementById('recurringFrequency').value,
+                    day_of_month: parseInt(document.getElementById('recurringDay').value) || 1,
+                    category: document.getElementById('recurringCategory').value,
+                    start_period: document.getElementById('recurringStart').value || nowPeriod(),
+                    end_period: document.getElementById('recurringEnd').value || null
+                };
+                if (id) {
+                    await apiCall('PUT', `/recurring/${id}`, data);
+                } else {
+                    await apiCall('POST', `/companies/${currentCompanyId}/recurring`, data);
+                }
+                closeRecurringModal();
+                await refreshAfterRecurring();
+            } catch(err) {
+                alert('Errore: ' + err.message);
+            }
+        });
+
+        async function stopRecurring(ruleId) {
+            const rule = recurringRules.find(r => r.id == ruleId);
+            if (!rule) return;
+            const ok = await showConfirm(`"${rule.name}" non verrà più segnata dai prossimi mesi. I mesi già registrati restano nello storico.`, { title: 'Interrompere?', okLabel: 'Interrompi', okClass: 'btn-primary' });
+            if (!ok) return;
+            try {
+                await apiCall('POST', `/recurring/${ruleId}/stop`, {});
+                await refreshAfterRecurring();
+            } catch(err) { alert('Errore: ' + err.message); }
+        }
+
+        async function deleteRecurring(ruleId) {
+            const rule = recurringRules.find(r => r.id == ruleId);
+            if (!rule) return;
+            const ok = await showConfirm(`Elimino la regola "${rule.name}". Le spese dei mesi già segnati restano nello storico.`, { title: 'Eliminare la regola?', okLabel: 'Elimina', okClass: 'btn-danger' });
+            if (!ok) return;
+            try {
+                await apiCall('DELETE', `/recurring/${ruleId}`);
+                await refreshAfterRecurring();
+            } catch(err) { alert('Errore: ' + err.message); }
         }
 
         // NOTE
