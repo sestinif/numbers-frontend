@@ -201,21 +201,6 @@
         .dropzone.dragover .dropzone__icon { color: var(--primary-green); }
 
 
-        /* ===== TREND PILLS ===== */
-        .stat-trend {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3px 9px 3px 7px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 500;
-            background: rgba(255,255,255,0.05);
-            color: var(--text-secondary);
-        }
-        .stat-trend.up { background: rgba(var(--green-rgb), 0.12); color: var(--primary-green); }
-        .stat-trend.down { background: rgba(var(--danger-rgb),0.12); color: var(--danger); }
-        .stat-trend svg, .stat-trend i { width: 13px; height: 13px; }
 
         /* ===== NAV SLIDING INDICATOR ===== */
         .nav-indicator {
@@ -479,31 +464,9 @@
         }
 
         /* ===== CARDS ===== */
-        .card {
-            background: var(--bg-glass);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 28px;
-            margin-bottom: 24px;
-            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s ease;
-            box-shadow: var(--elev-2), inset 0 1px 0 rgba(255,255,255,0.03);
-            position: relative;
-            overflow: hidden;
-        }
+        .card { position: relative; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
 
-        .card:hover {
-            border-color: rgba(255,255,255,0.10);
-            box-shadow: var(--elev-3), inset 0 1px 0 rgba(255,255,255,0.04);
-        }
-
-        .card h2 {
-            color: var(--text-primary);
-            margin-bottom: 24px;
-            font-family: var(--font-display);
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
+        .card h2 { margin-bottom: 20px; font-family: var(--font-display); font-size: 15px; font-weight: 500; color: var(--text-primary); }
 
         /* ===== FORMS ===== */
         .form-group { margin-bottom: 18px; }
@@ -605,60 +568,23 @@
 
         /* ===== STATS GRID ===== */
         .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin-bottom: 32px;
+            display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px;
+            margin: 0 0 28px; padding-bottom: 28px; border-bottom: 1px solid var(--border-color);
         }
 
-        .stat-card {
-            background: var(--bg-glass);
-            color: var(--text-primary);
-            padding: 28px;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.35s ease;
-            box-shadow: var(--elev-2), inset 0 1px 0 rgba(255,255,255,0.03);
-        }
+        .stat-card { min-width: 0; padding: 0; background: none; border: 0; border-radius: 0; color: var(--text-primary); }
 
-        .stat-card:hover {
-            transform: translateY(-3px);
-            border-color: rgba(255,255,255,0.10);
-            box-shadow: var(--elev-4), inset 0 1px 0 rgba(255,255,255,0.04);
-        }
-
-        .stat-card h3 {
-            font-size: 12px;
-            margin-bottom: 14px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            font-family: var(--font-body);
-        }
+        .stat-card h3 { font-size: 12px; font-weight: 400; margin-bottom: 6px; color: var(--text-secondary); font-family: var(--font-body); }
 
         .stat-card .value {
-            font-family: var(--font-display);
-            font-size: 32px;
-            font-weight: 500;
-            letter-spacing: -1.5px;
-            color: var(--text-primary);
+            font-family: var(--font-display); font-size: 24px; font-weight: 400; letter-spacing: -0.02em;
+            color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
-        .stat-trend {
-            font-size: 12px;
-            margin-top: 10px;
-            color: var(--text-tertiary);
-            font-weight: 500;
-            font-family: var(--font-body);
-        }
+        .stat-trend { display: block; margin-top: 6px; padding: 0; border-radius: 0; background: none; font-size: 12px; font-weight: 400; color: var(--text-secondary); font-family: var(--font-body); }
 
         /* ===== CHART ===== */
-        .chart-container {
-            position: relative;
-            height: 350px;
-            margin-top: 20px;
-        }
+        .chart-container { position: relative; height: 320px; margin-top: 0; }
 
         /* ===== INVOICE / EXPENSE ITEMS ===== */
         .invoice-items {
@@ -863,39 +789,18 @@
         .badge-auto { background: none; border: 0; color: var(--text-secondary); margin-left: 8px; cursor: help; }
 
         /* ===== QUICK ACTIONS ===== */
-        .quick-actions {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        .quick-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 30px; }
 
         .quick-action-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px dashed var(--border-color);
-            border-radius: 10px;
-            color: var(--text-secondary);
-            font-family: var(--font-body);
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.25s ease;
+            display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+            background: transparent; border: 1px solid var(--border-strong); border-radius: 8px;
+            color: var(--text-primary); font-family: var(--font-body); font-size: 13px; font-weight: 400;
+            cursor: pointer; transition: background 0.15s ease;
         }
 
-        .quick-action-btn:hover {
-            background: rgba(var(--green-rgb), 0.05);
-            border-color: var(--border-glow);
-            color: var(--primary-green);
-            border-style: solid;
-        }
+        .quick-action-btn:hover { background: var(--bg-hover); border-color: var(--border-strong); color: var(--text-primary); }
 
-        .quick-action-btn svg {
-            stroke: currentColor;
-            flex-shrink: 0;
-        }
+        .quick-action-btn svg { width: 16px; height: 16px; stroke: var(--text-secondary); flex-shrink: 0; }
 
         /* ===== CARD TOOLBAR ===== */
         .card-toolbar {
@@ -952,46 +857,20 @@
 
         /* ===== ALERTS ===== */
         .alert {
-            padding: 16px 20px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-            font-size: 14px;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            padding: 14px 0; margin: 0; border: 0; border-bottom: 1px solid var(--border-color); border-radius: 0;
+            background: none; color: var(--text-primary); font-size: 14px;
         }
 
-        .alert::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-        }
+        .alert::before { content: ''; flex: 0 0 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--text-secondary); }
 
-        .alert-warning {
-            background: rgba(var(--warning-rgb), 0.06);
-            border-color: rgba(var(--warning-rgb), 0.15);
-            color: var(--warning);
-        }
+        .alert-warning { background: none; border-color: var(--border-color); color: var(--text-primary); }
 
-        .alert-warning::before {
-            background: var(--warning);
-        }
+        .alert-warning::before { background: var(--warning); }
 
-        .alert-info {
-            background: rgba(var(--green-rgb), 0.04);
-            border-color: rgba(var(--green-rgb), 0.15);
-            color: var(--primary-green);
-        }
+        .alert-info { background: none; border-color: var(--border-color); color: var(--text-primary); }
 
-        .alert-info::before {
-            background: var(--primary-green);
-        }
+        .alert-info::before { background: var(--text-secondary); }
 
         /* ===== REMINDER BADGE ===== */
         .reminder-badge {
@@ -1030,6 +909,20 @@
 
         .form-group small { display: block; margin-top: 6px; font-size: 12px; }
 
+        #reminderAlerts:not(:empty) { margin-bottom: 24px; }
+
+        .alert > div { flex: 1; min-width: 0; }
+
+        .alert strong { font-weight: 500; }
+
+        .alert .btn { margin: 0; flex-shrink: 0; padding: 6px 12px; font-size: 12px; }
+
+        .stat-trend.up, .stat-trend.down { background: none; color: var(--text-secondary); }
+
+        #totalRevenue, #totalRevenueTrend.up { color: var(--money-in); }
+
+        .stat-card:has(#netRevenueTrend.down) #netRevenue, #netRevenueTrend.down { color: var(--danger); }
+
         /* Tablet */
         @media (max-width: 1024px) {
             .content {
@@ -1037,7 +930,8 @@
             }
 
             .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                row-gap: 24px;
             }
 
             .report-grid {
@@ -1120,32 +1014,38 @@
 
             /* Quick actions mobile */
             .quick-actions {
-                flex-direction: column;
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
                 gap: 8px;
+                margin-bottom: 26px;
             }
 
             .quick-action-btn {
-                padding: 12px 16px;
+                flex-direction: column;
+                gap: 6px;
+                padding: 12px 4px;
+                font-size: 12px;
+                text-align: center;
             }
 
             /* Stats grid mobile */
             .stats-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 24px 16px;
             }
 
             .stat-card {
-                padding: 18px 16px;
-                border-radius: 12px;
+                padding: 0;
+                border-radius: 0;
             }
 
             .stat-card h3 {
                 font-size: 12px;
-                margin-bottom: 8px;
+                margin-bottom: 6px;
             }
 
             .stat-card .value {
-                font-size: 24px;
+                font-size: 20px;
             }
 
             .stat-trend {
@@ -1154,9 +1054,9 @@
 
             /* Cards mobile */
             .card {
-                padding: 16px;
+                padding: 18px;
                 border-radius: 12px;
-                margin-bottom: 12px;
+                margin-bottom: 16px;
             }
 
             .card-toolbar {
@@ -1217,21 +1117,17 @@
 
             /* Chart mobile */
             .chart-container {
-                height: 250px;
+                height: 240px;
             }
 
             /* Alerts mobile */
             .alert {
-                padding: 12px 14px;
-                font-size: 13px;
-                flex-direction: column;
-                gap: 10px;
-                align-items: flex-start;
+                padding: 14px 0;
+                font-size: 14px;
             }
 
             .alert .btn {
-                width: 100%;
-                text-align: center;
+                width: auto;
             }
 
             /* Modals mobile */
@@ -1264,12 +1160,8 @@
 
         /* Small mobile */
         @media (max-width: 380px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
             .stat-card .value {
-                font-size: 20px;
+                font-size: 18px;
             }
         }
     </style>
@@ -1404,12 +1296,12 @@
 
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <h3>Fatturato Totale</h3>
+                            <h3>Fatturato totale</h3>
                             <div class="value" id="totalRevenue">&#8364;0</div>
                             <div class="stat-trend" id="totalRevenueTrend"></div>
                         </div>
                         <div class="stat-card">
-                            <h3>Spese Totali</h3>
+                            <h3>Spese totali</h3>
                             <div class="value" id="totalExpenses">&#8364;0</div>
                             <div class="stat-trend" id="totalExpensesTrend"></div>
                         </div>
@@ -1419,14 +1311,14 @@
                             <div class="stat-trend" id="netRevenueTrend"></div>
                         </div>
                         <div class="stat-card">
-                            <h3>Fatture Questo Mese</h3>
+                            <h3>Fatture questo mese</h3>
                             <div class="value" id="monthInvoices">0</div>
                             <div class="stat-trend" id="monthInvoicesTrend"></div>
                         </div>
                     </div>
 
                     <div class="card">
-                        <h2>Andamento Finanziario</h2>
+                        <h2>Andamento finanziario</h2>
                         <div class="chart-container">
                             <canvas id="financeChart"></canvas>
                         </div>
@@ -4611,7 +4503,7 @@
                     txt = `nessun confronto · ${currentYear - 1}`;
                 }
                 el.className = 'stat-trend ' + cls;
-                el.innerHTML = (arrow ? `<span style="font-weight:700;">${arrow}</span> ` : '') + txt;
+                el.innerHTML = (arrow ? `<span>${arrow}</span> ` : '') + txt;
             };
 
             // Set trends
@@ -4620,7 +4512,7 @@
             const netTrend = document.getElementById('netRevenueTrend');
             if (netTrend) {
                 netTrend.className = 'stat-trend ' + (netRevenue >= 0 ? 'up' : 'down');
-                netTrend.innerHTML = `<span style="font-weight:700;">${netRevenue >= 0 ? '↑' : '↓'}</span> ${netRevenue >= 0 ? 'In utile' : 'In perdita'}`;
+                netTrend.innerHTML = `<span>${netRevenue >= 0 ? '↑' : '↓'}</span> ${netRevenue >= 0 ? 'In utile' : 'In perdita'}`;
             }
             const monthTrend = document.getElementById('monthInvoicesTrend');
             if (monthTrend) { monthTrend.className = 'stat-trend'; monthTrend.textContent = `su ${companyInvoices.length} totali`; }
@@ -4666,72 +4558,43 @@
                 expensesData.push(monthExpenses);
             }
 
-            // Gradienti area (depth)
-            const h = canvas.height || 320;
-            const gRev = ctx.createLinearGradient(0, 0, 0, h);
-            gRev.addColorStop(0, 'rgba(0, 210, 106, 0.38)');
-            gRev.addColorStop(0.5, 'rgba(0, 210, 106, 0.10)');
-            gRev.addColorStop(1, 'rgba(0, 210, 106, 0)');
-            const gExp = ctx.createLinearGradient(0, 0, 0, h);
-            gExp.addColorStop(0, 'rgba(255, 255, 255, 0.10)');
-            gExp.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-            // Plugin: glow morbido sotto la linea del fatturato
-            const lineGlow = {
-                id: 'lineGlow',
-                beforeDatasetDraw(chart, args) {
-                    if (args.index === 0) {
-                        const c = chart.ctx;
-                        c.save();
-                        c.shadowColor = 'rgba(0, 210, 106, 0.55)';
-                        c.shadowBlur = 16;
-                        c.shadowOffsetY = 3;
-                    }
-                },
-                afterDatasetDraw(chart, args) {
-                    if (args.index === 0) chart.ctx.restore();
-                }
-            };
-
             window.financeChartInstance = new Chart(ctx, {
                 type: 'line',
-                plugins: [lineGlow],
                 data: {
                     labels: months,
                     datasets: [
                         {
                             label: 'Fatturato (\u20AC)',
                             data: revenues,
-                            borderColor: 'rgb(0, 210, 106)',
-                            backgroundColor: gRev,
+                            borderColor: '#8D9BFF',
+                            backgroundColor: '#8D9BFF',
                             cubicInterpolationMode: 'monotone',
                             tension: 0.4,
-                            fill: true,
-                            borderWidth: 3,
+                            fill: false,
+                            borderWidth: 2,
                             borderCapStyle: 'round',
                             borderJoinStyle: 'round',
                             pointRadius: 0,
-                            pointHoverRadius: 6,
-                            pointHoverBackgroundColor: 'rgb(0, 210, 106)',
-                            pointHoverBorderColor: '#0A0A0A',
-                            pointHoverBorderWidth: 3,
+                            pointHoverRadius: 4,
+                            pointHoverBackgroundColor: '#8D9BFF',
+                            pointHoverBorderColor: '#1B1B24',
+                            pointHoverBorderWidth: 2,
                             pointStyle: 'circle'
                         },
                         {
                             label: 'Spese (\u20AC)',
                             data: expensesData,
-                            borderColor: 'rgba(255, 255, 255, 0.45)',
-                            backgroundColor: gExp,
+                            borderColor: '#5F69B8',
+                            backgroundColor: '#5F69B8',
                             cubicInterpolationMode: 'monotone',
                             tension: 0.4,
-                            fill: true,
+                            fill: false,
                             borderWidth: 1.5,
-                            borderDash: [3, 4],
                             borderCapStyle: 'round',
                             pointRadius: 0,
-                            pointHoverRadius: 5,
-                            pointHoverBackgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            pointHoverBorderColor: '#0A0A0A',
+                            pointHoverRadius: 4,
+                            pointHoverBackgroundColor: '#5F69B8',
+                            pointHoverBorderColor: '#1B1B24',
                             pointHoverBorderWidth: 2
                         }
                     ]
@@ -4750,8 +4613,8 @@
                             position: 'top',
                             align: 'end',
                             labels: {
-                                color: 'rgba(255, 255, 255, 0.85)',
-                                font: { family: 'Inter', size: 12, weight: '600' },
+                                color: '#9A9AA8',
+                                font: { family: 'Inter', size: 12, weight: '400' },
                                 padding: 18,
                                 usePointStyle: true,
                                 pointStyle: 'circle',
@@ -4760,18 +4623,18 @@
                             }
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(18, 18, 20, 0.92)',
-                            titleColor: 'rgba(255, 255, 255, 0.6)',
-                            bodyColor: 'rgba(255, 255, 255, 0.95)',
+                            backgroundColor: '#23232E',
+                            titleColor: '#9A9AA8',
+                            bodyColor: '#EDEDF3',
                             borderColor: 'rgba(255, 255, 255, 0.08)',
                             borderWidth: 1,
-                            padding: 14,
-                            cornerRadius: 12,
+                            padding: 12,
+                            cornerRadius: 8,
                             displayColors: true,
                             usePointStyle: true,
                             boxPadding: 6,
-                            titleFont: { family: 'Inter', size: 11, weight: '700' },
-                            bodyFont: { family: 'Inter', size: 13, weight: '700' },
+                            titleFont: { family: 'Inter', size: 12, weight: '400' },
+                            bodyFont: { family: 'Inter', size: 13, weight: '500' },
                             callbacks: {
                                 label: function(ctx) {
                                     const v = ctx.parsed.y || 0;
@@ -4785,8 +4648,8 @@
                             grid: { display: false },
                             border: { display: false },
                             ticks: {
-                                color: 'rgba(255, 255, 255, 0.4)',
-                                font: { family: 'Inter', size: 11, weight: '500' },
+                                color: '#9A9AA8',
+                                font: { family: 'Inter', size: 12, weight: '400' },
                                 padding: 8,
                                 maxRotation: 0,
                                 autoSkipPadding: 16
@@ -4795,13 +4658,13 @@
                         y: {
                             beginAtZero: true,
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.04)',
+                                color: 'rgba(255, 255, 255, 0.05)',
                                 drawBorder: false
                             },
                             border: { display: false },
                             ticks: {
-                                color: 'rgba(255, 255, 255, 0.4)',
-                                font: { family: 'Inter', size: 11, weight: '500' },
+                                color: '#9A9AA8',
+                                font: { family: 'Inter', size: 12, weight: '400' },
                                 padding: 10,
                                 maxTicksLimit: 6,
                                 callback: function(value) {
