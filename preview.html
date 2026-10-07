@@ -24,8 +24,13 @@
     // Col pannello del browser nascosto le animazioni restano a metà: di base sono spente (?anim=1 le riaccende).
     const still = new URLSearchParams(location.search).get('anim') === '1' ? ''
         : '<style>*,*::before,*::after{animation:none!important;transition:none!important}.anim-enter{opacity:1!important}</style>';
+    // Il server locale non manda intestazioni di cache: senza questo il browser tiene
+    // la copia vecchia di notes-logic.js e degli altri script dopo una modifica.
+    const local = new RegExp('<scr' + 'ipt src="(?!https?:)([^"?]+\\.js)">', 'g');
+    const fresh = html.replace(tag, still + open + mock + close + tag)
+        .replace(local, '<scr' + 'ipt src="$1?t=' + Date.now() + '">');
     document.open();
-    document.write(html.replace(tag, still + open + mock + close + tag));
+    document.write(fresh);
     document.close();
 })();
 </script>
