@@ -1992,7 +1992,9 @@
 
         // Formatta numeri in stile italiano (28.628,04)
         function formatCurrency(amount, symbol = '\u20AC') {
-            return symbol + parseFloat(amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const n = parseFloat(amount);
+            const abs = Math.abs(n).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' });
+            return (n < 0 ? '-' : '') + symbol + abs;
         }
 
         function formatCurrencyShort(amount, symbol = '\u20AC') {
