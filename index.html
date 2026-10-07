@@ -683,15 +683,13 @@
         }
 
         /* ===== REPORT GRID ===== */
-        .report-grid {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
-            gap: 20px;
-        }
+        .report-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+        #monthlyReportTable th, #customerReportTable th { white-space: nowrap; }
+        #customerReportTable th, #customerReportTable td { padding-left: 8px; padding-right: 8px; }
+        #customerReportTable th:first-child, #customerReportTable td:first-child { padding-left: 0; }
+        #customerReportTable th:last-child, #customerReportTable td:last-child { padding-right: 0; }
 
-        .report-grid .card {
-            margin-bottom: 0;
-        }
+        .report-grid .card { margin-bottom: 0; }
 
         .report-year-select {
             height: 36px; padding: 0 32px 0 12px; border: 1px solid var(--border-strong); border-radius: 8px;
@@ -833,6 +831,16 @@
 
         #noteAlertList > div:last-child { border-bottom: 0 !important; }
 
+        #monthlyReportTable td:nth-child(3), #customerReportTable td:nth-child(3) { color: var(--money-in); }
+
+        #monthlyReportTable td.neg { color: var(--danger); }
+
+        tr.report-total td { border-top: 1px solid var(--border-strong); }
+
+        tr.report-total td strong, #monthlyReportTable td strong { font-weight: 400; }
+
+        tr.report-total td:first-child strong, tr.report-total td.num strong { font-weight: 500; }
+
         /* Tablet */
         @media (max-width: 1024px) {
             .content {
@@ -846,6 +854,7 @@
 
             .report-grid {
                 grid-template-columns: 1fr;
+                gap: 8px;
             }
 
             .mini-stats-bar {
@@ -948,11 +957,6 @@
             }
 
             /* Report mobile */
-            .report-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
             /* Chart mobile */
             .chart-container {
                 height: 240px;
@@ -1047,6 +1051,25 @@
             #expenseNotesTable td:nth-child(1)::before, #remindersTable td:nth-child(2)::before, #notesTable td:nth-child(2)::before { content: none; }
             #recurringTable td:nth-child(3)::before { content: '\00B7  ogni '; margin-right: 0; }
             #recurringTable td:nth-child(4)::before { content: '\00B7  dal '; margin-right: 0; }
+
+            .report-grid { grid-template-columns: 1fr; gap: 8px; }
+            /* Riepilogo mensile: resta una tabella, senza il conteggio delle fatture */
+            #monthlyReportTable th:nth-child(2), #monthlyReportTable td:nth-child(2) { display: none; }
+            #monthlyReportTable th, #monthlyReportTable td { padding: 12px 6px; font-size: 13px; height: auto; }
+            #monthlyReportTable th { font-size: 12px; }
+            #monthlyReportTable th:first-child, #monthlyReportTable td:first-child { padding-left: 0; }
+            #monthlyReportTable th:last-child, #monthlyReportTable td:last-child { padding-right: 0; }
+            /* Top clienti: nome e fatturato, numero di fatture e media sotto */
+            #customerReportTable, #customerReportTable thead, #customerReportTable tbody { display: block; }
+            #customerReportTable thead { display: none; }
+            #customerReportTable tbody tr { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; padding: 15px 0; border-top: 1px solid var(--border-color); }
+            #customerReportTable tbody tr::before { content: ''; order: 3; flex: 0 0 100%; height: 0; }
+            #customerReportTable td { display: block; order: 5; height: auto; padding: 0; border: 0; font-size: 12px; color: var(--text-secondary); }
+            #customerReportTable td:nth-child(1) { order: 1; flex: 1 1 0; min-width: 0; font-size: 14px; color: var(--text-primary); overflow-wrap: anywhere; }
+            #customerReportTable td:nth-child(3) { order: 2; flex: 0 0 auto; font-size: 14px; color: var(--money-in); }
+            #customerReportTable td:nth-child(2)::after { content: ' fatture'; }
+            #customerReportTable td:nth-child(4)::before { content: '\00B7  media '; }
+            #customerReportTable td.empty-state { order: 0; flex: 1 1 100%; padding: 40px 0; }
         }
 
         /* Small mobile */
@@ -1560,7 +1583,7 @@
 
                     <div class="report-grid">
                         <div class="card report-card-main">
-                            <h2>Riepilogo Mensile</h2>
+                            <h2>Riepilogo mensile</h2>
                             <div class="table-container">
                                 <table id="monthlyReportTable">
                                     <thead>
@@ -1578,15 +1601,15 @@
                         </div>
 
                         <div class="card report-card-side">
-                            <h2>Top Clienti</h2>
+                            <h2>Top clienti</h2>
                             <div class="table-container">
                                 <table id="customerReportTable">
                                     <thead>
                                         <tr>
                                             <th>Cliente</th>
-                                            <th>N. Fatture</th>
-                                            <th>Fatturato</th>
-                                            <th>Media/Fatt.</th>
+                                            <th>N. fatture</th>
+                                            <th class="num">Fatturato</th>
+                                            <th class="num">Media per fattura</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -4769,21 +4792,18 @@
                     <td>${monthInvoices.length}</td>
                     <td class="num"><strong>${formatCurrency(monthRevenue)}</strong></td>
                     <td class="num"><strong>${formatCurrency(monthExpenseTotal)}</strong></td>
-                    <td class="num"><strong>${formatCurrency(monthNet)}</strong></td>
+                    <td class="num${monthNet < 0 ? ' neg' : ''}"><strong>${formatCurrency(monthNet)}</strong></td>
                 `;
             }
 
             const totalRow = tbody.insertRow();
-            totalRow.style.background = 'rgba(255, 255, 255, 0.05)';
-            totalRow.style.borderTop = '2px solid var(--primary-green)';
-            totalRow.style.color = 'var(--text-primary)';
-            totalRow.style.fontWeight = 'bold';
+            totalRow.className = 'report-total';
             totalRow.innerHTML = `
-                <td><strong>TOTALE ${year}</strong></td>
+                <td><strong>Totale ${year}</strong></td>
                 <td>${yearInvoices}</td>
                 <td class="num"><strong>${formatCurrency(yearTotal)}</strong></td>
                 <td class="num"><strong>${formatCurrency(yearExpenses)}</strong></td>
-                <td class="num"><strong>${formatCurrency(yearTotal - yearExpenses)}</strong></td>
+                <td class="num${(yearTotal - yearExpenses) < 0 ? ' neg' : ''}"><strong>${formatCurrency(yearTotal - yearExpenses)}</strong></td>
             `;
         }
 
@@ -4817,8 +4837,8 @@
                 row.innerHTML = `
                     <td><strong>${customer ? escapeHtml(customer.name) : 'Cliente eliminato'}</strong></td>
                     <td>${data.count}</td>
-                    <td><strong>${formatCurrency(data.total)}</strong></td>
-                    <td>${formatCurrency(average)}</td>
+                    <td class="num"><strong>${formatCurrency(data.total)}</strong></td>
+                    <td class="num">${formatCurrency(average)}</td>
                 `;
             });
         }
