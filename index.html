@@ -48,10 +48,7 @@
             --danger-rgb: 245, 138, 155;
             --warning: #E2A33C;
             --warning-rgb: 226, 163, 60;
-            --chart-2: #5F69B8;
             --overlay: rgba(8, 8, 12, 0.62);
-            --radius: 12px;
-            --radius-sm: 8px;
             --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
@@ -88,7 +85,7 @@
 
         /* Cifre tabulari: importi e numeri sempre allineati (premium per app finanziaria) */
         .value, .stat-card .value, td, th, .badge,
-        input[type="number"], .mini-stat-value, #invoiceTotal, .toolbar-stat {
+        input[type="number"], .mini-stat-value, #invoiceTotal {
             font-variant-numeric: tabular-nums;
             font-feature-settings: "tnum" 1, "cv01" 1;
         }
@@ -121,15 +118,8 @@
         .toast--info .toast__icon { background: rgba(var(--warning-rgb), 0.15); color: var(--warning); }
         .toast__icon svg, .toast__icon i { width: 13px; height: 13px; }
 
-        /* ===== ENTRANCE ANIMATIONS ===== */
-        @keyframes enterUp {
-            from { opacity: 0; transform: translateY(14px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        .anim-enter {
-            opacity: 0;
-            animation: enterUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        /* Lo script mette .anim-enter sui blocchi della Dashboard: non fa più niente. */
+        .anim-enter { opacity: 1; animation: none; }
 
         /* ===== SKELETON ===== */
         @keyframes skeletonPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
@@ -200,8 +190,6 @@
         .dropzone__icon svg, .dropzone__icon i { width: 28px; height: 28px; }
         .dropzone.dragover .dropzone__icon { color: var(--primary-green); }
 
-
-
         /* ===== NAV SLIDING INDICATOR ===== */
         .nav-indicator {
             position: absolute; left: 12px; right: 12px; height: 0; top: 0;
@@ -209,13 +197,6 @@
             transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
             pointer-events: none; z-index: 0; opacity: 0;
         }
-
-        /* ===== SECTION TRANSITION ===== */
-        @keyframes sectionIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        .section.active { animation: sectionIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 
         .main-header.scrolled { background: var(--bg-primary); box-shadow: none; }
 
@@ -346,7 +327,7 @@
             border-bottom: 1px solid var(--border-color); align-items: center; gap: 14px;
         }
 
-        .hamburger { background: none; border: none; color: var(--text-primary); font-size: 20px; line-height: 1; cursor: pointer; padding: 4px 6px 4px 0; }
+        .hamburger { background: none; border: none; color: var(--text-primary); font-family: inherit; font-size: 20px; line-height: 1; cursor: pointer; padding: 4px 6px 4px 0; }
 
         .mobile-logo { font-family: var(--font-display); font-size: 16px; font-weight: 500; color: var(--text-primary); }
 
@@ -365,36 +346,6 @@
             display: block;
         }
 
-        /* ===== SECTION HEADER PATTERN ===== */
-        .section-header {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            font-family: var(--font-display);
-            font-size: 28px;
-            font-weight: 500;
-            letter-spacing: -1px;
-            color: var(--text-primary);
-        }
-
-        .section-subtitle {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-top: 6px;
-            font-weight: 400;
-        }
-
-        .section-actions {
-            display: flex;
-            flex-direction: row;
-            gap: 8px;
-        }
-
         /* ===== SECTIONS ===== */
         .section {
             display: none;
@@ -402,18 +353,12 @@
 
         .section.active {
             display: block;
-            animation: fadeInUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: sectionIn 0.2s ease;
         }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes sectionIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -534,14 +479,6 @@
         }
 
         .invoice-item { display: grid; grid-template-columns: 3fr 1fr 44px; gap: 10px; margin-bottom: 0; align-items: end; }
-
-        .expense-item {
-            display: grid;
-            grid-template-columns: 2fr 2fr 1fr 50px;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: end;
-        }
 
         .empty-state { text-align: center; padding: 48px 20px; color: var(--text-secondary); font-size: 14px; }
 
@@ -718,10 +655,6 @@
         .alert-warning { background: none; border-color: var(--border-color); color: var(--text-primary); }
 
         .alert-warning::before { background: var(--warning); }
-
-        .alert-info { background: none; border-color: var(--border-color); color: var(--text-primary); }
-
-        .alert-info::before { background: var(--text-secondary); }
 
         /* ===== REMINDER BADGE ===== */
         .reminder-badge {
@@ -947,7 +880,6 @@
             }
 
             /* Forms mobile */
-            .expense-item,
             .form-row {
                 grid-template-columns: 1fr;
             }
@@ -1160,7 +1092,7 @@
             <!-- Logo -->
             <div class="sidebar-logo">
                 <div class="logo-icon">N</div>
-                <a class="logo-text" href="https://numbers-frontend-two.vercel.app" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;display:inline-flex;align-items:center;gap:5px;">Numbers<span style="font-size:0.66em;opacity:0.5;">&#8599;</span></a>
+                <a class="logo-text" href="https://numbers-frontend-two.vercel.app" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;display:inline-flex;align-items:center;gap:5px;">Numbers<span style="font-size:12px;color:var(--text-secondary);">&#8599;</span></a>
             </div>
 
             <!-- Navigation -->
@@ -4686,8 +4618,8 @@
                     datasets: [{
                         label: 'Fatturato (\u20AC)',
                         data: data,
-                        backgroundColor: 'rgba(0, 210, 106, 0.8)',
-                        borderColor: 'rgb(0, 210, 106)',
+                        backgroundColor: 'rgba(141, 155, 255, 0.8)',
+                        borderColor: '#8D9BFF',
                         borderWidth: 2
                     }]
                 },
