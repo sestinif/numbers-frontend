@@ -105,3 +105,21 @@ test('il campo done arriva anche come stringa dal database', () => {
     assert.strictEqual(L.selectNotesForAlert([nota({ done: 'f' })], OGGI).length, 1);
     assert.strictEqual(L.selectNotesForAlert([nota({ done: 't' })], OGGI).length, 0);
 });
+
+test('selectUpcomingReminders tiene la scadenza di oggi', () => {
+    const scadenze = [
+        { id: 1, due_date: '2026-09-23', completed: false },
+        { id: 2, due_date: '2026-09-22', completed: false },
+        { id: 3, due_date: '2026-10-23', completed: false },
+        { id: 4, due_date: '2026-10-24', completed: false },
+        { id: 5, due_date: '2026-09-25', completed: true },
+        { id: 6, date: '2026-09-30', completed: false }
+    ];
+    const ids = L.selectUpcomingReminders(scadenze, '2026-09-23', '2026-10-23').map(r => r.id);
+    assert.deepStrictEqual(ids, [1, 3, 6]);
+});
+
+test('selectUpcomingReminders regge input sporchi', () => {
+    assert.deepStrictEqual(L.selectUpcomingReminders(null, '2026-09-23', '2026-10-23'), []);
+    assert.deepStrictEqual(L.selectUpcomingReminders([{ id: 1, due_date: null, completed: false }], '2026-09-23', '2026-10-23'), []);
+});

@@ -85,8 +85,22 @@
         return 'fra ' + (-d) + ' giorni';
     }
 
+    // Scadenze non completate che cadono tra oggi e il limite, estremi compresi.
+    // Confronto fra stringhe: una data letta con new Date() vale mezzanotte UTC,
+    // e a mezzogiorno una scadenza di oggi risulterebbe già passata.
+    function selectUpcomingReminders(reminders, todayIso, limitIso) {
+        if (!Array.isArray(reminders)) return [];
+        const from = toISODate(todayIso), to = toISODate(limitIso);
+        return reminders.filter(r => {
+            if (isTrue(r.completed)) return false;
+            const due = toISODate(r.due_date || r.date);
+            return due !== '' && due >= from && due <= to;
+        });
+    }
+
     return {
         toISODate, todayISO, daysBetween, tomorrowISO,
-        selectNotesForAlert, countBadgeNotes, formatDueLabel
+        selectNotesForAlert, countBadgeNotes, formatDueLabel,
+        selectUpcomingReminders
     };
 });

@@ -4358,7 +4358,7 @@
             // Mini-stats scadenze
             const pending = reminders.filter(r => !r.completed).length;
             const done = reminders.filter(r => r.completed).length;
-            const nextReminder = sortedReminders.find(r => !r.completed && new Date(r.due_date || r.date) >= new Date());
+            const nextReminder = sortedReminders.find(r => !r.completed && NotesLogic.toISODate(r.due_date || r.date) >= NotesLogic.todayISO());
             document.getElementById('miniReminderPending').textContent = pending;
             document.getElementById('miniReminderDone').textContent = done;
             document.getElementById('miniReminderNext').textContent = nextReminder
@@ -4405,18 +4405,15 @@
             const oneMonthLater = new Date(today);
             oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
 
-            const upcomingReminders = reminders.filter(r => {
-                if (r.completed) return false;
-                const reminderDate = new Date(r.due_date || r.date);
-                return reminderDate >= today && reminderDate <= oneMonthLater;
-            });
+            const upcomingReminders = NotesLogic.selectUpcomingReminders(
+                reminders, NotesLogic.todayISO(today), NotesLogic.toISODate(oneMonthLater));
 
             const alertsContainer = document.getElementById('reminderAlerts');
             alertsContainer.innerHTML = '';
 
             if (upcomingReminders.length > 0) {
                 upcomingReminders.forEach(reminder => {
-                    const daysUntil = Math.ceil((new Date(reminder.due_date || reminder.date) - today) / (1000 * 60 * 60 * 24));
+                    const daysUntil = NotesLogic.daysBetween(NotesLogic.todayISO(today), reminder.due_date || reminder.date);
                     const alert = document.createElement('div');
                     alert.className = 'alert alert-warning';
                     alert.innerHTML = `
