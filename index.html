@@ -2275,10 +2275,12 @@
             const status = tools.status || 'all';
             [...table.tBodies[0].rows].forEach(r => {
                 if (r.querySelector('.empty-state')) return;
-                const text = r.innerText.toLowerCase();
+                // Il testo della riga senza la cella delle azioni. innerText non va bene: di una riga
+                // già nascosta restituisce tutto, comprese le etichette dei bottoni.
+                const text = [...r.cells].filter(c => !c.classList.contains('action-btns')).map(c => c.textContent).join(' ').toLowerCase();
                 let ok = !q || text.includes(q);
                 if (ok && status !== 'all') {
-                    const isPending = /in sospeso/i.test(r.innerText);
+                    const isPending = /in sospeso/i.test(text);
                     ok = status === 'pending' ? isPending : !isPending;
                 }
                 r.style.display = ok ? '' : 'none';
