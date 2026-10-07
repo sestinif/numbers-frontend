@@ -256,21 +256,12 @@
         .stat-trend svg, .stat-trend i { width: 13px; height: 13px; }
 
         /* ===== NAV SLIDING INDICATOR ===== */
-        .sidebar-nav { position: relative; }
         .nav-indicator {
-            position: absolute;
-            left: 8px; right: 8px;
-            height: 0; top: 0;
-            border-radius: 10px;
-            background: rgba(var(--green-rgb), 0.10);
-            box-shadow: inset 3px 0 0 var(--primary-green);
-            transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), height 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
-            pointer-events: none;
-            z-index: 0;
-            opacity: 0;
+            position: absolute; left: 12px; right: 12px; height: 0; top: 0;
+            border-radius: 8px; background: var(--bg-elev);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+            pointer-events: none; z-index: 0; opacity: 0;
         }
-        .sidebar-nav-item { position: relative; z-index: 1; background: transparent !important; }
-        .sidebar-nav-item.active { box-shadow: none !important; background: transparent !important; }
 
         /* ===== SECTION TRANSITION ===== */
         @keyframes sectionIn {
@@ -279,15 +270,7 @@
         }
         .section.active { animation: sectionIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 
-        /* ===== FROSTED TOPBAR ON SCROLL ===== */
-        .main-header {
-            transition: box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
-        }
-        .main-header.scrolled {
-            background: var(--bg-primary);
-            box-shadow: none;
-            border-bottom-color: rgba(255,255,255,0.10);
-        }
+        .main-header.scrolled { background: var(--bg-primary); box-shadow: none; }
 
         /* ===== TABLE TOOLS (ricerca + chip) ===== */
         .table-tools {
@@ -352,112 +335,41 @@
 
         /* ===== SIDEBAR ===== */
         .sidebar {
-            width: 260px;
-            position: fixed;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            background: var(--bg-primary);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            z-index: 200;
+            width: 260px; position: fixed; left: 0; top: 0; bottom: 0;
+            background: var(--bg-primary); border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column; z-index: 200;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .sidebar-logo {
-            padding: 28px 24px;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 14px;
-            border-bottom: 1px solid var(--border-color);
-        }
+        .sidebar-logo { padding: 24px 20px 20px; display: flex; flex-direction: row; align-items: center; gap: 12px; }
 
         .logo-icon {
-            width: 38px;
-            height: 38px;
-            background: var(--bg-card);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 500;
-            color: var(--primary-green);
-            font-family: var(--font-display);
-            position: relative;
-            overflow: hidden;
-            flex-shrink: 0;
+            width: 30px; height: 30px; flex-shrink: 0;
+            background: var(--bg-card); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; font-weight: 500; font-family: var(--font-display); color: var(--money-in);
         }
 
-        .logo-text {
-            font-family: var(--font-display);
-            font-size: 22px;
-            font-weight: 500;
-            color: var(--text-primary);
-            letter-spacing: -1px;
-        }
+        .logo-text { font-family: var(--font-display); font-size: 15px; font-weight: 500; color: var(--text-primary); }
 
-        .sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            padding: 16px 12px;
-            flex: 1;
-            gap: 2px;
-        }
+        .sidebar-nav { position: relative; display: flex; flex-direction: column; padding: 4px 12px 16px; flex: 1; gap: 2px; overflow-y: auto; }
 
-        .nav-group-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-tertiary);
-            padding: 14px 16px 6px;
-            user-select: none;
-            pointer-events: none;
-        }
+        .nav-group-label { font-size: 12px; font-weight: 400; color: var(--text-secondary); padding: 16px 12px 6px; user-select: none; pointer-events: none; }
         .nav-group-label:first-child { padding-top: 4px; }
 
         .sidebar-nav-item {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 12px;
-            padding: 11px 16px;
-            border-radius: 10px;
-            color: var(--text-secondary);
-            border: none;
-            background: none;
-            width: 100%;
-            text-align: left;
-            font-size: 14px;
-            font-weight: 500;
-            font-family: var(--font-body);
-            cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
+            display: flex; flex-direction: row; align-items: center; gap: 12px;
+            padding: 9px 12px; border-radius: 8px; color: var(--text-secondary);
+            border: none; background: none; width: 100%; text-align: left;
+            font-size: 14px; font-weight: 400; font-family: var(--font-body);
+            cursor: pointer; transition: color 0.15s ease; position: relative; z-index: 1;
         }
 
-        .sidebar-nav-item:hover {
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text-primary);
-            transform: translateX(2px);
-        }
+        .sidebar-nav-item:hover { color: var(--text-primary); }
 
-        .sidebar-nav-item.active {
-            background: rgba(var(--green-rgb), 0.06);
-            color: var(--primary-green);
-            box-shadow: inset 3px 0 0 var(--primary-green);
-            font-weight: 500;
-        }
+        .sidebar-nav-item.active { color: var(--text-primary); font-weight: 500; }
 
-        .sidebar-nav-item svg {
-            width: 20px;
-            height: 20px;
-            stroke: currentColor;
-            flex-shrink: 0;
-            transition: filter 0.25s ease;
-        }
+        .sidebar-nav-item svg { width: 18px; height: 18px; stroke: currentColor; flex-shrink: 0; }
 
         .sidebar-company {
             padding: 16px;
@@ -474,109 +386,46 @@
         }
 
         .sidebar-footer-btn {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            color: var(--text-secondary);
-            border: none;
-            background: none;
-            width: 100%;
-            text-align: left;
-            font-size: 13px;
-            font-weight: 500;
-            font-family: var(--font-body);
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: row; align-items: center; gap: 12px;
+            padding: 8px 12px; border-radius: 8px; color: var(--text-secondary);
+            border: none; background: none; width: 100%; text-align: left;
+            font-size: 13px; font-weight: 400; font-family: var(--font-body);
+            cursor: pointer; transition: color 0.15s ease;
         }
 
-        .sidebar-footer-btn:hover {
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text-primary);
-        }
+        .sidebar-footer-btn:hover { background: none; color: var(--text-primary); }
 
-        .sidebar-footer-btn svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            flex-shrink: 0;
-        }
+        .sidebar-footer-btn svg { width: 16px; height: 16px; stroke: currentColor; flex-shrink: 0; }
 
         /* ===== MAIN CONTENT ===== */
-        .main-content {
-            margin-left: 260px;
-            flex: 1;
-            min-height: 100vh;
-            background: var(--bg-primary);
-        }
+        .main-content { margin-left: 260px; flex: 1; min-width: 0; min-height: 100vh; background: var(--bg-primary); }
 
         .main-header {
-            padding: 24px 40px;
-            border-bottom: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            background: var(--bg-primary);
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
+            padding: 22px 40px; border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 50; background: var(--bg-primary);
+            display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 16px;
         }
 
-        .main-header h1 {
-            font-family: var(--font-display);
-            font-size: 24px;
-            font-weight: 500;
-            letter-spacing: -1px;
-        }
+        .main-header h1 { font-family: var(--font-display); font-size: 26px; font-weight: 400; letter-spacing: -0.02em; line-height: 1.2; }
 
         .header-company-name {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            padding: 6px 14px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
+            font-size: 12px; font-weight: 400; color: var(--text-secondary);
+            padding: 0; background: none; border: 0; border-radius: 0;
+            min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
-        .content {
-            padding: 32px 40px;
-            min-height: 500px;
-            width: 100%;
-        }
+        .content { padding: 28px 40px 48px; min-height: 500px; width: 100%; }
 
         /* ===== MOBILE HEADER & OVERLAY ===== */
         .mobile-header {
-            display: none;
-            position: sticky;
-            top: 0;
-            z-index: 150;
-            background: var(--bg-primary);
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-color);
-            align-items: center;
-            gap: 12px;
+            display: none; position: sticky; top: 0; z-index: 150;
+            background: var(--bg-primary); padding: 14px 20px;
+            border-bottom: 1px solid var(--border-color); align-items: center; gap: 14px;
         }
 
-        .hamburger {
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            font-size: 24px;
-            cursor: pointer;
-            padding: 4px 8px;
-        }
+        .hamburger { background: none; border: none; color: var(--text-primary); font-size: 20px; line-height: 1; cursor: pointer; padding: 4px 6px 4px 0; }
 
-        .mobile-logo {
-            font-family: var(--font-display);
-            font-size: 20px;
-            font-weight: 500;
-            color: var(--text-primary);
-            letter-spacing: -0.5px;
-        }
+        .mobile-logo { font-family: var(--font-display); font-size: 16px; font-weight: 500; color: var(--text-primary); }
 
         .sidebar-overlay {
             display: none;
@@ -965,27 +814,14 @@
 
         /* ===== COMPANY SELECTOR & DROPDOWN ===== */
         .company-selector {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border-color);
-            padding: 10px 16px;
-            border-radius: 10px;
-            color: var(--text-primary);
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            font-family: var(--font-body);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 100%;
+            background: transparent; border: 1px solid var(--border-strong);
+            padding: 9px 12px; border-radius: 8px; color: var(--text-primary);
+            cursor: pointer; font-size: 13px; font-weight: 400; font-family: var(--font-body);
+            display: flex; align-items: center; gap: 8px; width: 100%;
+            transition: border-color 0.15s ease;
         }
 
-        .company-selector:hover {
-            background: rgba(255,255,255,0.06);
-            border-color: var(--border-glow);
-            box-shadow: var(--green-glow);
-        }
+        .company-selector:hover { border-color: rgba(255, 255, 255, 0.24); }
 
         .company-selector span:first-child {
             flex: 1;
@@ -995,20 +831,9 @@
         }
 
         .company-dropdown {
-            display: none;
-            position: absolute;
-            bottom: 100%;
-            left: 0;
-            right: 0;
-            margin-bottom: 8px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
-            z-index: 1000;
-            overflow: hidden;
-            max-height: 300px;
-            overflow-y: auto;
+            display: none; position: absolute; bottom: 100%; left: 16px; right: 16px; margin-bottom: 8px;
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;
+            box-shadow: var(--elev-4); z-index: 1000; overflow: hidden; max-height: 300px; overflow-y: auto;
         }
 
         .company-dropdown.active {
@@ -1027,42 +852,17 @@
             }
         }
 
-        .company-option {
-            padding: 14px 20px;
-            cursor: pointer;
-            color: var(--text-primary);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            position: relative;
-        }
+        .company-option { padding: 12px 16px; cursor: pointer; font-size: 13px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); }
 
-        .company-option:last-child {
-            border-bottom: none;
-        }
+        .company-option:last-child { border-bottom: none; }
 
-        .company-option:hover {
-            background: var(--bg-hover);
-            border-left: 3px solid rgba(var(--green-rgb), 0.5);
-            padding-left: 21px;
-            cursor: pointer;
-        }
+        .company-option:hover { background: var(--bg-hover); }
 
-        .company-option.active {
-            background: var(--bg-elev);
-            color: var(--primary-green);
-            font-weight: 500;
-            border-left: 3px solid var(--primary-green);
-        }
+        .company-option.active { background: var(--bg-elev); color: var(--text-primary); font-weight: 500; }
 
-        .company-option.active:hover {
-            background: var(--bg-elev);
-            border-left: 3px solid var(--primary-green);
-        }
+        .company-option.active:hover { background: var(--bg-elev); }
 
-        .company-option.new {
-            color: var(--primary-green);
-            font-weight: 500;
-        }
+        .company-option.new { color: var(--primary-green); font-weight: 500; }
 
         /* ===== MODALS ===== */
         .modal {
@@ -1343,19 +1143,10 @@
 
         /* ===== REMINDER BADGE ===== */
         .reminder-badge {
-            background: var(--danger);
-            color: #FFFFFF;
-            min-width: 20px;
-            height: 20px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 500;
-            font-family: var(--font-display);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 6px;
-            margin-left: auto;
+            background: var(--danger); color: var(--bg-primary);
+            min-width: 20px; height: 20px; border-radius: 10px; padding: 0 6px;
+            font-size: 12px; font-weight: 500; font-family: var(--font-display);
+            display: flex; align-items: center; justify-content: center; margin-left: auto;
         }
 
         /* ===== FORM ROW ===== */
@@ -1366,10 +1157,12 @@
         }
 
         /* ===== MOBILE RESPONSIVE ===== */
+        .company-selector span:last-child { font-size: 12px; color: var(--text-secondary); }
+
         /* Tablet */
         @media (max-width: 1024px) {
             .content {
-                padding: 24px 20px;
+                padding: 24px 28px 40px;
             }
 
             .stats-grid {
@@ -1390,7 +1183,7 @@
 
             .sidebar.sidebar-open {
                 transform: translateX(0);
-                box-shadow: 4px 0 40px rgba(0, 0, 0, 0.5);
+                box-shadow: var(--elev-4);
             }
 
             .mobile-header {
@@ -1402,20 +1195,16 @@
             }
 
             .main-header {
-                padding: 14px 16px;
+                padding: 16px 20px;
+                position: static;
             }
 
             .main-header h1 {
-                font-size: 18px;
-            }
-
-            .header-company-name {
-                font-size: 12px;
-                padding: 4px 10px;
+                font-size: 22px;
             }
 
             .content {
-                padding: 12px;
+                padding: 8px 20px 40px;
             }
 
             /* Toolbar mobile */
@@ -1602,10 +1391,6 @@
 
             .stat-card .value {
                 font-size: 20px;
-            }
-
-            .main-header h1 {
-                font-size: 16px;
             }
         }
     </style>
@@ -3022,7 +2807,7 @@
             // Aggiungi "Nuova Azienda"
             const newOption = document.createElement('div');
             newOption.className = 'company-option new';
-            newOption.textContent = '+ NUOVA AZIENDA';
+            newOption.textContent = '+ Nuova azienda';
             newOption.onclick = () => {
                 toggleCompanyDropdown();
                 openCompanyModal();
