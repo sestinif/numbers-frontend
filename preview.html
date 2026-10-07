@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numbers — anteprima locale</title>
+</head>
+<body>
+<script>
+// Anteprima locale: carica l'index.html vero, gli mette davanti i dati finti e lo apre.
+// Non va online (.vercelignore) e fuori da localhost non parte.
+(async () => {
+    if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+        document.body.textContent = 'Anteprima disponibile solo in locale.';
+        return;
+    }
+    const [html, mock] = await Promise.all([
+        fetch('index.html', { cache: 'no-store' }).then(r => r.text()),
+        fetch('preview-mock.js', { cache: 'no-store' }).then(r => r.text())
+    ]);
+    const open = '<scr' + 'ipt>', close = '</scr' + 'ipt>';
+    const tag = '<scr' + 'ipt src="config.js">' + close;
+    if (!html.includes(tag)) { document.body.textContent = 'index.html: non trovo config.js'; return; }
+    // Col pannello del browser nascosto le animazioni restano a metà: di base sono spente (?anim=1 le riaccende).
+    const still = new URLSearchParams(location.search).get('anim') === '1' ? ''
+        : '<style>*,*::before,*::after{animation:none!important;transition:none!important}.anim-enter{opacity:1!important}</style>';
+    document.open();
+    document.write(html.replace(tag, still + open + mock + close + tag));
+    document.close();
+})();
+</script>
+</body>
+</html>
