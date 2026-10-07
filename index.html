@@ -464,7 +464,7 @@
         /* ===== BUTTONS ===== */
         .btn {
             padding: 8px 14px; border: 1px solid transparent; border-radius: 8px;
-            font-size: 13px; font-weight: 500; font-family: var(--font-body);
+            font-size: 13px; font-weight: 500; font-family: var(--font-body); white-space: nowrap;
             cursor: pointer; margin-right: 8px; margin-bottom: 8px;
             transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
         }
@@ -533,13 +533,7 @@
             margin-top: 20px;
         }
 
-        .invoice-item {
-            display: grid;
-            grid-template-columns: 3fr 1fr 50px;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: end;
-        }
+        .invoice-item { display: grid; grid-template-columns: 3fr 1fr 44px; gap: 10px; margin-bottom: 0; align-items: end; }
 
         .expense-item {
             display: grid;
@@ -609,15 +603,8 @@
 
         /* ===== MODALS ===== */
         .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--overlay);
-            animation: fadeIn 0.3s;
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background: var(--overlay); animation: fadeIn 0.2s;
         }
 
         .modal.active {
@@ -627,29 +614,15 @@
         }
 
         .modal-content {
-            background: var(--bg-card);
-            padding: 36px;
-            border-radius: 20px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: var(--elev-4), inset 0 1px 0 rgba(255,255,255,0.05);
-            position: relative;
+            position: relative; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+            padding: 28px; background: var(--bg-card);
+            border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--elev-4);
+            animation: slideUp 0.25s ease;
         }
 
         @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .modal-content h2 {
-            margin-bottom: 24px;
-            font-family: var(--font-display);
-            font-size: 20px;
-            font-weight: 500;
-            letter-spacing: -0.5px;
-            text-transform: none;
-        }
+        .modal-content h2 { margin-bottom: 24px; font-family: var(--font-display); font-size: 18px; font-weight: 500; text-transform: none; }
 
         /* ===== SECTION TOOLBAR (stats + actions) ===== */
         .section-toolbar {
@@ -838,6 +811,28 @@
 
         tbody tr:has(td.action-btns) { cursor: pointer; }
 
+        .modal-content h3 { font-size: 14px; font-weight: 500; }
+
+        .modal-content form > .btn { margin-top: 6px; }
+
+        .invoice-item .btn { height: 44px; width: 44px; padding: 0; margin: 0 0 18px; }
+
+        .invoice-total {
+            display: flex; justify-content: space-between; align-items: baseline;
+            margin: 18px 0 22px; padding: 16px 0;
+            border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
+        }
+
+        .invoice-total > span { font-size: 12px; color: var(--text-secondary); }
+
+        .invoice-total strong { font-size: 20px; font-weight: 400; letter-spacing: -0.02em; }
+
+        #noteAlertModal .modal-content > .btn { margin-top: 18px; }
+
+        #noteAlertList .action-btns .btn { margin: 0; }
+
+        #noteAlertList > div:last-child { border-bottom: 0 !important; }
+
         /* Tablet */
         @media (max-width: 1024px) {
             .content {
@@ -943,10 +938,13 @@
             }
 
             /* Forms mobile */
-            .invoice-item,
             .expense-item,
             .form-row {
                 grid-template-columns: 1fr;
+            }
+
+            .invoice-item {
+                grid-template-columns: minmax(0, 1fr) 96px 44px;
             }
 
             /* Report mobile */
@@ -973,9 +971,9 @@
             /* Modals mobile */
             .modal-content {
                 padding: 24px 20px;
-                border-radius: 16px;
-                width: 95%;
-                max-height: 95vh;
+                border-radius: 12px;
+                width: 94%;
+                max-height: 92vh;
             }
 
             .modal-content h2 {
@@ -1697,12 +1695,12 @@
         <div class="modal-content" style="max-width: 460px; text-align: center;">
             <div style="display:flex;justify-content:center;margin-bottom:16px;color:var(--primary-green);"><i data-lucide="building-2" style="width:44px;height:44px;"></i></div>
             <h2 style="margin-bottom: 8px;">Benvenuto in Numbers</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 32px; font-size: 14px; line-height: 1.6;">
+            <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 14px; line-height: 1.6;">
                 Per iniziare, crea la tua prima azienda.<br>Potrai aggiungere clienti, fatture e spese.
             </p>
             <form id="noCompanyForm">
                 <div class="form-group" style="text-align: left;">
-                    <label>Nome Azienda *</label>
+                    <label>Nome azienda *</label>
                     <input type="text" id="noCompanyName" required placeholder="Es: Mario Rossi Consulting">
                 </div>
                 <div class="form-group" style="text-align: left;">
@@ -1714,7 +1712,7 @@
                     <input type="email" id="noCompanyEmail" placeholder="info@azienda.it">
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
-                    CREA AZIENDA
+                    Crea azienda
                 </button>
             </form>
         </div>
@@ -1723,11 +1721,11 @@
     <!-- COMPANY MODAL -->
     <div id="companyModal" class="modal">
         <div class="modal-content">
-            <h2 id="companyModalTitle">NUOVA AZIENDA</h2>
+            <h2 id="companyModalTitle">Nuova azienda</h2>
             <form id="companyForm">
                 <input type="hidden" id="companyId">
                 <div class="form-group">
-                    <label>Nome Azienda/LLC *</label>
+                    <label>Nome azienda/LLC *</label>
                     <input type="text" id="companyName" required placeholder="Es: My Company LLC">
                 </div>
                 <div class="form-group">
@@ -1743,7 +1741,7 @@
                     <input type="text" id="companyTaxId" placeholder="Tax ID">
                 </div>
                 <div class="form-group">
-                    <label>Informazioni Pagamento</label>
+                    <label>Informazioni di pagamento</label>
                     <textarea id="companyPayment" rows="3" placeholder="IBAN, PayPal, etc."></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">Salva azienda</button>
@@ -1759,7 +1757,7 @@
             <form id="customerForm">
                 <input type="hidden" id="customerId">
                 <div class="form-group">
-                    <label>Nome Cliente *</label>
+                    <label>Nome cliente *</label>
                     <input type="text" id="customerName" required>
                 </div>
                 <div class="form-group">
@@ -1767,7 +1765,7 @@
                     <textarea id="customerAddress" rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>VAT Number</label>
+                    <label>VAT number</label>
                     <input type="text" id="customerVat" placeholder="IT12345678901">
                 </div>
                 <button type="submit" class="btn btn-primary">Salva</button>
@@ -1784,7 +1782,7 @@
                 <input type="hidden" id="invoiceId">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Numero Fattura *</label>
+                        <label>Numero fattura *</label>
                         <input type="number" id="invoiceNumber" required readonly>
                         <small style="color: var(--text-secondary);">Progressivo automatico (non modificabile)</small>
                     </div>
@@ -1810,20 +1808,21 @@
                     </div>
                 </div>
 
-                <div id="pendingNotesContainer" style="display:none; margin: 16px 0; padding: 14px; background: rgba(0,210,106,0.04); border: 1px solid rgba(0,210,106,0.15); border-radius: 10px;">
+                <div id="pendingNotesContainer" style="display:none; margin: 16px 0; padding: 14px; background: var(--bg-elev); border: 0; border-radius: 8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-                        <div style="font-size: 12px; font-weight: 600; color: var(--primary-green); text-transform: uppercase; letter-spacing: 0.5px;">Rimborsi da fatturare</div>
-                        <button type="button" class="btn btn-primary" style="padding:6px 14px; font-size:11px; margin:0;" onclick="addAllNotesToInvoice()">+ Aggiungi tutte</button>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Rimborsi da fatturare</div>
+                        <button type="button" class="btn btn-primary" style="padding:6px 12px; font-size:12px; margin:0;" onclick="addAllNotesToInvoice()">+ Aggiungi tutte</button>
                     </div>
                     <div id="pendingNotesList"></div>
                 </div>
 
-                <h3 style="margin: 20px 0 16px 0; font-size: 16px;">Voci di Fattura</h3>
+                <h3 style="margin: 22px 0 14px 0;">Voci di fattura</h3>
                 <div id="invoiceItemsContainer" class="invoice-items"></div>
                 <button type="button" class="btn btn-secondary" onclick="addInvoiceItem()">+ Aggiungi voce</button>
 
-                <div class="form-group" style="margin-top: 20px;">
-                    <label><strong>Totale: <span id="currencySymbol">&euro;</span><span id="invoiceTotal">0.00</span></strong></label>
+                <div class="invoice-total">
+                    <span>Totale</span>
+                    <strong><span id="currencySymbol">&euro;</span><span id="invoiceTotal">0.00</span></strong>
                 </div>
 
                 <button type="submit" class="btn btn-primary" id="invoiceSubmitBtn">Crea fattura e genera PDF</button>
@@ -1858,13 +1857,13 @@
                     <label>Categoria *</label>
                     <select id="expenseCategory" required>
                         <option value="">Seleziona categoria...</option>
-                        <option value="Ufficio">Ufficio e Materiali</option>
-                        <option value="Software">Software e Abbonamenti</option>
-                        <option value="Marketing">Marketing e Pubblicita</option>
-                        <option value="Trasporti">Trasporti e Viaggi</option>
-                        <option value="Consulenze">Consulenze Professionali</option>
-                        <option value="Utenze">Utenze e Servizi</option>
-                        <option value="Personale">Personale e Stipendi</option>
+                        <option value="Ufficio">Ufficio e materiali</option>
+                        <option value="Software">Software e abbonamenti</option>
+                        <option value="Marketing">Marketing e pubblicità</option>
+                        <option value="Trasporti">Trasporti e viaggi</option>
+                        <option value="Consulenze">Consulenze professionali</option>
+                        <option value="Utenze">Utenze e servizi</option>
+                        <option value="Personale">Personale e stipendi</option>
                         <option value="Altro">Altro</option>
                     </select>
                 </div>
@@ -1905,13 +1904,13 @@
                     <div class="form-group">
                         <label>Categoria</label>
                         <select id="recurringCategory">
-                            <option value="Software">Software e Abbonamenti</option>
-                            <option value="Ufficio">Ufficio e Materiali</option>
-                            <option value="Marketing">Marketing e Pubblicita</option>
-                            <option value="Trasporti">Trasporti e Viaggi</option>
-                            <option value="Consulenze">Consulenze Professionali</option>
-                            <option value="Utenze">Utenze e Servizi</option>
-                            <option value="Personale">Personale e Stipendi</option>
+                            <option value="Software">Software e abbonamenti</option>
+                            <option value="Ufficio">Ufficio e materiali</option>
+                            <option value="Marketing">Marketing e pubblicità</option>
+                            <option value="Trasporti">Trasporti e viaggi</option>
+                            <option value="Consulenze">Consulenze professionali</option>
+                            <option value="Utenze">Utenze e servizi</option>
+                            <option value="Personale">Personale e stipendi</option>
                             <option value="Altro">Altro</option>
                         </select>
                     </div>
@@ -1946,7 +1945,7 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Data Scadenza *</label>
+                        <label>Data scadenza *</label>
                         <input type="date" id="reminderDate" required>
                     </div>
                     <div class="form-group">
@@ -2005,10 +2004,10 @@
     <!-- SETTINGS MODAL -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
-            <h2>Impostazioni Azienda</h2>
+            <h2>Impostazioni azienda</h2>
             <form id="settingsForm">
                 <div class="form-group">
-                    <label>Nome Azienda *</label>
+                    <label>Nome azienda *</label>
                     <input type="text" id="settingsCompanyName" required>
                 </div>
                 <div class="form-group">
@@ -2026,12 +2025,12 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Informazioni di Pagamento</label>
+                    <label>Informazioni di pagamento</label>
                     <textarea id="settingsCompanyPayment" rows="3" placeholder="IBAN, coordinate bancarie, etc."></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">Salva modifiche</button>
                 <button type="button" class="btn btn-secondary" onclick="closeSettingsModal()">Annulla</button>
-                <button type="button" class="btn btn-danger" onclick="deleteCurrentCompany()" style="float: right;">Elimina Azienda</button>
+                <button type="button" class="btn btn-danger" onclick="deleteCurrentCompany()" style="float: right;">Elimina azienda</button>
             </form>
         </div>
     </div>
@@ -2708,7 +2707,7 @@
                 document.getElementById('companyTaxId').value = company.tax_id || company.vat_number || company.taxId || '';
                 document.getElementById('companyPayment').value = company.payment_info || company.payment || '';
             } else {
-                document.getElementById('companyModalTitle').textContent = 'NUOVA AZIENDA';
+                document.getElementById('companyModalTitle').textContent = 'Nuova azienda';
             }
 
             modal.classList.add('active');
@@ -3066,14 +3065,14 @@
 
             pending.forEach(note => {
                 const div = document.createElement('div');
-                div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);';
+                div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--border-color);';
                 div.innerHTML = `
                     <div>
                         <strong style="font-size:13px;">${escapeHtml(note.description)}</strong>
                         <span style="color:var(--text-secondary); font-size:12px; margin-left:8px;">${formatCurrency(note.amount)}</span>
                         ${note.notes ? '<br><small style="color:var(--text-secondary);">' + escapeHtml(note.notes) + '</small>' : ''}
                     </div>
-                    <button type="button" class="btn btn-primary" style="padding:6px 14px; font-size:11px; margin:0;" onclick="addNoteToInvoice(${note.id}, this.parentElement)">+ Aggiungi</button>
+                    <button type="button" class="btn btn-primary" style="padding:6px 12px; font-size:12px; margin:0;" onclick="addNoteToInvoice(${note.id}, this.parentElement)">+ Aggiungi</button>
                 `;
                 list.appendChild(div);
             });
@@ -4155,12 +4154,12 @@
                 const quando = NotesLogic.formatDueLabel(d, today);
                 // pre-wrap: la mail incollata mantiene gli a capo.
                 const corpo = note.body
-                    ? `<div style="white-space: pre-wrap; margin: 12px 0; padding: 12px; border-radius: 8px; background: rgba(255,255,255,.04); font-size: .92rem; line-height: 1.55;">${escapeHtml(note.body)}</div>`
+                    ? `<div style="white-space: pre-wrap; margin: 12px 0 14px; padding: 14px; border-radius: 8px; background: var(--bg-elev); font-size: 14px; line-height: 1.55;">${escapeHtml(note.body)}</div>`
                     : '';
                 return `
-                    <div style="padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,.08);">
-                        <div style="font-weight: 600; font-size: 1.05rem;">${escapeHtml(note.title)}</div>
-                        <div style="color: var(--warning); font-size: .85rem; margin-top: 4px;">${escapeHtml(quando)} &middot; ${formatNoteDate(d)}</div>
+                    <div style="padding: 18px 0; border-bottom: 1px solid var(--border-color);">
+                        <div style="font-weight: 500; font-size: 15px;">${escapeHtml(note.title)}</div>
+                        <div style="color: var(--warning); font-size: 12px; margin-top: 3px;">${escapeHtml(quando)} &middot; ${formatNoteDate(d)}</div>
                         ${corpo}
                         <div class="action-btns" style="margin-top: 10px;">
                             <button class="btn btn-success" onclick="markNoteDoneFromAlert(${note.id})">Fatto</button>
@@ -4874,7 +4873,7 @@
                     return;
                 }
                 container.innerHTML = receipts.map(r => `
-                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:var(--bg-secondary);border-radius:6px;margin-bottom:6px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg-elev);border-radius:8px;margin-bottom:6px;">
                         <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;margin-right:10px;"><i data-lucide="paperclip" style="width:13px;height:13px;vertical-align:-2px;"></i> ${escapeHtml(r.filename)} <small style="color:var(--text-secondary)">(${formatBytes(r.size_bytes)})</small></span>
                         <div>
                             <button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:12px;" onclick="viewReceipt(${r.id})">Vedi</button>
