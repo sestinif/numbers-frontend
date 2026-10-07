@@ -44,6 +44,8 @@
             --text-secondary: #9A9AA8;
             --text-tertiary: #9A9AA8;
             --money-in: #4FD1A1;
+            /* Stesso verde, altro significato: una cosa fatta, attiva, chiusa bene. */
+            --ok: #4FD1A1;
             --danger: #F58A9B;
             --danger-rgb: 245, 138, 155;
             --warning: #E2A33C;
@@ -592,7 +594,7 @@
         }
         .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-        .badge-paid { background: none; border: 0; color: var(--text-secondary); }
+        .badge-paid { background: none; border: 0; color: var(--ok); }
 
         .badge-pending { background: none; border: 0; color: var(--warning); }
 
@@ -1063,6 +1065,32 @@
             }
             .row-sheet__grab { display: none; }
             .row-sheet__close { display: inline-flex; }
+        }
+
+        /* ===== COLORE CHE DICE QUALCOSA =====
+           Il minimo indispensabile, ma per capire meglio: verdi le entrate anche nelle loro liste,
+           verde ciò che è fatto, ambra ciò che aspetta, rosa ciò che è scaduto o sotto zero. */
+        #invoicesTable td.num, #customersTable td.num { color: var(--money-in); }
+        .row-sheet[data-table="invoicesTable"] .row-sheet__amount,
+        .row-sheet[data-table="customersTable"] .row-sheet__amount { color: var(--money-in); }
+
+        /* ===== TONDI DI RIGA (row-marks.js) =====
+           Il testo del tondo arriva da attr(): non entra in ricerca, ordinamento e scheda. */
+        .row-mark {
+            display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+            width: 30px; height: 30px; margin-right: 12px; border-radius: 50%; vertical-align: middle;
+            background: rgba(255, 255, 255, 0.08); color: var(--mark);
+            background: color-mix(in srgb, var(--mark) 24%, transparent);
+            color: color-mix(in srgb, var(--mark) 70%, white);
+            font-size: 12px; font-weight: 500; line-height: 1;
+        }
+        .row-mark::before { content: attr(data-label); }
+        .row-mark:not([data-label]) { color: var(--mark); }
+        .row-mark svg { width: 15px; height: 15px; }
+        @media (max-width: 768px) {
+            .has-marks tbody tr { position: relative; padding-left: 48px; }
+            .has-marks tbody tr:has(td.empty-state), .has-marks tbody tr:has(.skeleton) { padding-left: 0; }
+            .has-marks .row-mark { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; margin: 0; }
         }
     </style>
 </head>
@@ -4028,7 +4056,7 @@
                 const done = isNoteDone(note);
                 const isLate = !done && due && due <= today;
                 const statusBadge = done
-                    ? '<span style="color: var(--text-secondary);">&#10003; Fatta</span>'
+                    ? '<span style="color: var(--ok);">&#10003; Fatta</span>'
                     : isLate
                         ? `<span style="color: var(--danger);">&#9888; ${escapeHtml(NotesLogic.formatDueLabel(due, today))}</span>`
                         : '<span style="color: var(--warning);">&#9201; In sospeso</span>';
@@ -4244,7 +4272,7 @@
                 const date = reminder.due_date || reminder.date;
                 const isCompleted = reminder.completed;
                 const statusBadge = isCompleted ?
-                    '<span style="color: var(--text-secondary);">&#10003; Fatto</span>' :
+                    '<span style="color: var(--ok);">&#10003; Fatto</span>' :
                     '<span style="color: var(--warning);">&#9201; In attesa</span>';
 
                 const row = tbody.insertRow();
@@ -5091,5 +5119,6 @@
         }
     </script>
     <script src="row-sheet.js"></script>
+    <script src="row-marks.js"></script>
 </body>
 </html>

@@ -130,6 +130,7 @@
                 actions: targets.map(t => ({ label: t === editLink ? 'Modifica' : t.textContent, danger: t.classList.contains('btn-danger') }))
             });
 
+            sheet.dataset.table = table.id;   // per lo stile: l'importo di una fattura è verde
             parts.title.textContent = model.title;
             parts.sub.textContent = model.subtitle;
             parts.amountLabel.textContent = model.amount ? model.amountLabel : '';
