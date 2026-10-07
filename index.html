@@ -220,53 +220,29 @@
         .main-header.scrolled { background: var(--bg-primary); box-shadow: none; }
 
         /* ===== TABLE TOOLS (ricerca + chip) ===== */
-        .table-tools {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 14px;
+        .table-tools { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 22px 0 4px; }
+        .table-search { position: relative; flex: 1; min-width: 200px; }
+        .table-search i {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            width: 15px; height: 15px; color: var(--text-secondary); pointer-events: none;
         }
-        .table-search {
-            position: relative;
-            flex: 1;
-            min-width: 200px;
-        }
-        .table-search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-secondary); }
         .table-search input {
-            width: 100%;
-            padding: 9px 12px 9px 34px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            color: var(--text-primary);
-            font-family: var(--font-body);
-            font-size: 13px;
+            width: 100%; height: 40px; padding: 0 12px 0 36px;
+            background: transparent; border: 1px solid var(--border-strong); border-radius: 8px;
+            color: var(--text-primary); font-family: var(--font-body); font-size: 14px;
         }
-        .chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .chip-group { display: flex; gap: 18px; flex-wrap: wrap; }
         .chip {
-            padding: 6px 14px;
-            border-radius: 999px;
-            border: 1px solid var(--border-color);
-            background: rgba(255,255,255,0.03);
-            color: var(--text-secondary);
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
+            padding: 8px 2px 10px; border: 0; border-bottom: 2px solid transparent; border-radius: 0;
+            background: none; color: var(--text-secondary); font-family: var(--font-body); font-size: 13px; font-weight: 400;
+            cursor: pointer; white-space: nowrap; transition: color 0.15s ease;
         }
-        .chip:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
-        .chip.active {
-            background: rgba(var(--green-rgb), 0.12);
-            border-color: rgba(var(--green-rgb), 0.4);
-            color: var(--primary-green);
-        }
+        .chip:hover { color: var(--text-primary); border-color: transparent; }
+        .chip.active { background: none; color: var(--text-primary); font-weight: 500; border-bottom-color: var(--primary-green); }
         /* Header ordinabili */
         th.sortable { cursor: pointer; user-select: none; white-space: nowrap; transition: color 0.2s ease; }
         th.sortable:hover { color: var(--text-primary); }
-        th.sortable .sort-caret { opacity: 0.35; margin-left: 5px; font-size: 12px; }
+        th.sortable .sort-caret { opacity: 0.5; margin-left: 5px; font-size: 12px; }
         th.sortable.sorted .sort-caret { opacity: 1; color: var(--primary-green); }
 
         /* Reduced motion */
@@ -510,61 +486,27 @@
         .btn-success:hover { background: var(--bg-hover); border-color: var(--border-strong); }
 
         /* ===== TABLES ===== */
-        .table-container {
-            overflow-x: auto;
-            margin-top: 20px;
-        }
+        .table-container { overflow-x: visible; margin-top: 8px; }
 
-        table {
-            width: 100%;
-            min-width: 640px;
-            border-collapse: collapse;
-            background: transparent;
-            border-radius: 12px;
-            overflow: hidden;
-        }
+        table { width: 100%; min-width: 0; border-collapse: collapse; background: transparent; }
 
         .num { text-align: right; font-variant-numeric: tabular-nums; }
 
         th {
-            background: rgba(255, 255, 255, 0.02);
-            color: var(--text-secondary);
-            padding: 14px 24px;
-            text-align: left;
-            font-weight: 500;
-            font-size: 12px;
-            border-bottom: 1px solid var(--border-color);
-            font-family: var(--font-body);
+            background: none; color: var(--text-secondary); padding: 14px 12px 10px;
+            text-align: left; font-weight: 400; font-size: 12px; border-bottom: 0; font-family: var(--font-body);
         }
 
-        td {
-            padding: 16px 24px;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-            font-size: 14px;
-            color: var(--text-primary);
-            font-weight: 400;
-        }
+        td { height: 52px; padding: 15px 12px; border-bottom: 0; border-top: 1px solid var(--border-color); font-size: 14px; font-weight: 400; color: var(--text-primary); }
 
-        td strong {
-            font-family: var(--font-display);
-            font-weight: 500;
-        }
+        td strong { font-family: var(--font-body); font-weight: 500; }
 
         tr {
             transition: background 0.2s ease;
         }
 
-        tbody tr {
-            transition: background 0.18s ease, box-shadow 0.18s ease;
-        }
-        tr:hover {
-            background: rgba(255, 255, 255, 0.035);
-            box-shadow: inset 3px 0 0 rgba(var(--green-rgb), 0.6);
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
+        tbody tr { transition: background 0.15s ease; }
+        tr:hover { background: none; box-shadow: none; }
 
         /* ===== STATS GRID ===== */
         .stats-grid {
@@ -607,21 +549,11 @@
             align-items: end;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-secondary);
-        }
+        .empty-state { text-align: center; padding: 48px 20px; color: var(--text-secondary); font-size: 14px; }
 
-        .action-btns {
-            display: flex;
-            gap: 5px;
-        }
+        .action-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 
-        .action-btns button {
-            padding: 6px 12px;
-            font-size: 13px;
-        }
+        .action-btns button { margin: 0; padding: 6px 12px; font-size: 13px; }
 
         /* ===== COMPANY SELECTOR & DROPDOWN ===== */
         .company-selector {
@@ -721,57 +653,25 @@
 
         /* ===== SECTION TOOLBAR (stats + actions) ===== */
         .section-toolbar {
-            display: flex;
-            align-items: stretch;
-            margin-bottom: 12px;
-            background: var(--bg-glass);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            overflow: hidden;
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;
+            margin-bottom: 0; padding: 0 0 26px;
+            background: none; border: 0; border-bottom: 1px solid var(--border-color); border-radius: 0;
         }
 
-        .mini-stats-bar {
-            display: flex;
-            flex: 1;
-            gap: 0;
-        }
+        .mini-stats-bar { display: flex; flex: 1; gap: 40px; min-width: 0; }
 
-        .mini-stat {
-            flex: 1;
-            padding: 14px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            border-right: 1px solid var(--border-color);
-        }
+        .mini-stat { display: flex; flex-direction: column; gap: 6px; flex: 0 1 auto; min-width: 0; padding: 0; border-right: 0; }
 
-        .mini-stat-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
+        .mini-stat-label { font-size: 12px; font-weight: 400; color: var(--text-secondary); }
 
         .mini-stat-value {
-            font-family: var(--font-display);
-            font-size: 18px;
-            font-weight: 500;
-            color: var(--text-primary);
-            letter-spacing: -0.5px;
+            font-family: var(--font-display); font-size: 24px; font-weight: 400; letter-spacing: -0.02em;
+            color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
-        .toolbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 0 16px;
-            border-left: 1px solid var(--border-color);
-            flex-shrink: 0;
-        }
+        .toolbar-actions { display: flex; align-items: center; gap: 8px; padding: 0; border-left: 0; flex-shrink: 0; }
 
-        .toolbar-actions .btn {
-            margin: 0;
-            white-space: nowrap;
-        }
+        .toolbar-actions .btn { margin: 0; white-space: nowrap; }
 
         /* ===== BADGES ===== */
         .badge {
@@ -803,11 +703,7 @@
         .quick-action-btn svg { width: 16px; height: 16px; stroke: var(--text-secondary); flex-shrink: 0; }
 
         /* ===== CARD TOOLBAR ===== */
-        .card-toolbar {
-            padding-bottom: 16px;
-            margin-bottom: 8px;
-            border-bottom: 1px solid var(--border-color);
-        }
+        .card-toolbar { padding: 0; margin: 0; border: 0; }
 
         .card-toolbar .filter-bar {
             margin-bottom: 0;
@@ -825,34 +721,18 @@
         }
 
         .report-year-select {
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: var(--font-body);
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
+            height: 36px; padding: 0 32px 0 12px; border: 1px solid var(--border-strong); border-radius: 8px;
+            color: var(--text-primary); font-family: var(--font-body); font-size: 13px; font-weight: 400; cursor: pointer;
         }
 
         /* ===== FILTER BAR ===== */
-        .filter-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+        .filter-bar { display: flex; gap: 18px; margin: 0; flex-wrap: wrap; align-items: center; }
 
-        .filter-bar select,
-        .filter-bar input {
-            padding: 8px 14px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 14px;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
+        .filter-bar select, .filter-bar input {
+            appearance: none; -webkit-appearance: none; max-width: 190px;
+            padding: 8px 18px 8px 0; border: 0; border-radius: 0;
+            font-family: var(--font-body); font-size: 13px; color: var(--text-secondary); cursor: pointer;
+            background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A9AA8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") right center no-repeat;
         }
 
         /* ===== ALERTS ===== */
@@ -923,6 +803,41 @@
 
         .stat-card:has(#netRevenueTrend.down) #netRevenue, #netRevenueTrend.down { color: var(--danger); }
 
+        .table-search input::placeholder { color: var(--text-secondary); }
+
+        .card:has(> .table-container) { background: none; border: 0; border-radius: 0; padding: 0; margin-bottom: 0; }
+
+        .card:has(> .table-container) > h2 { margin: 26px 0 0; font-size: 13px; font-weight: 400; color: var(--text-secondary); }
+
+        .card:has(> .card-toolbar) { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; align-items: center; }
+
+        .card:has(> .card-toolbar) > .card-toolbar { grid-column: 2; grid-row: 1; margin: 22px 0 4px; }
+
+        .card:has(> .card-toolbar) > .table-tools { grid-column: 1; grid-row: 1; }
+
+        .card:has(> .card-toolbar) > .table-container { grid-column: 1 / -1; }
+
+        th:first-child, td:first-child { padding-left: 0; }
+
+        th:last-child, td:last-child { padding-right: 0; }
+
+        td small { font-size: 12px; }
+        td a { text-decoration-color: rgba(255, 255, 255, 0.3) !important; }
+
+        tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+        tbody tr:focus-visible { outline: 2px solid rgba(var(--green-rgb), 0.6); outline-offset: -2px; }
+
+        td.action-btns { display: table-cell; width: 32px; text-align: right; white-space: nowrap; color: var(--text-secondary); }
+
+        td.action-btns > * { display: none; }
+
+        td.action-btns::after { content: '\22EF'; font-size: 16px; line-height: 1; opacity: 0; transition: opacity 0.15s ease; }
+
+        tbody tr:hover td.action-btns::after, tbody tr:focus-visible td.action-btns::after { opacity: 1; }
+
+        tbody tr:has(td.action-btns) { cursor: pointer; }
+
         /* Tablet */
         @media (max-width: 1024px) {
             .content {
@@ -936,6 +851,14 @@
 
             .report-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .mini-stats-bar {
+                gap: 28px;
+            }
+
+            .mini-stat-value {
+                font-size: 20px;
             }
         }
 
@@ -970,46 +893,6 @@
 
             .content {
                 padding: 8px 20px 40px;
-            }
-
-            /* Toolbar mobile */
-            .section-toolbar {
-                flex-direction: column;
-                border-radius: 10px;
-            }
-
-            .mini-stats-bar {
-                flex-direction: column;
-            }
-
-            .mini-stat {
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 16px;
-            }
-
-            .mini-stat:last-child {
-                border-bottom: none;
-            }
-
-            .mini-stat-value {
-                font-size: 16px;
-            }
-
-            .toolbar-actions {
-                border-left: none;
-                border-top: 1px solid var(--border-color);
-                padding: 10px 12px;
-                justify-content: stretch;
-            }
-
-            .toolbar-actions .btn {
-                flex: 1;
-                text-align: center;
-                padding: 10px 12px;
             }
 
             /* Quick actions mobile */
@@ -1059,54 +942,11 @@
                 margin-bottom: 16px;
             }
 
-            .card-toolbar {
-                padding-bottom: 12px;
-            }
-
-            /* Tables mobile */
-            .table-container {
-                margin-top: 12px;
-                margin-left: -16px;
-                margin-right: -16px;
-                padding: 0;
-            }
-
-            th {
-                padding: 10px 12px;
-                font-size: 12px;
-            }
-
-            td {
-                padding: 12px;
-                font-size: 13px;
-            }
-
-            .action-btns {
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .action-btns button {
-                padding: 6px 10px;
-                font-size: 12px;
-                width: 100%;
-            }
-
             /* Forms mobile */
             .invoice-item,
             .expense-item,
             .form-row {
                 grid-template-columns: 1fr;
-            }
-
-            .filter-bar {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .filter-bar select {
-                width: 100%;
-                padding: 10px 14px;
             }
 
             /* Report mobile */
@@ -1156,6 +996,59 @@
             .table-search input {
                 font-size: 16px;
             }
+
+            /* Indicatori: lista etichetta / valore, poi i bottoni */
+            .section-toolbar { flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 22px; border-radius: 0; }
+            .mini-stats-bar { flex-direction: column; gap: 0; }
+            .mini-stat { flex-direction: row; justify-content: space-between; align-items: baseline; gap: 16px; padding: 13px 0; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .mini-stat-value { font-size: 16px; }
+            .toolbar-actions { border: 0; padding: 20px 0 0; }
+            .toolbar-actions .btn { padding: 11px 18px; text-align: center; }
+            .toolbar-actions .btn-primary { flex: 1; }
+
+            /* Fatture: filtri sopra, ricerca sotto */
+            .card:has(> .card-toolbar) { grid-template-columns: minmax(0, 1fr); }
+            .card:has(> .card-toolbar) > .card-toolbar { grid-column: 1; grid-row: 1; margin: 16px 0 0; }
+            .card:has(> .card-toolbar) > .table-tools { grid-column: 1; grid-row: 2; margin-top: 12px; }
+            .filter-bar { flex-direction: row; flex-wrap: nowrap; justify-content: space-between; gap: 8px; }
+            /* 16px veri (sotto, iOS ingrandisce la pagina), rimpiccioliti a vista fino a 13px */
+            .filter-bar select { width: auto; max-width: 42%; padding: 8px 18px 8px 0; font-size: 16px; transform: scale(0.8125); transform-origin: left center; }
+            .table-search input { height: 44px; }
+
+            /* La riga diventa un blocco a due linee: titolo e importo sopra, il resto sotto.
+               Nessuna cella esce dalla pagina: ricerca e filtro «In sospeso» leggono il testo visibile. */
+            .table-container { margin: 8px 0 0; padding: 0; }
+            .list-table, .list-table thead, .list-table tbody { display: block; }
+            .list-table thead tr { display: flex; flex-wrap: wrap; gap: 0 18px; padding: 10px 0 6px; }
+            .list-table th { padding: 6px 0; font-size: 12px; }
+            .list-table th:not(.sortable) { display: none; }
+            .list-table tbody tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 8px; padding: 15px 0; border-top: 1px solid var(--border-color); }
+            .list-table tbody tr::before { content: ''; order: 3; flex: 0 0 100%; height: 0; }
+            .list-table td { display: block; order: 5; height: auto; min-width: 0; padding: 0; border: 0; font-size: 12px; color: var(--text-secondary); }
+            .list-table td::before { content: '\00B7'; margin-right: 8px; }
+            .list-table td strong { font-weight: 400; }
+            .list-table td:has(> .badge:first-child)::before { content: none; }
+            .list-table td.action-btns { display: none; }
+            .list-table td.empty-state { order: 0; flex: 1 1 100%; padding: 40px 0; font-size: 14px; }
+            .list-table td.empty-state::before { content: none; }
+            /* Prima linea: il titolo… */
+            #invoicesTable td:nth-child(3), #customersTable td:nth-child(1), #companiesTable td:nth-child(1),
+            #expensesTable td:nth-child(2), #recurringTable td:nth-child(1), #expenseNotesTable td:nth-child(2),
+            #remindersTable td:nth-child(1), #notesTable td:nth-child(1) {
+                order: 1; flex: 1 1 0; font-size: 14px; color: var(--text-primary); overflow-wrap: anywhere;
+            }
+            /* …e l'importo */
+            .list-table td.num { order: 2; flex: 0 0 auto; font-size: 14px; color: var(--text-primary); }
+            .list-table td.num strong { font-weight: 500; }
+            #invoicesTable td:nth-child(3)::before, #customersTable td:nth-child(1)::before, #companiesTable td:nth-child(1)::before,
+            #expensesTable td:nth-child(2)::before, #recurringTable td:nth-child(1)::before, #expenseNotesTable td:nth-child(2)::before,
+            #remindersTable td:nth-child(1)::before, #notesTable td:nth-child(1)::before, .list-table td.num::before { content: none; }
+            /* Seconda linea: la prima voce non ha il punto davanti */
+            #invoicesTable td:nth-child(1):not(.empty-state)::before { content: 'N. '; margin-right: 0; }
+            #companiesTable td:nth-child(2)::before, #expensesTable td:nth-child(1)::before, #recurringTable td:nth-child(2)::before,
+            #expenseNotesTable td:nth-child(1)::before, #remindersTable td:nth-child(2)::before, #notesTable td:nth-child(2)::before { content: none; }
+            #recurringTable td:nth-child(3)::before { content: '\00B7  ogni '; margin-right: 0; }
+            #recurringTable td:nth-child(4)::before { content: '\00B7  dal '; margin-right: 0; }
         }
 
         /* Small mobile */
@@ -1327,15 +1220,15 @@
 
                 <!-- COMPANIES -->
                 <div id="companies" class="section">
-                    <div class="section-toolbar" style="justify-content: flex-end; padding: 12px 16px;">
+                    <div class="section-toolbar" style="justify-content: flex-end;">
                         <button class="btn btn-primary" style="margin:0;" onclick="openCompanyModal()">+ Nuova azienda</button>
                     </div>
                     <div class="card">
                         <div class="table-container">
-                            <table id="companiesTable">
+                            <table id="companiesTable" class="list-table">
                                 <thead>
                                     <tr>
-                                        <th>Nome Azienda</th>
+                                        <th>Nome azienda</th>
                                         <th>Indirizzo</th>
                                         <th>Email</th>
                                         <th>Azioni</th>
@@ -1370,11 +1263,11 @@
                     </div>
                     <div class="card">
                         <div class="table-container">
-                            <table id="customersTable">
+                            <table id="customersTable" class="list-table">
                                 <thead>
                                     <tr>
                                         <th>Cliente</th>
-                                        <th class="num">Fatturato Totale</th>
+                                        <th class="num">Fatturato totale</th>
                                         <th>Azioni</th>
                                     </tr>
                                 </thead>
@@ -1433,7 +1326,7 @@
                             </div>
                         </div>
                         <div class="table-container">
-                            <table id="invoicesTable">
+                            <table id="invoicesTable" class="list-table">
                                 <thead>
                                     <tr>
                                         <th>N.</th>
@@ -1473,7 +1366,7 @@
                     </div>
                     <div class="card">
                         <div class="table-container">
-                            <table id="expensesTable">
+                            <table id="expensesTable" class="list-table">
                                 <thead>
                                     <tr>
                                         <th>Data</th>
@@ -1512,7 +1405,7 @@
                     </div>
                     <div class="card">
                         <div class="table-container">
-                            <table id="recurringTable">
+                            <table id="recurringTable" class="list-table">
                                 <thead>
                                     <tr>
                                         <th>Nome</th>
@@ -1553,7 +1446,7 @@
                     </div>
                     <div class="card">
                         <div class="table-container">
-                            <table id="remindersTable">
+                            <table id="remindersTable" class="list-table">
                                 <thead>
                                     <tr>
                                         <th>Descrizione</th>
@@ -1592,7 +1485,7 @@
                     </div>
                     <div class="card">
                         <div class="table-container">
-                            <table id="notesTable">
+                            <table id="notesTable" class="list-table">
                                 <thead>
                                     <tr>
                                         <th>Titolo</th>
@@ -1609,7 +1502,7 @@
 
                 <!-- REPORTS -->
                 <div id="reports" class="section">
-                    <div class="section-toolbar" style="justify-content: flex-end; padding: 12px 16px;">
+                    <div class="section-toolbar" style="justify-content: flex-end;">
                         <select id="reportYear" onchange="generateReports()" class="report-year-select"></select>
                     </div>
 
@@ -1673,7 +1566,7 @@
                     </div>
                     <div class="card">
                         <div class="table-container">
-                            <table id="expenseNotesTable">
+                            <table id="expenseNotesTable" class="list-table">
                                 <thead>
                                     <tr>
                                         <th>Data</th>
@@ -4123,10 +4016,10 @@
                 const done = isNoteDone(note);
                 const isLate = !done && due && due <= today;
                 const statusBadge = done
-                    ? '<span style="color: var(--primary-green); font-weight: 600;">&#10003; Fatta</span>'
+                    ? '<span style="color: var(--text-secondary);">&#10003; Fatta</span>'
                     : isLate
-                        ? `<span style="color: var(--danger); font-weight: 600;">&#9888; ${escapeHtml(NotesLogic.formatDueLabel(due, today))}</span>`
-                        : '<span style="color: var(--warning); font-weight: 600;">&#9201; In sospeso</span>';
+                        ? `<span style="color: var(--danger);">&#9888; ${escapeHtml(NotesLogic.formatDueLabel(due, today))}</span>`
+                        : '<span style="color: var(--warning);">&#9201; In sospeso</span>';
 
                 const row = tbody.insertRow();
                 row.innerHTML = `
@@ -4339,8 +4232,8 @@
                 const date = reminder.due_date || reminder.date;
                 const isCompleted = reminder.completed;
                 const statusBadge = isCompleted ?
-                    '<span style="color: var(--primary-green); font-weight: 600;">&#10003; Fatto</span>' :
-                    '<span style="color: var(--warning); font-weight: 600;">&#9201; In attesa</span>';
+                    '<span style="color: var(--text-secondary);">&#10003; Fatto</span>' :
+                    '<span style="color: var(--warning);">&#9201; In attesa</span>';
 
                 const row = tbody.insertRow();
                 row.innerHTML = `
@@ -5093,7 +4986,7 @@
                 const row = tbody.insertRow();
                 if (note.completed) row.style.opacity = '0.5';
                 const receiptsBadge = note.receipts_count > 0
-                    ? ` <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--bg-secondary);border-radius:10px;font-size:11px;color:var(--text-secondary);cursor:pointer;" onclick="openExpenseNoteModal(${note.id})" title="Vedi ricevute"><i data-lucide="paperclip" style="width:12px;height:12px;"></i>${note.receipts_count}</span>`
+                    ? ` <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--bg-elev);border-radius:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;" onclick="openExpenseNoteModal(${note.id})" title="Vedi ricevute"><i data-lucide="paperclip" style="width:12px;height:12px;"></i>${note.receipts_count}</span>`
                     : '';
                 row.innerHTML = `
                     <td>${date ? new Date(date).toLocaleDateString('it-IT') : '-'}</td>
