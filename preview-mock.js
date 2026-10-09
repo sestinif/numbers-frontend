@@ -47,10 +47,15 @@
     const expenses = [];
     let eid = 500;
     for (let b = 0; b < 14; b++) {
-        expenses.push({ id: eid++, expense_date: monthDay(b, 1), description: 'Render', category: 'Software', amount: 19, auto_source: 'rule:1', notes: 'Spesa ricorrente' });
-        expenses.push({ id: eid++, expense_date: monthDay(b, 1), description: 'Vercel Pro', category: 'Software', amount: 20, auto_source: 'rule:2', notes: 'Spesa ricorrente' });
+        // Render è variabile: il mese in corso è ancora una stima, i due prima sono confermati, quelli vecchi non hanno il tipo.
+        expenses.push(b < 3
+            ? { id: eid++, expense_date: monthDay(b, 5), description: 'Render', category: 'Software', amount: b === 0 ? 30 : 26.4 + b, auto_source: 'rule:1', notes: 'Spesa ricorrente', account: 'Revolut Business', cost_type: 'variable', amount_confirmed: b !== 0 }
+            : { id: eid++, expense_date: monthDay(b, 1), description: 'Render', category: 'Software', amount: 19, auto_source: 'rule:1', notes: 'Spesa ricorrente' });
+        expenses.push(b < 3
+            ? { id: eid++, expense_date: monthDay(b, 1), description: 'Vercel Pro', category: 'Software', amount: 20, auto_source: 'rule:2', notes: 'Spesa ricorrente', account: 'Mercury', cost_type: 'fixed', amount_confirmed: true }
+            : { id: eid++, expense_date: monthDay(b, 1), description: 'Vercel Pro', category: 'Software', amount: 20, auto_source: 'rule:2', notes: 'Spesa ricorrente' });
         expenses.push({ id: eid++, expense_date: monthDay(b, 28), description: 'API OpenAI', category: 'Software', amount: 12.4 + b * 3.1, auto_source: 'openai', notes: 'Si aggiorna da sola' });
-        expenses.push({ id: eid++, expense_date: monthDay(b, 12), description: 'Commercialista', category: 'Consulenze', amount: 350 });
+        expenses.push({ id: eid++, expense_date: monthDay(b, 12), description: 'Commercialista', category: 'Consulenze', amount: 350, account: b < 2 ? 'Mercury' : null });
         if (b % 2 === 0) expenses.push({ id: eid++, expense_date: monthDay(b, 17), description: 'Meta Ads — campagna lead generation di ottobre', category: 'Marketing', amount: 640 + b * 25 });
         if (b % 3 === 0) expenses.push({ id: eid++, expense_date: monthDay(b, 21), description: 'Volo Malta-Bologna', category: 'Rimborso fatturato', amount: 184.3 });
     }
@@ -58,9 +63,9 @@
     if (params.get('neg') === '1') liveExpenses.push({ id: eid++, expense_date: dayOffset(0), description: 'Acquisto attrezzatura', category: 'Ufficio', amount: 9800 });
 
     const recurring = [
-        { id: 1, name: 'Render', category: 'Software', frequency: 'monthly', day_of_month: 1, start_period: period(13), end_period: null, amount: 19 },
-        { id: 2, name: 'Vercel Pro', category: 'Software', frequency: 'monthly', day_of_month: 1, start_period: period(13), end_period: null, amount: 20 },
-        { id: 3, name: 'Dominio scalingcatalyst.com', category: 'Software', frequency: 'yearly', day_of_month: 10, start_period: period(9), end_period: null, amount: 24 },
+        { id: 1, name: 'Render', category: 'Software', frequency: 'monthly', day_of_month: 14, start_period: period(13), end_period: null, amount: 30, account: 'Revolut Business', cost_type: 'variable' },
+        { id: 2, name: 'Vercel Pro', category: 'Software', frequency: 'monthly', day_of_month: 1, start_period: period(13), end_period: null, amount: 20, account: 'Mercury', cost_type: 'fixed' },
+        { id: 3, name: 'Dominio scalingcatalyst.com', category: 'Software', frequency: 'yearly', day_of_month: 10, start_period: period(9), end_period: null, amount: 24, account: 'Revolut Business', cost_type: 'fixed' },
         { id: 4, name: 'Notion Team', category: 'Software', frequency: 'monthly', day_of_month: 5, start_period: period(11), end_period: period(2), amount: 16 }
     ];
     const reminders = [

@@ -1092,6 +1092,16 @@
             .has-marks tbody tr:has(td.empty-state), .has-marks tbody tr:has(.skeleton) { padding-left: 0; }
             .has-marks .row-mark { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; margin: 0; }
         }
+
+        /* ===== CONTO E TIPO DELLE SPESE (cost-labels.js) ===== */
+        .badge-inline { margin-left: 8px; }
+        .cost-type { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+        .cost-type--variable { color: var(--warning); }
+        #expensesTable td:nth-child(4), #recurringTable td:nth-child(6) { color: var(--text-secondary); white-space: nowrap; }
+        @media (max-width: 768px) {
+            .list-table td:empty { display: none; }
+            .cost-type { font-size: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -1407,6 +1417,7 @@
                                         <th>Data</th>
                                         <th>Descrizione</th>
                                         <th>Categoria</th>
+                                        <th>Conto</th>
                                         <th class="num">Importo</th>
                                         <th></th>
                                     </tr>
@@ -1448,6 +1459,8 @@
                                         <th>Ogni</th>
                                         <th>Dal</th>
                                         <th>Stato</th>
+                                        <th>Conto</th>
+                                        <th>Tipo</th>
                                         <th class="num">Importo</th>
                                         <th></th>
                                     </tr>
@@ -1851,6 +1864,11 @@
                     </select>
                 </div>
 
+                <div class="form-group">
+                    <label>Conto</label>
+                    <input type="text" id="expenseAccount" list="accountOptions" maxlength="120" autocomplete="off" placeholder="Es: Revolut Business">
+                </div>
+
                 <button type="submit" class="btn btn-primary">Salva spesa</button>
                 <button type="button" class="btn btn-secondary" onclick="closeExpenseModal()">Annulla</button>
             </form>
@@ -1900,6 +1918,19 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
+                        <label>Conto di addebito</label>
+                        <input type="text" id="recurringAccount" list="accountOptions" maxlength="120" autocomplete="off" placeholder="Es: Revolut Business">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select id="recurringCostType">
+                            <option value="fixed">Fisso</option>
+                            <option value="variable">Variabile</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
                         <label>Dal mese</label>
                         <input type="month" id="recurringStart">
                     </div>
@@ -1908,7 +1939,7 @@
                         <input type="month" id="recurringEnd">
                     </div>
                 </div>
-                <p style="font-size:12px;color:var(--text-secondary);margin:4px 0 14px;line-height:1.5">Ogni mese si crea da sola una voce di spesa. Se interrompi, i mesi già segnati restano. Se cambi l'importo, vale solo per i mesi nuovi.</p>
+                <p style="font-size:12px;color:var(--text-secondary);margin:4px 0 14px;line-height:1.5">Ogni mese si crea da sola una voce di spesa. Se interrompi, i mesi già segnati restano. Se cambi l'importo, vale solo per i mesi nuovi. Se è variabile l'importo è una stima: la voce del mese nasce «da confermare» e la sistemi con la cifra della fattura.</p>
                 <button type="submit" class="btn btn-primary">Salva ricorrente</button>
                 <button type="button" class="btn btn-secondary" onclick="closeRecurringModal()">Annulla</button>
             </form>
@@ -2019,7 +2050,9 @@
     </div>
 
     <script src="config.js"></script>
+    <datalist id="accountOptions"></datalist>
     <script src="notes-logic.js"></script>
+    <script src="cost-labels.js"></script>
     <script>
         // ==========================================
         // API CONFIGURATION - RENDER BACKEND
@@ -2326,7 +2359,7 @@
         function initTableTools() {
             const configs = [
                 { id: 'invoicesTable', ph: 'Cerca fattura o cliente…', sort: [0,1,2,3] },
-                { id: 'expensesTable', ph: 'Cerca spesa…', sort: [0,1,2,3] },
+                { id: 'expensesTable', ph: 'Cerca spesa…', sort: [0,1,2,3,4] },
                 { id: 'customersTable', ph: 'Cerca cliente…', sort: [0,1] },
                 { id: 'remindersTable', ph: 'Cerca scadenza…', sort: [0,1] },
                 { id: 'notesTable', ph: 'Cerca nota…', sort: [0,1] },
@@ -3710,6 +3743,7 @@
                 document.getElementById('expenseAmount').value = expense.amount;
                 document.getElementById('expenseDescription').value = expense.description;
                 document.getElementById('expenseCategory').value = expense.category || '';
+                document.getElementById('expenseAccount').value = expense.account || '';
             } else {
                 document.getElementById('expenseModalTitle').textContent = 'Nuova spesa';
                 setupExpenseDate();
@@ -3730,6 +3764,7 @@
                     date: document.getElementById('expenseDate').value,
                     description: document.getElementById('expenseDescription').value,
                     category: document.getElementById('expenseCategory').value,
+                    account: document.getElementById('expenseAccount').value,
                     amount: parseFloat(document.getElementById('expenseAmount').value)
                 };
                 // Il modulo non ha il campo note: in modifica si ripassano quelle che c'erano, altrimenti il salvataggio le cancella.
@@ -3758,7 +3793,8 @@
             tbody.innerHTML = '';
 
             if (expenses.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nessuna spesa presente. Aggiungi la prima spesa!</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna spesa presente. Aggiungi la prima spesa!</td></tr>';
+                refreshAccountOptions();
                 return;
             }
 
@@ -3766,11 +3802,13 @@
 
             sortedExpenses.forEach(expense => {
                 const date = expense.expense_date || expense.date;
+                const badge = CostLabels.expenseBadge(expense);
                 const row = tbody.insertRow();
                 row.innerHTML = `
                     <td>${new Date(date).toLocaleDateString('it-IT')}</td>
-                    <td>${escapeHtml(expense.description)}${expense.auto_source ? `<span class="badge badge-auto" title="${escapeHtml(expense.notes || 'Si aggiorna da sola')}">${expense.auto_source.startsWith('rule:') ? 'Ricorrente' : 'Auto'}</span>` : ''}</td>
+                    <td>${escapeHtml(expense.description)}${badge ? `<span class="badge badge-${badge.tone} badge-inline" title="${escapeHtml(badge.title)}">${badge.text}</span>` : ''}</td>
                     <td>${expense.category ? escapeHtml(expense.category) : '-'}</td>
+                    <td>${expense.account ? escapeHtml(expense.account) : ''}</td>
                     <td class="num"><strong>${formatCurrency(expense.amount)}</strong></td>
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="openExpenseModal(${expense.id})">Modifica</button>
@@ -3789,6 +3827,19 @@
             document.getElementById('miniExpenseTotal').textContent = formatCurrency(totalExp);
             document.getElementById('miniExpenseMonth').textContent = formatCurrency(monthExp);
             document.getElementById('miniExpenseCount').textContent = expenses.length;
+            refreshAccountOptions();
+        }
+
+        // I conti già usati in regole e spese, riproposti nei due moduli.
+        function refreshAccountOptions() {
+            const list = document.getElementById('accountOptions');
+            if (!list) return;
+            list.innerHTML = '';
+            CostLabels.knownAccounts(recurringRules, expenses).forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                list.appendChild(option);
+            });
         }
 
         async function deleteExpense(expenseId) {
@@ -3853,7 +3904,7 @@
             tbody.innerHTML = '';
 
             if (recurringRules.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Nessuna ricorrente. Aggiungi il primo abbonamento o costo fisso!</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Nessuna ricorrente. Aggiungi il primo abbonamento o costo fisso!</td></tr>';
             } else {
                 const sorted = [...recurringRules].sort((a, b) => (ruleIsActive(b) - ruleIsActive(a)) || a.name.localeCompare(b.name));
                 sorted.forEach(rule => {
@@ -3869,6 +3920,8 @@
                         <td>${freq}</td>
                         <td>${fmtPeriod(rule.start_period)}</td>
                         <td>${stato}</td>
+                        <td>${rule.account ? escapeHtml(rule.account) : ''}</td>
+                        <td><span class="cost-type cost-type--${CostLabels.ruleType(rule)}">${CostLabels.ruleTypeLabel(rule)}</span></td>
                         <td class="num"><strong>${formatCurrency(rule.amount)}</strong></td>
                         <td class="action-btns">
                             <button class="btn btn-secondary" onclick="openRecurringModal(${rule.id})">Modifica</button>
@@ -3884,6 +3937,7 @@
             document.getElementById('miniRecurringActive').textContent = active.length;
             document.getElementById('miniRecurringMonthly').textContent = formatCurrency(monthly);
             document.getElementById('miniRecurringStopped').textContent = recurringRules.length - active.length;
+            refreshAccountOptions();
         }
 
         function openRecurringModal(ruleId = null) {
@@ -3902,6 +3956,8 @@
                 document.getElementById('recurringCategory').value = rule.category || 'Software';
                 document.getElementById('recurringStart').value = rule.start_period || nowPeriod();
                 document.getElementById('recurringEnd').value = rule.end_period || '';
+                document.getElementById('recurringAccount').value = rule.account || '';
+                document.getElementById('recurringCostType').value = CostLabels.ruleType(rule);
             } else {
                 document.getElementById('recurringModalTitle').textContent = 'Nuova spesa ricorrente';
                 document.getElementById('recurringStart').value = nowPeriod();
@@ -3936,7 +3992,9 @@
                     day_of_month: parseInt(document.getElementById('recurringDay').value) || 1,
                     category: document.getElementById('recurringCategory').value,
                     start_period: document.getElementById('recurringStart').value || nowPeriod(),
-                    end_period: document.getElementById('recurringEnd').value || null
+                    end_period: document.getElementById('recurringEnd').value || null,
+                    account: document.getElementById('recurringAccount').value,
+                    cost_type: document.getElementById('recurringCostType').value
                 };
                 if (id) {
                     await apiCall('PUT', `/recurring/${id}`, data);
