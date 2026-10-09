@@ -2294,14 +2294,13 @@
             rows.sort((a, b) => {
                 const xa = (a.cells[colIdx] ? a.cells[colIdx].innerText : '').trim();
                 const xb = (b.cells[colIdx] ? b.cells[colIdx].innerText : '').trim();
+                // Prima le date: «28/12/2025» letta come numero diventa 28122025 e l'ordine salta.
+                const da = parseCellDate(xa), db = parseCellDate(xb);
                 const na = parseCellNumber(xa), nb = parseCellNumber(xb);
                 let cmp;
-                if (!isNaN(na) && !isNaN(nb)) cmp = na - nb;
-                else {
-                    const da = parseCellDate(xa), db = parseCellDate(xb);
-                    if (da != null && db != null) cmp = da - db;
-                    else cmp = xa.localeCompare(xb, 'it', { numeric: true });
-                }
+                if (da != null && db != null) cmp = da - db;
+                else if (!isNaN(na) && !isNaN(nb)) cmp = na - nb;
+                else cmp = xa.localeCompare(xb, 'it', { numeric: true });
                 return dir === 'asc' ? cmp : -cmp;
             });
             rows.forEach(r => tbody.appendChild(r));
