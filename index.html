@@ -1087,6 +1087,15 @@
         .row-mark::before { content: attr(data-label); }
         .row-mark:not([data-label]) { color: var(--mark); }
         .row-mark svg { width: 15px; height: 15px; }
+        /* A schermo largo il tondo sta fuori dal flusso del testo: un nome lungo che va a capo
+           resta allineato al nome, non scivola sotto il tondo. */
+        @media (min-width: 769px) {
+            .has-marks td:has(> .row-mark) { position: relative; height: 61px; padding-left: 54px; }
+            .has-marks td > .row-mark { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); margin: 0; }
+            /* La prima colonna parte a filo: lì il tondo sta a zero. */
+            .has-marks td:first-child:has(> .row-mark), #customerReportTable td:first-child:has(> .row-mark) { padding-left: 42px; }
+            .has-marks td:first-child > .row-mark { left: 0; }
+        }
         @media (max-width: 768px) {
             .has-marks tbody tr { position: relative; padding-left: 48px; }
             .has-marks tbody tr:has(td.empty-state), .has-marks tbody tr:has(.skeleton) { padding-left: 0; }
