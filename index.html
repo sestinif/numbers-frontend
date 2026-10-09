@@ -3732,6 +3732,9 @@
                     category: document.getElementById('expenseCategory').value,
                     amount: parseFloat(document.getElementById('expenseAmount').value)
                 };
+                // Il modulo non ha il campo note: in modifica si ripassano quelle che c'erano, altrimenti il salvataggio le cancella.
+                const current = expenseId ? expenses.find(e => e.id == expenseId) : null;
+                if (current && current.notes != null) expenseData.notes = current.notes;
 
                 if (expenseId) {
                     await apiCall('PUT', `/expenses/${expenseId}`, expenseData);
