@@ -1085,12 +1085,18 @@
         .period-mode.active { background: var(--bg-hover); color: var(--text-primary); font-weight: 500; }
         .period-arrow:focus-visible, .period-mode:focus-visible { outline: 2px solid var(--primary-green); outline-offset: 1px; }
         .period-label { min-width: 132px; padding: 0 6px; text-align: center; font-size: 14px; font-weight: 500; color: var(--text-primary); }
+        .period-bar:has(+ .period-notice:not([hidden])) { margin-bottom: 12px; }
+        .period-notice { display: flex; align-items: center; gap: 10px; margin: 0 0 28px; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; color: var(--text-secondary); }
+        .period-notice[hidden] { display: none; }
+        .period-notice-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); flex-shrink: 0; }
         #miniExpensePending.is-pending { color: var(--warning); }
         /* Report: il mese che si sta guardando, dentro i dodici dell'anno. */
         #monthlyReportTable tr.is-period td { background: var(--green-light); }
         #monthlyReportTable tr.is-period td:first-child strong { color: var(--primary-green); font-weight: 500; }
         @media (max-width: 768px) {
             .period-bar { flex-direction: column; align-items: stretch; gap: 8px; margin: 10px 0 22px; }
+            .period-notice { align-items: flex-start; margin-bottom: 22px; }
+            .period-notice-dot { margin-top: 5px; }
             .period-step, .period-modes { display: flex; }
             .period-arrow, .period-mode { height: 40px; }
             .period-arrow { width: 44px; }
@@ -1262,6 +1268,11 @@
                         <button type="button" class="period-mode" data-mode="A" onclick="setPeriodMode('A')">Anno</button>
                         <button type="button" class="period-mode" data-mode="T" onclick="setPeriodMode('T')">Tutto</button>
                     </div>
+                </div>
+                <!-- Compare quando il periodo scelto finisce prima del mese da cui i dati sono precisi. -->
+                <div id="periodNotice" class="period-notice" role="note" hidden>
+                    <span class="period-notice-dot" aria-hidden="true"></span>
+                    <span id="periodNoticeText"></span>
                 </div>
 
                 <!-- DASHBOARD -->
@@ -2248,6 +2259,8 @@
         let currentCompanyId = localStorage.getItem('currentCompanyId') || null;
         // Il periodo che si sta guardando, uguale in tutte le pagine che hanno una data.
         let appPeriod = Period.load(localStorage);
+        // Da questo mese in poi tutto è segnato con cura; prima le cifre sono ricostruite e possono essere sfalsate.
+        const RELIABLE_FROM = '2026-10';
         const invoiceDate = inv => inv.invoice_date || inv.date;
         const expenseDate = exp => exp.expense_date || exp.date;
         let customers = [];
@@ -2503,6 +2516,10 @@
                 b.classList.toggle('active', on);
                 b.setAttribute('aria-pressed', on ? 'true' : 'false');
             });
+            const notice = document.getElementById('periodNotice');
+            notice.hidden = bar.hidden || !Period.endsBefore(appPeriod, RELIABLE_FROM);
+            document.getElementById('periodNoticeText').textContent =
+                `Queste cifre possono essere sfalsate. È tutto tracciato con precisione da ${Period.monthLabel(RELIABLE_FROM)}.`;
         }
 
         function applyPeriod(next) {

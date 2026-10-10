@@ -96,3 +96,21 @@ test('senza memoria, o con la memoria rotta, si parte dal mese in corso', () => 
     assert.doesNotThrow(() => P.save({ setItem: () => { throw new Error('bloccata'); } }, { mode: 'M', year: 2026, month: 10 }));
     assert.deepStrictEqual(P.load(null, NOW), { mode: 'M', year: 2026, month: 10 });
 });
+
+test('un periodo è «vecchio» se finisce prima del mese da cui i dati sono precisi', () => {
+    const FROM = '2026-10';
+    assert.strictEqual(P.endsBefore({ mode: 'M', year: 2026, month: 9 }, FROM), true);
+    assert.strictEqual(P.endsBefore({ mode: 'M', year: 2025, month: 12 }, FROM), true);
+    assert.strictEqual(P.endsBefore({ mode: 'M', year: 2026, month: 10 }, FROM), false);
+    assert.strictEqual(P.endsBefore({ mode: 'M', year: 2027, month: 1 }, FROM), false);
+    // Un anno intero finisce a dicembre: il 2026 arriva oltre ottobre, il 2025 no.
+    assert.strictEqual(P.endsBefore({ mode: 'A', year: 2025, month: 10 }, FROM), true);
+    assert.strictEqual(P.endsBefore({ mode: 'A', year: 2026, month: 3 }, FROM), false);
+    // «Tutto» arriva fino a oggi.
+    assert.strictEqual(P.endsBefore({ mode: 'T', year: 2020, month: 1 }, FROM), false);
+});
+
+test('il mese da cui i dati sono precisi si scrive per esteso', () => {
+    assert.strictEqual(P.monthLabel('2026-10'), 'ottobre 2026');
+    assert.strictEqual(P.monthLabel('2027-01'), 'gennaio 2027');
+});

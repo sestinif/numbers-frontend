@@ -65,6 +65,20 @@
         return prev.mode === 'A' ? String(prev.year) : MONTHS[prev.month - 1].toLowerCase();
     }
 
+    // Vero se il periodo finisce prima del mese 'YYYY-MM': un mese precedente, o un anno
+    // intero precedente. «Tutto» arriva fino a oggi, quindi mai.
+    function endsBefore(period, yearMonth) {
+        if (period.mode === 'T') return false;
+        const month = period.mode === 'A' ? 12 : period.month;
+        return period.year + '-' + String(month).padStart(2, '0') < yearMonth;
+    }
+
+    // 'YYYY-MM' scritto per esteso, in minuscolo: «ottobre 2026».
+    function monthLabel(yearMonth) {
+        const [y, m] = yearMonth.split('-').map(Number);
+        return MONTHS[m - 1].toLowerCase() + ' ' + y;
+    }
+
     // Si ricorda solo la vista (mese, anno, tutto). Mese e anno ripartono da oggi:
     // riaprire l'app su un mese scelto la settimana scorsa confonderebbe.
     function load(storage, now) {
@@ -81,5 +95,5 @@
         try { if (storage) storage.setItem(STORAGE_KEY, period.mode); } catch (e) { /* memoria bloccata: pazienza */ }
     }
 
-    return { current, label, contains, filter, shift, withMode, previous, previousLabel, load, save, MONTHS };
+    return { current, label, contains, filter, shift, withMode, previous, previousLabel, endsBefore, monthLabel, load, save, MONTHS };
 });
