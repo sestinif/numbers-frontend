@@ -630,10 +630,6 @@
 
         .report-grid .card { margin-bottom: 0; }
 
-        .report-year-select {
-            height: 36px; padding: 0 32px 0 12px; border: 1px solid var(--border-strong); border-radius: 8px;
-            color: var(--text-primary); font-family: var(--font-body); font-size: 13px; font-weight: 400; cursor: pointer;
-        }
 
         /* ===== FILTER BAR ===== */
         .filter-bar { display: flex; gap: 18px; margin: 0; flex-wrap: wrap; align-items: center; }
@@ -686,7 +682,7 @@
 
         .form-group input[readonly] { color: var(--text-secondary); border-color: var(--border-color); }
 
-        .form-group select, .report-year-select {
+        .form-group select {
             appearance: none; -webkit-appearance: none; padding-right: 32px;
             background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239A9AA8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") right 12px center no-repeat;
         }
@@ -1074,6 +1070,34 @@
         .row-sheet[data-table="invoicesTable"] .row-sheet__amount,
         .row-sheet[data-table="customersTable"] .row-sheet__amount { color: var(--money-in); }
 
+        /* ===== PERIODO (period.js) =====
+           Un selettore solo, in cima alle pagine che hanno una data: frecce + Mese / Anno / Tutto. */
+        .period-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 28px; }
+        .period-bar[hidden] { display: none; }
+        .period-step, .period-modes { display: inline-flex; align-items: center; gap: 2px; padding: 3px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; }
+        .period-arrow, .period-mode {
+            display: inline-flex; align-items: center; justify-content: center; height: 32px; border: 0; border-radius: 6px;
+            background: transparent; color: var(--text-secondary); font-family: var(--font-body); font-size: 14px; font-weight: 400; cursor: pointer;
+        }
+        .period-arrow { width: 32px; color: var(--text-primary); }
+        .period-mode { padding: 0 14px; }
+        .period-arrow:hover, .period-mode:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .period-mode.active { background: var(--bg-hover); color: var(--text-primary); font-weight: 500; }
+        .period-arrow:focus-visible, .period-mode:focus-visible { outline: 2px solid var(--primary-green); outline-offset: 1px; }
+        .period-label { min-width: 132px; padding: 0 6px; text-align: center; font-size: 14px; font-weight: 500; color: var(--text-primary); }
+        #miniExpensePending.is-pending { color: var(--warning); }
+        /* Report: il mese che si sta guardando, dentro i dodici dell'anno. */
+        #monthlyReportTable tr.is-period td { background: var(--green-light); }
+        #monthlyReportTable tr.is-period td:first-child strong { color: var(--primary-green); font-weight: 500; }
+        @media (max-width: 768px) {
+            .period-bar { flex-direction: column; align-items: stretch; gap: 8px; margin: 10px 0 22px; }
+            .period-step, .period-modes { display: flex; }
+            .period-arrow, .period-mode { height: 40px; }
+            .period-arrow { width: 44px; }
+            .period-label { flex: 1; }
+            .period-mode { flex: 1; padding: 0; }
+        }
+
         /* ===== TONDI DI RIGA (row-marks.js) =====
            Il testo del tondo arriva da attr(): non entra in ricerca, ordinamento e scheda. */
         .row-mark {
@@ -1222,6 +1246,24 @@
             </div>
 
             <div class="content">
+                <!-- Il periodo che si sta guardando: uno solo per tutta l'app (period.js). -->
+                <div id="periodBar" class="period-bar" hidden>
+                    <div class="period-step">
+                        <button type="button" class="period-arrow" onclick="shiftPeriod(-1)" aria-label="Periodo precedente">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <span id="periodLabel" class="period-label" aria-live="polite"></span>
+                        <button type="button" class="period-arrow" onclick="shiftPeriod(1)" aria-label="Periodo successivo">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                    </div>
+                    <div class="period-modes" role="group" aria-label="Vista del periodo">
+                        <button type="button" class="period-mode" data-mode="M" onclick="setPeriodMode('M')">Mese</button>
+                        <button type="button" class="period-mode" data-mode="A" onclick="setPeriodMode('A')">Anno</button>
+                        <button type="button" class="period-mode" data-mode="T" onclick="setPeriodMode('T')">Tutto</button>
+                    </div>
+                </div>
+
                 <!-- DASHBOARD -->
                 <div id="dashboard" class="section active">
                     <div id="reminderAlerts"></div>
@@ -1243,12 +1285,12 @@
 
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <h3>Fatturato totale</h3>
+                            <h3>Fatturato</h3>
                             <div class="value" id="totalRevenue">&#8364;0</div>
                             <div class="stat-trend" id="totalRevenueTrend"></div>
                         </div>
                         <div class="stat-card">
-                            <h3>Spese totali</h3>
+                            <h3>Spese</h3>
                             <div class="value" id="totalExpenses">&#8364;0</div>
                             <div class="stat-trend" id="totalExpensesTrend"></div>
                         </div>
@@ -1258,7 +1300,7 @@
                             <div class="stat-trend" id="netRevenueTrend"></div>
                         </div>
                         <div class="stat-card">
-                            <h3>Fatture questo mese</h3>
+                            <h3>Fatture</h3>
                             <div class="value" id="monthInvoices">0</div>
                             <div class="stat-trend" id="monthInvoicesTrend"></div>
                         </div>
@@ -1336,11 +1378,11 @@
                     <div class="section-toolbar">
                         <div class="mini-stats-bar">
                             <div class="mini-stat">
-                                <span class="mini-stat-label">Totale fatturato</span>
+                                <span class="mini-stat-label">Fatturato</span>
                                 <span class="mini-stat-value" id="miniInvoiceTotal">€0</span>
                             </div>
                             <div class="mini-stat">
-                                <span class="mini-stat-label">N. fatture</span>
+                                <span class="mini-stat-label">Fatture</span>
                                 <span class="mini-stat-value" id="miniInvoiceCount">0</span>
                             </div>
                             <div class="mini-stat">
@@ -1358,24 +1400,6 @@
                             <div class="filter-bar">
                                 <select id="filterCustomer" onchange="filterInvoices()">
                                     <option value="">Tutti i clienti</option>
-                                </select>
-                                <select id="filterYear" onchange="filterInvoices()">
-                                    <option value="">Tutti gli anni</option>
-                                </select>
-                                <select id="filterMonth" onchange="filterInvoices()">
-                                    <option value="">Tutti i mesi</option>
-                                    <option value="1">Gennaio</option>
-                                    <option value="2">Febbraio</option>
-                                    <option value="3">Marzo</option>
-                                    <option value="4">Aprile</option>
-                                    <option value="5">Maggio</option>
-                                    <option value="6">Giugno</option>
-                                    <option value="7">Luglio</option>
-                                    <option value="8">Agosto</option>
-                                    <option value="9">Settembre</option>
-                                    <option value="10">Ottobre</option>
-                                    <option value="11">Novembre</option>
-                                    <option value="12">Dicembre</option>
                                 </select>
                             </div>
                         </div>
@@ -1401,16 +1425,16 @@
                     <div class="section-toolbar">
                         <div class="mini-stats-bar">
                             <div class="mini-stat">
-                                <span class="mini-stat-label">Totale spese</span>
+                                <span class="mini-stat-label">Spese</span>
                                 <span class="mini-stat-value" id="miniExpenseTotal">€0</span>
                             </div>
                             <div class="mini-stat">
-                                <span class="mini-stat-label">Questo mese</span>
-                                <span class="mini-stat-value" id="miniExpenseMonth">€0</span>
+                                <span class="mini-stat-label">Operazioni</span>
+                                <span class="mini-stat-value" id="miniExpenseCount">0</span>
                             </div>
                             <div class="mini-stat">
-                                <span class="mini-stat-label">N. operazioni</span>
-                                <span class="mini-stat-value" id="miniExpenseCount">0</span>
+                                <span class="mini-stat-label">Da confermare</span>
+                                <span class="mini-stat-value" id="miniExpensePending">0</span>
                             </div>
                         </div>
                         <div class="toolbar-actions">
@@ -1559,10 +1583,6 @@
 
                 <!-- REPORTS -->
                 <div id="reports" class="section">
-                    <div class="section-toolbar" style="justify-content: flex-end;">
-                        <select id="reportYear" onchange="generateReports()" class="report-year-select"></select>
-                    </div>
-
                     <div class="report-grid">
                         <div class="card report-card-main">
                             <h2>Riepilogo mensile</h2>
@@ -2062,6 +2082,7 @@
     <datalist id="accountOptions"></datalist>
     <script src="notes-logic.js"></script>
     <script src="cost-labels.js"></script>
+    <script src="period.js"></script>
     <script>
         // ==========================================
         // API CONFIGURATION - RENDER BACKEND
@@ -2225,6 +2246,10 @@
         // Data Storage (in-memory cache)
         let companies = [];
         let currentCompanyId = localStorage.getItem('currentCompanyId') || null;
+        // Il periodo che si sta guardando, uguale in tutte le pagine che hanno una data.
+        let appPeriod = Period.load(localStorage);
+        const invoiceDate = inv => inv.invoice_date || inv.date;
+        const expenseDate = exp => exp.expense_date || exp.date;
         let customers = [];
         let invoices = [];
         let expenses = [];
@@ -2459,6 +2484,40 @@
         }
 
         // Navigation
+        // Le pagine che seguono il periodo, e come si ridisegnano quando cambia.
+        const PERIOD_SECTIONS = {
+            dashboard: () => updateDashboard(),
+            invoices: () => { updateInvoiceStats(); filterInvoices(); },
+            customers: () => loadCustomers(),
+            expenses: () => loadExpenses(),
+            reports: () => generateReports()
+        };
+
+        function renderPeriodBar(sectionId) {
+            const bar = document.getElementById('periodBar');
+            if (!bar) return;
+            if (sectionId) bar.hidden = !PERIOD_SECTIONS[sectionId];
+            document.getElementById('periodLabel').textContent = Period.label(appPeriod);
+            bar.querySelectorAll('.period-mode').forEach(b => {
+                const on = b.dataset.mode === appPeriod.mode;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+        }
+
+        function applyPeriod(next) {
+            appPeriod = next;
+            Period.save(localStorage, appPeriod);
+            renderPeriodBar();
+            const active = document.querySelector('.section.active');
+            const redraw = active && PERIOD_SECTIONS[active.id];
+            if (redraw && currentCompanyId) redraw();
+        }
+
+        function shiftPeriod(step) { applyPeriod(Period.shift(appPeriod, step)); }
+        function setPeriodMode(mode) { applyPeriod(Period.withMode(appPeriod, mode)); }
+        renderPeriodBar('dashboard');
+
         function showSection(sectionId, btn) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
@@ -2474,6 +2533,7 @@
             // Update main header title
             const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', recurring: 'Ricorrenti', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Rimborsi', reports: 'Report', companies: 'Aziende' };
             document.getElementById('mainHeaderTitle').textContent = titles[sectionId] || sectionId;
+            renderPeriodBar(sectionId);
 
             // Close sidebar on mobile
             document.querySelector('.sidebar').classList.remove('sidebar-open');
@@ -2586,7 +2646,6 @@
                 updateCompanyDropdown();
                 updateDashboard();
                 generateReports();
-                populateYearFilters();
                 checkReminders();
                 loadCustomers(); loadInvoices(); loadExpenses(); loadReminders(); loadCompanies(); loadNotes();
                 checkNotesAlert();
@@ -2611,7 +2670,6 @@
                 updateCompanyDropdown();
                 updateDashboard();
                 generateReports();
-                populateYearFilters();
                 checkReminders();
                 // Pre-render delle tabelle (sostituisce gli skeleton, navigazione istantanea)
                 loadInvoices();
@@ -2696,7 +2754,6 @@
             loadNotes();
             updateDashboard();
             generateReports();
-            populateYearFilters();
             checkReminders();
             checkNotesAlert();
         }
@@ -2954,7 +3011,7 @@
             }
 
             const customerRevenues = {};
-            invoices.forEach(inv => {
+            Period.filter(invoices, invoiceDate, appPeriod).forEach(inv => {
                 const cid = inv.customer_id || inv.customerId;
                 if (!customerRevenues[cid]) customerRevenues[cid] = 0;
                 customerRevenues[cid] += parseFloat(inv.total);
@@ -3315,42 +3372,37 @@
             }
         });
 
+        // Mini-stats fatture: sul periodo scelto, senza guardare il filtro per cliente.
+        function updateInvoiceStats() {
+            const list = Period.filter(invoices, invoiceDate, appPeriod);
+            const totalInvAmount = list.reduce((s, i) => s + parseFloat(i.total || 0), 0);
+            const avgInv = list.length > 0 ? totalInvAmount / list.length : 0;
+            document.getElementById('miniInvoiceTotal').textContent = formatCurrency(totalInvAmount);
+            document.getElementById('miniInvoiceCount').textContent = list.length;
+            document.getElementById('miniInvoiceAvg').textContent = formatCurrency(avgInv);
+        }
+
         function loadInvoices() {
             if (!currentCompanyId) return;
 
-            // Mini-stats fatture (sempre su TUTTI i dati, non filtrati)
-            const totalInvAmount = invoices.reduce((s, i) => s + parseFloat(i.total || 0), 0);
-            const avgInv = invoices.length > 0 ? totalInvAmount / invoices.length : 0;
-            document.getElementById('miniInvoiceTotal').textContent = formatCurrency(totalInvAmount);
-            document.getElementById('miniInvoiceCount').textContent = invoices.length;
-            document.getElementById('miniInvoiceAvg').textContent = formatCurrency(avgInv);
+            updateInvoiceStats();
 
-            // Reset filtri a "Tutti" quando si carica la sezione
+            // Reset del filtro cliente quando si carica la sezione
             document.getElementById('filterCustomer').value = '';
-            document.getElementById('filterYear').value = '';
-            document.getElementById('filterMonth').value = '';
 
-            // Mostra tutte le fatture
-            renderInvoiceTable(invoices);
+            // Mostra le fatture del periodo
+            renderInvoiceTable(Period.filter(invoices, invoiceDate, appPeriod));
         }
 
         function filterInvoices() {
             if (!currentCompanyId) return;
 
             const customerFilter = document.getElementById('filterCustomer').value;
-            const yearFilter = document.getElementById('filterYear').value;
-            const monthFilter = document.getElementById('filterMonth').value;
 
-            let filtered = [...invoices];
+            let filtered = Period.filter(invoices, invoiceDate, appPeriod);
 
             if (customerFilter) {
                 filtered = filtered.filter(i => (i.customer_id || i.customerId) == customerFilter);
-            }
-            if (yearFilter) {
-                filtered = filtered.filter(i => new Date(i.invoice_date || i.date).getFullYear().toString() === yearFilter);
-            }
-            if (monthFilter) {
-                filtered = filtered.filter(i => (new Date(i.invoice_date || i.date).getMonth() + 1).toString() === monthFilter);
             }
 
             renderInvoiceTable(filtered);
@@ -3807,7 +3859,12 @@
                 return;
             }
 
-            const sortedExpenses = [...expenses].sort((a, b) => new Date(b.expense_date || b.date) - new Date(a.expense_date || a.date));
+            const shown = Period.filter(expenses, expenseDate, appPeriod);
+            const sortedExpenses = shown.sort((a, b) => new Date(b.expense_date || b.date) - new Date(a.expense_date || a.date));
+
+            if (shown.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna spesa in questo periodo.</td></tr>';
+            }
 
             sortedExpenses.forEach(expense => {
                 const date = expense.expense_date || expense.date;
@@ -3826,16 +3883,14 @@
                 `;
             });
 
-            // Mini-stats spese
-            const totalExp = expenses.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-            const now = new Date();
-            const monthExp = expenses.filter(e => {
-                const d = new Date(e.expense_date || e.date);
-                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-            }).reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+            // Mini-stats spese, sul periodo scelto
+            const totalExp = shown.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+            const pending = shown.filter(e => { const b = CostLabels.expenseBadge(e); return b && b.tone === 'pending'; }).length;
+            const pendingEl = document.getElementById('miniExpensePending');
             document.getElementById('miniExpenseTotal').textContent = formatCurrency(totalExp);
-            document.getElementById('miniExpenseMonth').textContent = formatCurrency(monthExp);
-            document.getElementById('miniExpenseCount').textContent = expenses.length;
+            document.getElementById('miniExpenseCount').textContent = shown.length;
+            pendingEl.textContent = pending;
+            pendingEl.classList.toggle('is-pending', pending > 0);
             refreshAccountOptions();
         }
 
@@ -4439,8 +4494,8 @@
         function updateDashboard() {
             if (!currentCompanyId) return;
 
-            const companyInvoices = invoices;
-            const companyExpenses = expenses;
+            const companyInvoices = Period.filter(invoices, invoiceDate, appPeriod);
+            const companyExpenses = Period.filter(expenses, expenseDate, appPeriod);
 
             const totalRevenue = companyInvoices.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0);
             // Le spese includono gia' i rimborsi fatturati (voci auto-create con categoria 'Rimborso fatturato')
@@ -4450,36 +4505,25 @@
                 .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
             const netRevenue = totalRevenue - totalExpensesAmount;
 
-            const currentMonth = new Date().getMonth();
             const currentYear = new Date().getFullYear();
-
-            const monthInvoices = companyInvoices.filter(inv => {
-                const invDate = new Date(inv.invoice_date || inv.date);
-                return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
-            });
 
             animateValue(document.getElementById('totalRevenue'), totalRevenue, v => formatCurrency(v));
             animateValue(document.getElementById('totalExpenses'), totalExpensesAmount, v => formatCurrency(v));
             animateValue(document.getElementById('netRevenue'), netRevenue, v => formatCurrency(v));
-            animateValue(document.getElementById('monthInvoices'), monthInvoices.length, v => String(Math.round(v)));
+            animateValue(document.getElementById('monthInvoices'), companyInvoices.length, v => String(Math.round(v)));
 
-            // Calculate trends
-            const prevMonth = new Date();
-            prevMonth.setMonth(prevMonth.getMonth() - 1);
-            const prevMonthInvoices = companyInvoices.filter(inv => {
-                const d = new Date(inv.invoice_date || inv.date);
-                return d.getMonth() === prevMonth.getMonth() && d.getFullYear() === prevMonth.getFullYear();
-            });
-            // Confronto ANNO su ANNO (i totali sono storici, ha senso vs anno scorso)
-            const sumYear = (arr, dateKeys, amountKey, year) => arr.filter(x => {
-                const d = new Date(x[dateKeys[0]] || x[dateKeys[1]]);
-                return d.getFullYear() === year;
-            }).reduce((s, x) => s + parseFloat(x[amountKey] || 0), 0);
-
-            const curYearRevenue = sumYear(companyInvoices, ['invoice_date', 'date'], 'total', currentYear);
-            const prevYearRevenue = sumYear(companyInvoices, ['invoice_date', 'date'], 'total', currentYear - 1);
-            const curYearExp = sumYear(expenses, ['expense_date', 'date'], 'amount', currentYear);
-            const prevYearExp = sumYear(expenses, ['expense_date', 'date'], 'amount', currentYear - 1);
+            // Confronto. Con un mese o un anno: il periodo prima. Con «Tutto» i totali sono
+            // storici, quindi anno in corso contro anno scorso.
+            const sumOf = (list, key) => list.reduce((s, x) => s + parseFloat(x[key] || 0), 0);
+            const prevPeriod = Period.previous(appPeriod);
+            const cmpNow = prevPeriod ? appPeriod : { mode: 'A', year: currentYear, month: 1 };
+            const cmpPrev = prevPeriod || { mode: 'A', year: currentYear - 1, month: 1 };
+            const versus = prevPeriod ? Period.previousLabel(appPeriod) : 'anno scorso';
+            const noCompare = prevPeriod ? versus : String(currentYear - 1);
+            const curYearRevenue = sumOf(Period.filter(invoices, invoiceDate, cmpNow), 'total');
+            const prevYearRevenue = sumOf(Period.filter(invoices, invoiceDate, cmpPrev), 'total');
+            const curYearExp = sumOf(Period.filter(expenses, expenseDate, cmpNow), 'amount');
+            const prevYearExp = sumOf(Period.filter(expenses, expenseDate, cmpPrev), 'amount');
 
             // Helper: pillola trend con freccia e %
             const pill = (el, cur, prev, invert) => {
@@ -4491,15 +4535,15 @@
                     if (rounded >= 1) {
                         const positive = d > 0;
                         arrow = positive ? '↑' : '↓';
-                        txt = rounded + '% vs anno scorso';
+                        txt = rounded + '% vs ' + versus;
                         // invert: per le spese, salire è "negativo"
                         cls = (positive ? !invert : invert) ? 'up' : 'down';
                     } else {
-                        arrow = '→'; txt = 'stabile vs anno scorso';
+                        arrow = '→'; txt = 'stabile vs ' + versus;
                     }
                 } else {
                     // Nessun dato dell'anno precedente: pillola neutra, no colore fuorviante
-                    txt = `nessun confronto · ${currentYear - 1}`;
+                    txt = `nessun confronto · ${noCompare}`;
                 }
                 el.className = 'stat-trend ' + cls;
                 el.innerHTML = (arrow ? `<span>${arrow}</span> ` : '') + txt;
@@ -4514,7 +4558,7 @@
                 netTrend.innerHTML = `<span>${netRevenue >= 0 ? '↑' : '↓'}</span> ${netRevenue >= 0 ? 'In utile' : 'In perdita'}`;
             }
             const monthTrend = document.getElementById('monthInvoicesTrend');
-            if (monthTrend) { monthTrend.className = 'stat-trend'; monthTrend.textContent = `su ${companyInvoices.length} totali`; }
+            if (monthTrend) { monthTrend.className = 'stat-trend'; monthTrend.textContent = appPeriod.mode === 'T' ? '' : `su ${invoices.length} totali`; }
 
             updateFinanceChart();
         }
@@ -4744,39 +4788,6 @@
         }
 
         // REPORTS
-        function populateYearFilters() {
-            const years = [...new Set(invoices.map(inv => new Date(inv.invoice_date || inv.date).getFullYear()))].sort((a, b) => b - a);
-
-            if (years.length === 0) {
-                years.push(new Date().getFullYear());
-            }
-
-            const selects = [
-                document.getElementById('filterYear'),
-                document.getElementById('reportYear')
-            ];
-
-            selects.forEach(select => {
-                const currentValue = select.value;
-                if (select.id === 'filterYear') {
-                    select.innerHTML = '<option value="">Tutti gli anni</option>';
-                } else {
-                    select.innerHTML = '';
-                }
-
-                years.forEach(year => {
-                    const option = document.createElement('option');
-                    option.value = year;
-                    option.textContent = year;
-                    select.appendChild(option);
-                });
-
-                if (!currentValue && years.length > 0) {
-                    select.value = years[0];
-                }
-            });
-        }
-
         function generateReports() {
             generateMonthlyReport();
             generateCustomerReport();
@@ -4785,7 +4796,8 @@
         function generateMonthlyReport() {
             if (!currentCompanyId) return;
 
-            const year = document.getElementById('reportYear').value || new Date().getFullYear();
+            // L'anno è quello del periodo; con «Tutto» resta l'anno in corso.
+            const year = appPeriod.mode === 'T' ? new Date().getFullYear() : appPeriod.year;
             const tbody = document.querySelector('#monthlyReportTable tbody');
             tbody.innerHTML = '';
 
@@ -4816,6 +4828,7 @@
                 yearInvoices += monthInvoices.length;
 
                 const row = tbody.insertRow();
+                if (appPeriod.mode === 'M' && month === appPeriod.month - 1) row.className = 'is-period';
                 row.innerHTML = `
                     <td><strong>${monthNames[month]}</strong></td>
                     <td>${monthInvoices.length}</td>
@@ -4844,7 +4857,7 @@
 
             const customerData = {};
 
-            invoices.forEach(inv => {
+            Period.filter(invoices, invoiceDate, appPeriod).forEach(inv => {
                 const cid = inv.customer_id || inv.customerId;
                 if (!customerData[cid]) customerData[cid] = { count: 0, total: 0 };
                 customerData[cid].count++;
