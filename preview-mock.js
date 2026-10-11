@@ -92,12 +92,12 @@
         configured: true, changed: 0,
         balances: [{ currency: 'USD', amount: 12480 }, { currency: 'EUR', amount: 3210.5 }, { currency: 'GBP', amount: 0 }],
         recipients: [
-            { id: 5, name: 'Maria Rossi', currency: 'EUR', country: 'IT', type: 'iban', account: 'IT60 •••• 3456' },
+            { id: 5, name: 'Maria Rossi', currency: 'EUR', country: 'IT', type: 'iban', account: 'IT60 •••• 3456', label: 'Assistente' },
             { id: 6, name: 'Blue Frame Video Ltd', currency: 'USD', country: 'US', type: 'aba', account: '•••• 6789' },
             { id: 7, name: 'Studio Eridano di Marco Bianchi e Associati', currency: 'EUR', country: 'IT', type: 'iban', account: 'IT12 •••• 9012' }
         ],
         payments: [
-            { id: 3, recipient_name: 'Maria Rossi', target_amount: '350.00', target_currency: 'EUR', source_amount: '350.62', source_currency: 'EUR', fee: '0.62', reference: 'Compenso ottobre', category: 'Personale', status: 'incoming_payment_waiting', state: 'waiting', status_label: 'Da confermare su Wise', expense_id: null, created_at: dayOffset(0) },
+            { id: 3, recipient_name: 'Maria Rossi', recipient_label: 'Assistente', target_amount: '350.00', target_currency: 'EUR', source_amount: '350.62', source_currency: 'EUR', fee: '0.62', reference: 'Compenso ottobre', category: 'Personale', status: 'incoming_payment_waiting', state: 'waiting', status_label: 'Da confermare su Wise', expense_id: null, created_at: dayOffset(0) },
             { id: 2, recipient_name: 'Blue Frame Video Ltd', target_amount: '420.00', target_currency: 'USD', source_amount: '420.00', source_currency: 'USD', fee: '0.39', reference: 'Montaggi settembre', category: 'Marketing', status: 'outgoing_payment_sent', state: 'paid', status_label: 'Inviato', expense_id: 41, created_at: dayOffset(-13) },
             { id: 1, recipient_name: 'Studio Eridano di Marco Bianchi e Associati', target_amount: '350.00', target_currency: 'EUR', source_amount: '350.62', source_currency: 'EUR', fee: '0.62', reference: '', category: 'Consulenze', status: 'cancelled', state: 'cancelled', status_label: 'Annullato', expense_id: null, created_at: dayOffset(-29) }
         ]
@@ -150,7 +150,7 @@
             invoice: 'openInvoiceModal', expense: 'openExpenseModal', recurring: 'openRecurringModal',
             reminder: 'openReminderModal', note: 'openNoteModal', customer: 'openCustomerModal',
             company: 'openCompanyModal', refund: 'openExpenseNoteModal', settings: 'openCompanySettings',
-            wiserecipient: 'openWiseRecipientModal'
+            wiserecipient: 'openWiseRecipientModal', wiselabels: 'openWiseLabelsModal'
         };
         const opener = openers[params.get('modal')];
         if (opener && typeof window[opener] === 'function') window[opener]();

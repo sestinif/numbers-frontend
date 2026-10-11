@@ -1081,6 +1081,15 @@
         .wise-note { margin: 0 0 16px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
         #wiseStats .mini-stat-value.is-pending { color: var(--warning); }
         .wise-note[hidden] { display: none; }
+        .wise-labels { margin: 0 0 18px; }
+        .wise-label-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border-color); }
+        .wise-label-row:first-child { border-top: 0; }
+        .wise-label-who { font-size: 13px; color: var(--text-secondary); line-height: 1.4; overflow-wrap: anywhere; }
+        .wise-label-row input {
+            width: 100%; height: 40px; padding: 0 12px; background: transparent; border: 1px solid var(--border-strong); border-radius: 8px;
+            color: var(--text-primary); font-family: var(--font-body); font-size: 14px; font-weight: 400;
+        }
+        .wise-label-row input:focus { outline: none; border-color: var(--primary-green); }
         .badge-muted { color: var(--text-secondary); }
         .badge-danger { color: var(--danger); }
         @media (max-width: 768px) {
@@ -1089,6 +1098,8 @@
                 order: 1; flex: 1 1 0; font-size: 14px; color: var(--text-primary); overflow-wrap: anywhere;
             }
             #wisePaymentsTable td:nth-child(2)::before, #wisePaymentsTable td:nth-child(1)::before { content: none; }
+            .wise-label-row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+            #payments .toolbar-actions { flex-wrap: wrap; }
         }
 
         /* ===== PERIODO (period.js) =====
@@ -1550,6 +1561,7 @@
                             </div>
                         </div>
                         <div class="toolbar-actions">
+                            <button class="btn btn-secondary" onclick="openWiseLabelsModal()">Nomi beneficiari</button>
                             <button class="btn btn-secondary" onclick="openWiseRecipientModal()">+ Beneficiario</button>
                         </div>
                     </div>
@@ -2016,10 +2028,26 @@
         </div>
     </div>
 
+    <div id="wiseLabelsModal" class="modal">
+        <div class="modal-content">
+            <h2>Nomi dei beneficiari</h2>
+            <form id="wiseLabelsForm">
+                <p class="wise-note">Dai a ogni beneficiario un nome che capisci al volo, tipo «Assistente» o «Mio conto N26». Il nome si vede solo in Numbers: su Wise resta quello del conto. Lascia vuoto per non dargliene uno.</p>
+                <div id="wiseLabelsList" class="wise-labels"></div>
+                <button type="submit" class="btn btn-primary" id="wiseLabelsSubmit">Salva nomi</button>
+                <button type="button" class="btn btn-secondary" onclick="closeWiseLabelsModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
     <div id="wiseRecipientModal" class="modal">
         <div class="modal-content">
             <h2>Nuovo beneficiario</h2>
             <form id="wiseRecipientForm">
+                <div class="form-group">
+                    <label>Nome in Numbers</label>
+                    <input type="text" id="wiseRecipientLabel" maxlength="60" autocomplete="off" placeholder="Es: Assistente, Video editor">
+                </div>
                 <div class="form-group">
                     <label>Intestatario del conto *</label>
                     <input type="text" id="wiseRecipientName" required maxlength="120" autocomplete="off" placeholder="Nome e cognome, o ragione sociale">
@@ -4052,6 +4080,11 @@
             return n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' }) + ' ' + currency;
         }
 
+        // Il nome dato in Numbers davanti, quello del conto su Wise dietro.
+        function wiseRecipientTitle(r) {
+            return r.label ? `${r.label} · ${r.name}` : r.name;
+        }
+
         function renderWiseMessage(text, isError) {
             const msg = document.getElementById('wiseMessage');
             msg.textContent = text;
@@ -4112,7 +4145,7 @@
                     const row = pBody.insertRow();
                     row.innerHTML = `
                         <td>${new Date(p.created_at).toLocaleDateString('it-IT')}</td>
-                        <td>${escapeHtml(p.recipient_name)}</td>
+                        <td>${escapeHtml(p.recipient_label || p.recipient_name)}</td>
                         <td>${p.reference ? escapeHtml(p.reference) : ''}</td>
                         <td><span class="badge ${tone[p.state] || 'badge-muted'}">${escapeHtml(p.status_label)}</span></td>
                         <td class="num"><strong>${wiseMoney(p.target_amount, p.target_currency)}</strong></td>
@@ -4134,10 +4167,10 @@
             const recipients = (wiseData && wiseData.recipients) || [];
             const sel = document.getElementById('wisePayRecipient');
             sel.innerHTML = `<option value="">${recipients.length ? 'Scegli…' : 'Nessun beneficiario: aggiungine uno'}</option>`;
-            [...recipients].sort((a, b) => a.name.localeCompare(b.name, 'it')).forEach(r => {
+            [...recipients].sort((a, b) => wiseRecipientTitle(a).localeCompare(wiseRecipientTitle(b), 'it')).forEach(r => {
                 const o = document.createElement('option');
                 o.value = r.id;
-                o.textContent = `${r.name} · ${r.currency}${r.account ? ' · ' + r.account : ''}`;
+                o.textContent = `${wiseRecipientTitle(r)} · ${r.currency}${r.account ? ' · ' + r.account : ''}`;
                 sel.appendChild(o);
             });
             const src = document.getElementById('wisePaySource');
@@ -4227,6 +4260,54 @@
             await loadPayments();
         }
 
+        function openWiseLabelsModal() {
+            if (!wiseData) { showToast('Wise non è collegato', 'info'); return; }
+            const list = document.getElementById('wiseLabelsList');
+            list.innerHTML = '';
+            const recipients = [...(wiseData.recipients || [])].sort((a, b) => a.name.localeCompare(b.name, 'it') || String(a.account).localeCompare(String(b.account)));
+            if (recipients.length === 0) list.innerHTML = '<p class="wise-note">Nessun beneficiario su Wise.</p>';
+            recipients.forEach(r => {
+                const row = document.createElement('div');
+                row.className = 'wise-label-row';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.maxLength = 60;
+                input.autocomplete = 'off';
+                input.value = r.label || '';
+                input.placeholder = 'Nome in Numbers';
+                input.dataset.recipient = r.id;
+                input.setAttribute('aria-label', `Nome per ${r.name}`);
+                const who = document.createElement('span');
+                who.className = 'wise-label-who';
+                who.textContent = `${r.name} · ${r.currency}${r.account ? ' · ' + r.account : ''}`;
+                row.appendChild(who);
+                row.appendChild(input);
+                list.appendChild(row);
+            });
+            document.getElementById('wiseLabelsSubmit').disabled = recipients.length === 0;
+            document.getElementById('wiseLabelsModal').classList.add('active');
+        }
+
+        function closeWiseLabelsModal() {
+            document.getElementById('wiseLabelsModal').classList.remove('active');
+        }
+
+        document.getElementById('wiseLabelsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('wiseLabelsSubmit');
+            btn.disabled = true;
+            try {
+                const labels = [...document.querySelectorAll('#wiseLabelsList input')].map(i => ({ recipientId: i.dataset.recipient, label: i.value }));
+                await apiCall('PUT', `/companies/${currentCompanyId}/wise/recipient-labels`, { labels });
+                closeWiseLabelsModal();
+                showToast('Nomi salvati', 'success');
+                await loadPayments();
+            } catch (err) {
+                showToast('Nomi non salvati: ' + err.message, 'error');
+                btn.disabled = false;
+            }
+        });
+
         function openWiseRecipientModal() {
             if (!currentCompanyId) { alert('Seleziona prima un\'azienda!'); return; }
             if (!wiseData) { showToast('Wise non è collegato', 'info'); return; }
@@ -4244,11 +4325,17 @@
             const btn = document.getElementById('wiseRecipientSubmit');
             btn.disabled = true;
             try {
-                await apiCall('POST', `/companies/${currentCompanyId}/wise/recipients`, {
+                const made = await apiCall('POST', `/companies/${currentCompanyId}/wise/recipients`, {
                     name: document.getElementById('wiseRecipientName').value,
                     iban: document.getElementById('wiseRecipientIban').value,
                     legalType: document.getElementById('wiseRecipientType').value
                 });
+                const label = document.getElementById('wiseRecipientLabel').value.trim();
+                if (label && made && made.id) {
+                    // Il beneficiario su Wise c'è già: se il nome non si salva, lo si mette dopo da «Nomi beneficiari».
+                    try { await apiCall('PUT', `/companies/${currentCompanyId}/wise/recipient-labels`, { labels: [{ recipientId: made.id, label }] }); }
+                    catch (e2) { showToast('Beneficiario salvato, ma il nome no: mettilo da «Nomi beneficiari»', 'info'); }
+                }
                 closeWiseRecipientModal();
                 showToast('Beneficiario salvato', 'success');
                 await loadPayments();
