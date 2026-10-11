@@ -1556,7 +1556,7 @@
                     </div>
                     <div id="wiseMessage" class="wise-message" hidden></div>
                     <div id="wiseBody">
-                        <p class="wise-hint">Numbers prepara il bonifico. Per farlo partire, confermalo nell'app di Wise.</p>
+                        <p class="wise-hint">Numbers prepara il bonifico. Per farlo partire, Federico deve confermarlo nell'app di Wise.</p>
                         <div class="card">
                             <h2>Beneficiari</h2>
                             <div class="table-container">
@@ -2043,7 +2043,7 @@
                     </select>
                 </div>
                 <p id="wisePayQuote" class="wise-quote" aria-live="polite"></p>
-                <p class="wise-note">Il bonifico viene solo preparato: non parte finché non lo confermi nell'app di Wise.</p>
+                <p class="wise-note">Il bonifico viene solo preparato: non parte finché Federico non lo conferma nell'app di Wise.</p>
                 <button type="submit" class="btn btn-primary" id="wisePaySubmit">Prepara su Wise</button>
                 <button type="button" class="btn btn-secondary" onclick="closeWisePayModal()">Annulla</button>
             </form>
@@ -4257,7 +4257,7 @@
                     trackExpense: document.getElementById('wisePayTrack').value === 'yes'
                 });
                 closeWisePayModal();
-                showToast('Bonifico preparato: confermalo nell\'app di Wise', 'success');
+                showToast('Bonifico preparato: Federico deve confermarlo nell\'app di Wise', 'success');
                 await loadPayments();
             } catch (err) {
                 showToast('Bonifico non preparato: ' + err.message, 'error');
