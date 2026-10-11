@@ -88,6 +88,20 @@
         { id: 3, date: dayOffset(-48), description: 'Taxi aeroporto', customer_name: 1, amount: 46.5, completed: true, action_type: 'invoice', notes: '', receipts_count: 1 }
     ];
 
+    const wiseMock = {
+        configured: true, changed: 0,
+        balances: [{ currency: 'USD', amount: 12480 }, { currency: 'EUR', amount: 3210.5 }, { currency: 'GBP', amount: 0 }],
+        recipients: [
+            { id: 5, name: 'Maria Rossi', currency: 'EUR', country: 'IT', type: 'iban', account: 'IT60 •••• 3456' },
+            { id: 6, name: 'Blue Frame Video Ltd', currency: 'USD', country: 'US', type: 'aba', account: '•••• 6789' },
+            { id: 7, name: 'Studio Eridano di Marco Bianchi e Associati', currency: 'EUR', country: 'IT', type: 'iban', account: 'IT12 •••• 9012' }
+        ],
+        payments: [
+            { id: 3, recipient_name: 'Maria Rossi', target_amount: '350.00', target_currency: 'EUR', source_amount: '350.62', source_currency: 'EUR', fee: '0.62', reference: 'Compenso ottobre', category: 'Personale', status: 'incoming_payment_waiting', state: 'waiting', status_label: 'Da confermare su Wise', expense_id: null, created_at: dayOffset(0) },
+            { id: 2, recipient_name: 'Blue Frame Video Ltd', target_amount: '420.00', target_currency: 'USD', source_amount: '420.00', source_currency: 'USD', fee: '0.39', reference: 'Montaggi settembre', category: 'Marketing', status: 'outgoing_payment_sent', state: 'paid', status_label: 'Inviato', expense_id: 41, created_at: dayOffset(-13) },
+            { id: 1, recipient_name: 'Studio Eridano di Marco Bianchi e Associati', target_amount: '350.00', target_currency: 'EUR', source_amount: '350.62', source_currency: 'EUR', fee: '0.62', reference: '', category: 'Consulenze', status: 'cancelled', state: 'cancelled', status_label: 'Annullato', expense_id: null, created_at: dayOffset(-29) }
+        ]
+    };
     const tables = { customers, invoices, expenses: liveExpenses, reminders, 'expense-notes': expenseNotes, notes, recurring };
     const empty = params.get('empty') === '1';
     const noCompany = params.get('nocompany') === '1';
@@ -99,6 +113,16 @@
         if (!u.startsWith(API)) return realFetch(url, opts);
         const method = (opts && opts.method) || 'GET';
         const path = u.slice(API.length).split('?')[0];
+        // Pagamenti (Wise): ?nowise=1 mostra la pagina non collegata, ?wiseerr=1 l'errore.
+        if (/\/wise$/.test(path)) {
+            if (params.get('wiseerr') === '1') return Promise.resolve(new Response(JSON.stringify({ error: 'Wise non riconosce il token: è sbagliato, scaduto o cancellato.' }), { status: 502, headers: { 'Content-Type': 'application/json' } }));
+            return json(params.get('nowise') === '1' ? { configured: false } : wiseMock);
+        }
+        if (/\/wise\/quote$/.test(path)) {
+            const b = JSON.parse((opts && opts.body) || '{}');
+            const usd = b.sourceCurrency === 'USD';
+            return json({ id: 'q-1', sourceCurrency: b.sourceCurrency, sourceAmount: Math.round(b.amount * (usd ? 109 : 100) + 62) / 100, targetCurrency: 'EUR', targetAmount: b.amount, fee: 0.62, rate: usd ? 0.92 : 1, delivery: null });
+        }
         if (method !== 'GET') return json({ id: 999, ok: true });
         if (path === '/companies') return json(noCompany ? [] : companies);
         const m = path.match(/^\/companies\/[^/]+\/([a-z-]+)$/);
@@ -125,7 +149,8 @@
         const openers = {
             invoice: 'openInvoiceModal', expense: 'openExpenseModal', recurring: 'openRecurringModal',
             reminder: 'openReminderModal', note: 'openNoteModal', customer: 'openCustomerModal',
-            company: 'openCompanyModal', refund: 'openExpenseNoteModal', settings: 'openCompanySettings'
+            company: 'openCompanyModal', refund: 'openExpenseNoteModal', settings: 'openCompanySettings',
+            wisepay: 'openWisePayModal', wiserecipient: 'openWiseRecipientModal'
         };
         const opener = openers[params.get('modal')];
         if (opener && typeof window[opener] === 'function') window[opener]();

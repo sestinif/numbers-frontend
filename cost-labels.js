@@ -25,6 +25,9 @@
     function expenseBadge(expense) {
         const source = expense && expense.auto_source;
         if (!source) return null;
+        if (String(source).indexOf('wise:') === 0) {
+            return { text: 'Wise', tone: 'auto', title: expense.notes || 'Bonifico partito da Wise' };
+        }
         if (String(source).indexOf('rule:') !== 0) {
             return { text: 'Auto', tone: 'auto', title: expense.notes || 'Si aggiorna da sola' };
         }

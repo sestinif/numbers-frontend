@@ -44,3 +44,9 @@ test('i conti già usati, senza doppioni e in ordine', () => {
     assert.deepStrictEqual(C.knownAccounts(rules, expenses), ['mercury', 'Relay', 'Revolut Business']);
     assert.deepStrictEqual(C.knownAccounts(null, undefined), []);
 });
+
+test('la spesa nata da un bonifico Wise ha il suo bollino', () => {
+    const b = C.expenseBadge({ auto_source: 'wise:901', notes: 'Bonifico Wise n. 901' });
+    assert.deepStrictEqual(b, { text: 'Wise', tone: 'auto', title: 'Bonifico Wise n. 901' });
+    assert.strictEqual(C.expenseBadge({ auto_source: 'wise:5' }).title, 'Bonifico partito da Wise');
+});
