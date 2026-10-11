@@ -1079,7 +1079,7 @@
         .wise-quote.is-error { color: var(--danger); }
         .wise-note { margin: 0 0 16px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
         #wiseStats .mini-stat-value.is-pending { color: var(--warning); }
-        #wisePayCurrency { color: var(--text-secondary); }
+        .wise-note[hidden] { display: none; }
         .badge-muted { color: var(--text-secondary); }
         .badge-danger { color: var(--danger); }
         @media (max-width: 768px) {
@@ -2004,18 +2004,26 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Importo che deve arrivare *</label>
+                        <label id="wisePayAmountLabel" for="wisePayAmount">Importo che deve arrivare *</label>
                         <input type="number" id="wisePayAmount" step="0.01" min="0.01" required placeholder="0.00" oninput="scheduleWiseQuote()">
                     </div>
                     <div class="form-group">
-                        <label>Valuta del beneficiario</label>
-                        <input type="text" id="wisePayCurrency" readonly tabindex="-1">
+                        <label>Paga dal saldo</label>
+                        <select id="wisePaySource" onchange="scheduleWiseQuote()"></select>
                     </div>
+                </div>
+                <p id="wisePayCurrencyNote" class="wise-note" hidden></p>
+                <div class="form-group">
+                    <label>Causale</label>
+                    <input type="text" id="wisePayReference" maxlength="140" autocomplete="off" placeholder="Es: Compenso ottobre">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Paga dal saldo</label>
-                        <select id="wisePaySource" onchange="scheduleWiseQuote()"></select>
+                        <label>Segnare il bonifico tra le Spese?</label>
+                        <select id="wisePayTrack">
+                            <option value="yes">Sì, da solo quando parte</option>
+                            <option value="no">No, non segnarlo</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Categoria della spesa</label>
@@ -2030,17 +2038,6 @@
                             <option value="Altro">Altro</option>
                         </select>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Causale</label>
-                    <input type="text" id="wisePayReference" maxlength="140" autocomplete="off" placeholder="Es: Compenso ottobre">
-                </div>
-                <div class="form-group">
-                    <label>Quando parte, segnala in Spese</label>
-                    <select id="wisePayTrack">
-                        <option value="yes">Sì, sul conto Wise</option>
-                        <option value="no">No</option>
-                    </select>
                 </div>
                 <p id="wisePayQuote" class="wise-quote" aria-live="polite"></p>
                 <p class="wise-note">Il bonifico viene solo preparato: non parte finché Federico non lo conferma nell'app di Wise.</p>
@@ -4212,7 +4209,14 @@
         // Scelto il beneficiario: valuta fissata, e si paga dal saldo nella stessa valuta se c'è.
         function updateWisePayForm() {
             const r = wiseData && (wiseData.recipients || []).find(x => String(x.id) === document.getElementById('wisePayRecipient').value);
-            document.getElementById('wisePayCurrency').value = r ? r.currency : '';
+            // La valuta non si sceglie: è quella del conto del beneficiario su Wise.
+            const cur = r && r.currency ? r.currency : '';
+            document.getElementById('wisePayAmountLabel').textContent = cur ? `Importo che deve arrivare, in ${cur} *` : 'Importo che deve arrivare *';
+            const note = document.getElementById('wisePayCurrencyNote');
+            note.hidden = !r;
+            note.textContent = !r ? '' : cur
+                ? `Al beneficiario arrivano ${cur}: è la valuta del suo conto salvato su Wise, da qui non si cambia.`
+                : 'Wise non indica la valuta di questo beneficiario: aprilo su Wise e controlla il conto.';
             const src = document.getElementById('wisePaySource');
             if (r && [...src.options].some(o => o.value === r.currency)) src.value = r.currency;
             scheduleWiseQuote();
