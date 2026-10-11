@@ -88,6 +88,14 @@
         { id: 3, date: dayOffset(-48), description: 'Taxi aeroporto', customer_name: 1, amount: 46.5, completed: true, action_type: 'invoice', notes: '', receipts_count: 1 }
     ];
 
+    const mailMock = {
+        configured: true, from: 'info@northwindstudio.example', copyToOwner: true,
+        sent: [
+            { id: 3, recipients: 'amministrazione@aurora-academy.example', subject: 'Fattura n. 34 del 03/10/2026 — Northwind Studio LLC', excerpt: 'Buongiorno, in allegato la fattura n. 34…', attachments: 'Fattura_34.pdf', invoice_id: 34, created_at: dayOffset(0) },
+            { id: 2, recipients: 'studio@eridano.example, marco@eridano.example', subject: 'Documenti per la chiusura del trimestre', excerpt: 'Ciao Marco, ti mando…', attachments: 'estratto.pdf, riepilogo.xlsx', invoice_id: null, created_at: dayOffset(-4) },
+            { id: 1, recipients: 'info@castellofitness.example', subject: 'Fattura n. 31 del 12/09/2026 — Northwind Studio LLC', excerpt: 'Buongiorno…', attachments: 'Fattura_31.pdf', invoice_id: 31, created_at: dayOffset(-29) }
+        ]
+    };
     const wiseMock = {
         configured: true, changed: 0,
         balances: [{ currency: 'USD', amount: 12480 }, { currency: 'EUR', amount: 3210.5 }, { currency: 'GBP', amount: 0 }],
@@ -124,6 +132,8 @@
             const usd = b.sourceCurrency === 'USD';
             return json({ id: 'q-1', sourceCurrency: b.sourceCurrency, sourceAmount: Math.round(b.amount * (usd ? 109 : 100) + 62) / 100, targetCurrency: 'EUR', targetAmount: b.amount, fee: 0.62, rate: usd ? 0.92 : 1, delivery: null });
         }
+        // Email: ?nomail=1 mostra la casella non collegata.
+        if (/\/email$/.test(path)) return json(params.get('nomail') === '1' ? { configured: false, from: null, copyToOwner: false, sent: [] } : mailMock);
         if (method !== 'GET') return json({ id: 999, ok: true });
         if (path === '/companies') return json(noCompany ? [] : companies);
         const m = path.match(/^\/companies\/[^/]+\/([a-z-]+)$/);

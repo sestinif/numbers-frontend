@@ -1070,6 +1070,17 @@
         .row-sheet[data-table="invoicesTable"] .row-sheet__amount,
         .row-sheet[data-table="customersTable"] .row-sheet__amount { color: var(--money-in); }
 
+        /* ===== EMAIL ===== */
+        #mailBody[hidden] { display: none; }
+        .mail-from { font-size: 16px; overflow-wrap: anywhere; }
+        .mail-attachment { margin: 0 0 10px; font-size: 13px; color: var(--text-primary); }
+        #mailForm textarea, #invoiceMailForm textarea { min-height: 180px; line-height: 1.5; resize: vertical; }
+        #mailFiles { height: auto; padding: 10px 12px; font-size: 13px; color: var(--text-secondary); }
+        @media (max-width: 768px) {
+            #mailSentTable td:nth-child(3) { order: 1; flex: 1 1 0; font-size: 14px; color: var(--text-primary); overflow-wrap: anywhere; }
+            #mailSentTable td:nth-child(3)::before, #mailSentTable td:nth-child(1)::before { content: none; }
+        }
+
         /* ===== PAGAMENTI (WISE) ===== */
         .wise-pay-card { max-width: 640px; margin-top: 20px; }
         .wise-pay-card form { margin-top: 4px; }
@@ -1292,6 +1303,10 @@
                     <i data-lucide="sticky-note"></i>
                     <span>Note</span>
                     <span class="reminder-badge" id="notesBadge" style="display:none;">0</span>
+                </button>
+                <button class="sidebar-nav-item" onclick="showSection('mail', this)">
+                    <i data-lucide="mail"></i>
+                    <span>Email</span>
                 </button>
 
                 <div class="nav-group-label">Analisi</div>
@@ -1668,6 +1683,64 @@
                     </div>
                 </div>
 
+                <!-- EMAIL (GMAIL, SOLO INVIO) -->
+                <div id="mail" class="section">
+                    <div class="section-toolbar">
+                        <div class="mini-stats-bar">
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Parte da</span>
+                                <span class="mini-stat-value mail-from" id="mailFrom">-</span>
+                            </div>
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Inviate oggi</span>
+                                <span class="mini-stat-value" id="mailToday">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="mailMessage" class="wise-message" hidden></div>
+                    <div id="mailBody">
+                        <div class="card wise-pay-card">
+                            <h2>Nuova email</h2>
+                            <form id="mailForm">
+                                <div class="form-group">
+                                    <label for="mailTo">A *</label>
+                                    <input type="text" id="mailTo" required autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="nome@azienda.it — più indirizzi separati da virgola">
+                                </div>
+                                <div class="form-group">
+                                    <label for="mailSubject">Oggetto *</label>
+                                    <input type="text" id="mailSubject" required maxlength="300" autocomplete="off">
+                                </div>
+                                <div class="form-group">
+                                    <label for="mailText">Testo *</label>
+                                    <textarea id="mailText" rows="9" required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="mailFiles">Allegati</label>
+                                    <input type="file" id="mailFiles" multiple>
+                                </div>
+                                <p class="wise-note" id="mailNote"></p>
+                                <button type="submit" class="btn btn-primary" id="mailSubmit">Invia email</button>
+                            </form>
+                        </div>
+                        <div class="card">
+                            <h2>Email inviate da Numbers</h2>
+                            <div class="table-container">
+                                <table id="mailSentTable" class="list-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>A</th>
+                                            <th>Oggetto</th>
+                                            <th>Allegati</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- REMINDERS -->
                 <div id="reminders" class="section">
                     <div class="section-toolbar">
@@ -1957,6 +2030,10 @@
                     <label>VAT number</label>
                     <input type="text" id="customerVat" placeholder="IT12345678901">
                 </div>
+                <div class="form-group">
+                    <label for="customerEmail">Email per le fatture</label>
+                    <input type="text" id="customerEmail" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="amministrazione@cliente.it">
+                </div>
                 <button type="submit" class="btn btn-primary">Salva</button>
                 <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">Annulla</button>
             </form>
@@ -2064,6 +2141,31 @@
 
                 <button type="submit" class="btn btn-primary">Salva spesa</button>
                 <button type="button" class="btn btn-secondary" onclick="closeExpenseModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="invoiceMailModal" class="modal">
+        <div class="modal-content">
+            <h2 id="invoiceMailTitle">Invia la fattura</h2>
+            <form id="invoiceMailForm">
+                <input type="hidden" id="invoiceMailId">
+                <div class="form-group">
+                    <label for="invoiceMailTo">A *</label>
+                    <input type="text" id="invoiceMailTo" required autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="amministrazione@cliente.it">
+                </div>
+                <div class="form-group">
+                    <label for="invoiceMailSubject">Oggetto *</label>
+                    <input type="text" id="invoiceMailSubject" required maxlength="300" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="invoiceMailText">Testo *</label>
+                    <textarea id="invoiceMailText" rows="9" required></textarea>
+                </div>
+                <p class="mail-attachment" id="invoiceMailAttachment"></p>
+                <p class="wise-note" id="invoiceMailNote"></p>
+                <button type="submit" class="btn btn-primary" id="invoiceMailSubmit">Invia email</button>
+                <button type="button" class="btn btn-secondary" onclick="closeInvoiceMail()">Annulla</button>
             </form>
         </div>
     </div>
@@ -2743,7 +2845,7 @@
             moveNavIndicator(btn);
 
             // Update main header title
-            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', recurring: 'Ricorrenti', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Rimborsi', payments: 'Pagamenti', reports: 'Report', companies: 'Aziende' };
+            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', recurring: 'Ricorrenti', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Rimborsi', payments: 'Pagamenti', mail: 'Email', reports: 'Report', companies: 'Aziende' };
             document.getElementById('mainHeaderTitle').textContent = titles[sectionId] || sectionId;
             renderPeriodBar(sectionId);
 
@@ -2774,6 +2876,8 @@
                 loadExpenseNotes();
             } else if (sectionId === 'payments') {
                 loadPayments();
+            } else if (sectionId === 'mail') {
+                loadMail();
             }
         }
 
@@ -3177,6 +3281,7 @@
                 document.getElementById('customerName').value = customer.name;
                 document.getElementById('customerAddress').value = customer.address || '';
                 document.getElementById('customerVat').value = customer.vat || customer.vat_number || '';
+                document.getElementById('customerEmail').value = customer.email || '';
             } else {
                 document.getElementById('customerModalTitle').textContent = 'Aggiungi cliente';
             }
@@ -3195,7 +3300,8 @@
                 const customerData = {
                     name: document.getElementById('customerName').value,
                     address: document.getElementById('customerAddress').value,
-                    vat: document.getElementById('customerVat').value
+                    vat: document.getElementById('customerVat').value,
+                    email: document.getElementById('customerEmail').value
                 };
                 if (customerId) {
                     await apiCall('PUT', `/customers/${customerId}`, customerData);
@@ -3649,6 +3755,7 @@
                     <td class="action-btns">
                         <button class="btn btn-secondary" onclick="viewInvoicePDF(${invoice.id})">Visualizza</button>
                         <button class="btn btn-secondary" onclick="regeneratePDF(${invoice.id})">PDF</button>
+                        <button class="btn btn-secondary" onclick="openInvoiceMail(${invoice.id})">Invia per email</button>
                         <button class="btn btn-secondary" onclick="duplicateInvoice(${invoice.id})">Duplica</button>
                         <button class="btn btn-secondary" onclick="openInvoiceModal(${invoice.id})">Modifica</button>
                         <button class="btn btn-danger" onclick="deleteInvoice(${invoice.id})">Elimina</button>
@@ -4107,6 +4214,170 @@
             pendingEl.classList.toggle('is-pending', pending > 0);
             refreshAccountOptions();
         }
+
+        // ============= EMAIL (GMAIL, SOLO INVIO) =============
+        // Numbers manda email dalla casella dell'azienda. Non le legge: le risposte arrivano in Gmail.
+        let mailData = null;   // { configured, from, copyToOwner, sent }
+        const MAIL_MAX_BYTES = 8 * 1024 * 1024;
+
+        function mailNoteText() {
+            if (!mailData || !mailData.configured) return '';
+            return `Parte da ${mailData.from}.` + (mailData.copyToOwner ? ' Federico riceve una copia di ogni email.' : '') + ' Le risposte arrivano nella casella, non qui.';
+        }
+
+        async function fetchMailStatus() {
+            mailData = await apiCall('GET', `/companies/${currentCompanyId}/email`);
+            return mailData;
+        }
+
+        async function loadMail() {
+            if (!currentCompanyId) return;
+            const msg = document.getElementById('mailMessage'), body = document.getElementById('mailBody');
+            try {
+                await fetchMailStatus();
+            } catch (e) {
+                mailData = null;
+                msg.textContent = 'Non riesco a leggere lo stato delle email: ' + e.message;
+                msg.classList.add('is-error'); msg.hidden = false; body.hidden = true;
+                return;
+            }
+            const sent = (mailData && mailData.sent) || [];
+            const todayKey = new Date().toDateString();
+            document.getElementById('mailFrom').textContent = mailData.configured ? mailData.from : '-';
+            document.getElementById('mailToday').textContent = sent.filter(m => new Date(m.created_at).toDateString() === todayKey).length;
+            msg.classList.remove('is-error');
+            if (!mailData.configured) {
+                msg.textContent = 'La casella email non è ancora collegata. Servono le variabili di Gmail sul server di Numbers.';
+                msg.hidden = false;
+            } else {
+                msg.hidden = true;
+            }
+            body.hidden = false;
+            document.getElementById('mailSubmit').disabled = !mailData.configured;
+            document.getElementById('mailNote').textContent = mailNoteText();
+
+            const tbody = document.querySelector('#mailSentTable tbody');
+            tbody.innerHTML = '';
+            if (sent.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Da Numbers non è ancora partita nessuna email.</td></tr>';
+                return;
+            }
+            sent.forEach(m => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${new Date(m.created_at).toLocaleDateString('it-IT')}</td>
+                    <td>${escapeHtml(m.recipients)}</td>
+                    <td>${escapeHtml(m.subject)}</td>
+                    <td>${m.attachments ? escapeHtml(m.attachments) : ''}</td>
+                `;
+            });
+        }
+
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+                reader.onerror = () => reject(new Error('Non riesco a leggere il file'));
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // Chiede conferma, manda, e dice com'è andata. Ritorna true se è partita.
+        async function sendMail({ to, subject, text, files, invoiceId }) {
+            const total = files.reduce((s, f) => s + f.blob.size, 0);
+            if (total > MAIL_MAX_BYTES) { showToast('Allegati troppo grandi: al massimo 8 MB in tutto', 'error'); return false; }
+            const ok = await showConfirm(`A: ${to}` + (files.length ? ` · ${files.length === 1 ? '1 allegato' : files.length + ' allegati'}` : ''),
+                { title: 'Inviare l\'email?', okLabel: 'Invia', okClass: 'btn-primary' });
+            if (!ok) return false;
+            try {
+                const attachments = [];
+                for (const f of files) attachments.push({ filename: f.name, mimeType: f.blob.type || 'application/octet-stream', base64: await blobToBase64(f.blob) });
+                await apiCall('POST', `/companies/${currentCompanyId}/email/send`, { to, subject, text, attachments, invoiceId: invoiceId || null });
+                showToast('Email inviata', 'success');
+                return true;
+            } catch (err) {
+                showToast('Email non inviata: ' + err.message, 'error');
+                return false;
+            }
+        }
+
+        document.getElementById('mailForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('mailSubmit');
+            btn.disabled = true;
+            const sent = await sendMail({
+                to: document.getElementById('mailTo').value,
+                subject: document.getElementById('mailSubject').value,
+                text: document.getElementById('mailText').value,
+                files: [...document.getElementById('mailFiles').files].map(f => ({ name: f.name, blob: f }))
+            });
+            if (sent) { this.reset(); await loadMail(); }
+            btn.disabled = !(mailData && mailData.configured);
+        });
+
+        // ----- Fattura per email
+        let invoiceMailFile = null;   // { name, blob } — il PDF della fattura aperta
+
+        async function openInvoiceMail(invoiceId) {
+            const invoice = invoices.find(i => i.id == invoiceId);
+            if (!invoice) return;
+            try { if (!mailData) await fetchMailStatus(); } catch (e) { showToast('Non riesco a leggere lo stato delle email: ' + e.message, 'error'); return; }
+            if (!mailData.configured) { showToast('La casella email non è ancora collegata', 'info'); return; }
+
+            const customer = customers.find(c => c.id == (invoice.customer_id || invoice.customerId));
+            const company = companies.find(c => c.id == currentCompanyId);
+            const companyName = company ? company.name : '';
+            const number = invoice.invoice_number || invoice.number;
+            const date = new Date(invoice.invoice_date || invoice.date).toLocaleDateString('it-IT');
+            const symbol = currencySymbols[invoice.currency || 'EUR'] || '\u20AC';
+            const pdf = generatePDF(buildInvoicePdfData(invoice), 'blob');
+            invoiceMailFile = { name: pdf.fileName, blob: pdf.blob };
+
+            document.getElementById('invoiceMailId').value = invoice.id;
+            document.getElementById('invoiceMailTitle').textContent = `Invia la fattura n. ${number}`;
+            document.getElementById('invoiceMailTo').value = (customer && customer.email) || '';
+            document.getElementById('invoiceMailSubject').value = `Fattura n. ${number} del ${date}` + (companyName ? ` — ${companyName}` : '');
+            document.getElementById('invoiceMailText').value =
+                `Buongiorno,\n\nin allegato la fattura n. ${number} del ${date}, per un totale di ${formatCurrency(invoice.total, symbol)}.\n\n` +
+                `Per qualsiasi domanda basta rispondere a questa email.\n\nGrazie,\n${companyName}`.trimEnd();
+            document.getElementById('invoiceMailAttachment').textContent = `Allegato: ${pdf.fileName}`;
+            document.getElementById('invoiceMailNote').textContent = mailNoteText() +
+                (customer && !customer.email ? ' L\'indirizzo che scrivi qui viene salvato sul cliente.' : '');
+            document.getElementById('invoiceMailSubmit').disabled = false;
+            document.getElementById('invoiceMailModal').classList.add('active');
+        }
+
+        function closeInvoiceMail() {
+            document.getElementById('invoiceMailModal').classList.remove('active');
+            invoiceMailFile = null;
+        }
+
+        document.getElementById('invoiceMailForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('invoiceMailSubmit');
+            btn.disabled = true;
+            const invoiceId = document.getElementById('invoiceMailId').value;
+            const to = document.getElementById('invoiceMailTo').value;
+            const sent = await sendMail({
+                to,
+                subject: document.getElementById('invoiceMailSubject').value,
+                text: document.getElementById('invoiceMailText').value,
+                files: invoiceMailFile ? [invoiceMailFile] : [],
+                invoiceId
+            });
+            if (!sent) { btn.disabled = false; return; }
+            // Il cliente non aveva un'email: si salva quella appena usata, così la prossima volta c'è già.
+            const invoice = invoices.find(i => i.id == invoiceId);
+            const customer = invoice && customers.find(c => c.id == (invoice.customer_id || invoice.customerId));
+            if (customer && !customer.email) {
+                try {
+                    await apiCall('PUT', `/customers/${customer.id}`, { name: customer.name, address: customer.address, vat: customer.vat || customer.vat_number, email: to });
+                    customers = await apiCall('GET', `/companies/${currentCompanyId}/customers`) || customers;
+                } catch (e2) { /* l'email è partita: l'indirizzo si può salvare dopo dal cliente */ }
+            }
+            closeInvoiceMail();
+            mailData = null; // il registro è cambiato: si rilegge alla prossima apertura
+        });
 
         // ============= PAGAMENTI (WISE) =============
         // Numbers prepara i bonifici dal conto Wise; a farli partire è la conferma nell'app di Wise.

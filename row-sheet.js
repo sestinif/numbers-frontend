@@ -15,10 +15,10 @@
         invoicesTable: 'Fattura', customersTable: 'Cliente', expensesTable: 'Spesa',
         recurringTable: 'Spesa ricorrente', remindersTable: 'Scadenza', notesTable: 'Nota',
         expenseNotesTable: 'Rimborso', companiesTable: 'Azienda',
-        wisePaymentsTable: 'Bonifico'
+        wisePaymentsTable: 'Bonifico', mailSentTable: 'Email inviata'
     };
     // La colonna che dà il nome alla riga, in ordine di apparizione.
-    const MAIN_LABELS = ['cliente', 'descrizione', 'nome', 'titolo', 'nome azienda', 'beneficiario'];
+    const MAIN_LABELS = ['cliente', 'descrizione', 'nome', 'titolo', 'nome azienda', 'beneficiario', 'oggetto'];
 
     function clean(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
 
