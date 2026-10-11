@@ -1081,6 +1081,48 @@
         .wise-note { margin: 0 0 16px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
         #wiseStats .mini-stat-value.is-pending { color: var(--warning); }
         .wise-note[hidden] { display: none; }
+        /* Elenco dei beneficiari: al posto della tendina del sistema, che con nomi lunghi era illeggibile. */
+        .wise-picker { position: relative; }
+        .wise-picker-button {
+            display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 7px 12px;
+            background: transparent; border: 1px solid var(--border-strong); border-radius: 8px; cursor: pointer;
+            color: var(--text-primary); font-family: var(--font-body); font-size: 14px; font-weight: 400; text-align: left;
+        }
+        .wise-picker-button:hover { border-color: rgba(255, 255, 255, 0.24); }
+        .wise-picker-button:focus-visible, .wise-picker-button[aria-expanded="true"] { outline: none; border-color: var(--primary-green); }
+        .wise-picker-button > svg { flex-shrink: 0; color: var(--text-secondary); }
+        .wise-picker-value { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+        .wise-picker-value.is-empty { color: var(--text-secondary); }
+        .wise-picker-panel {
+            position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 6px); padding: 8px;
+            background: var(--bg-elev); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--elev-4);
+        }
+        .wise-picker-panel[hidden] { display: none; }
+        .wise-picker-panel input {
+            width: 100%; height: 40px; padding: 0 12px; margin: 0 0 6px; background: transparent; border: 1px solid var(--border-color); border-radius: 8px;
+            color: var(--text-primary); font-family: var(--font-body); font-size: 14px; font-weight: 400;
+        }
+        .wise-picker-panel input:focus { outline: none; border-color: var(--primary-green); }
+        .wise-picker-list { max-height: 320px; overflow-y: auto; }
+        .wise-picker-row {
+            display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 8px; background: transparent; border: 0; border-radius: 8px;
+            cursor: pointer; color: var(--text-primary); font-family: var(--font-body); text-align: left;
+        }
+        .wise-picker-row:hover, .wise-picker-row:focus-visible { outline: none; background: var(--bg-hover); }
+        .wise-picker-row[aria-selected="true"] { background: var(--green-light); }
+        .wise-picker-mark {
+            display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08); color: var(--mark);
+            background: color-mix(in srgb, var(--mark) 24%, transparent);
+            color: color-mix(in srgb, var(--mark) 70%, white);
+            font-size: 12px; font-weight: 500; line-height: 1;
+        }
+        .wise-picker-mark::before { content: attr(data-label); }
+        .wise-picker-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+        .wise-picker-title { font-size: 14px; font-weight: 400; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .wise-picker-sub { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .wise-picker-cur { flex-shrink: 0; font-size: 12px; color: var(--text-secondary); }
+        .wise-picker-empty { margin: 0; padding: 14px 8px; font-size: 13px; color: var(--text-secondary); }
         .wise-labels { margin: 0 0 18px; }
         .wise-label-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border-color); }
         .wise-label-row:first-child { border-top: 0; }
@@ -1571,8 +1613,19 @@
                             <h2>Nuovo bonifico</h2>
                             <form id="wisePayForm">
                                 <div class="form-group">
-                                    <label>Beneficiario *</label>
-                                    <select id="wisePayRecipient" required onchange="updateWisePayForm()"></select>
+                                    <label id="wisePickerLabel">Beneficiario *</label>
+                                    <div class="wise-picker" id="wisePicker">
+                                        <button type="button" class="wise-picker-button" id="wisePickerButton" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="wisePickerLabel wisePickerValue" onclick="toggleWisePicker()">
+                                            <span class="wise-picker-value" id="wisePickerValue">Scegli…</span>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                                        </button>
+                                        <div class="wise-picker-panel" id="wisePickerPanel" hidden>
+                                            <input type="text" id="wisePickerSearch" placeholder="Cerca per nome o conto…" autocomplete="off" spellcheck="false" aria-label="Cerca beneficiario" oninput="renderWisePickerList()">
+                                            <div class="wise-picker-list" id="wisePickerList" role="listbox" aria-labelledby="wisePickerLabel"></div>
+                                        </div>
+                                        <!-- Tiene il valore scelto: il resto del modulo legge da qui. -->
+                                        <select id="wisePayRecipient" hidden tabindex="-1" aria-hidden="true" onchange="updateWisePayForm()"></select>
+                                    </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
@@ -2032,7 +2085,7 @@
         <div class="modal-content">
             <h2>Nomi dei beneficiari</h2>
             <form id="wiseLabelsForm">
-                <p class="wise-note">Dai a ogni beneficiario un nome che capisci al volo, tipo «Assistente» o «Mio conto N26». Il nome si vede solo in Numbers: su Wise resta quello del conto. Lascia vuoto per non dargliene uno.</p>
+                <p class="wise-note">Nel bonifico si possono scegliere solo i beneficiari che hanno un nome qui. Dagli un nome che capisci al volo, tipo «Assistente» o «Mio conto N26». Chi resta vuoto non compare. Su Wise non cambia niente.</p>
                 <div id="wiseLabelsList" class="wise-labels"></div>
                 <button type="submit" class="btn btn-primary" id="wiseLabelsSubmit">Salva nomi</button>
                 <button type="button" class="btn btn-secondary" onclick="closeWiseLabelsModal()">Annulla</button>
@@ -2045,8 +2098,8 @@
             <h2>Nuovo beneficiario</h2>
             <form id="wiseRecipientForm">
                 <div class="form-group">
-                    <label>Nome in Numbers</label>
-                    <input type="text" id="wiseRecipientLabel" maxlength="60" autocomplete="off" placeholder="Es: Assistente, Video editor">
+                    <label>Nome in Numbers *</label>
+                    <input type="text" id="wiseRecipientLabel" required maxlength="60" autocomplete="off" placeholder="Es: Assistente, Video editor">
                 </div>
                 <div class="form-group">
                     <label>Intestatario del conto *</label>
@@ -4080,10 +4133,118 @@
             return n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' }) + ' ' + currency;
         }
 
-        // Il nome dato in Numbers davanti, quello del conto su Wise dietro.
+        // Come si presenta un beneficiario: in grande il nome dato in Numbers (o quello del conto),
+        // in piccolo il resto, che serve solo a distinguere due conti simili.
         function wiseRecipientTitle(r) {
-            return r.label ? `${r.label} · ${r.name}` : r.name;
+            return r.label || r.name;
         }
+        function wiseRecipientSub(r) {
+            return [r.label ? r.name : '', r.account || ''].filter(Boolean).join(' · ');
+        }
+
+        // Una riga dell'elenco dei beneficiari (e del bottone che mostra quello scelto).
+        function wiseRecipientRow(r) {
+            const frag = document.createDocumentFragment();
+            const mark = document.createElement('span');
+            mark.className = 'wise-picker-mark';
+            mark.setAttribute('aria-hidden', 'true');
+            mark.dataset.label = RowMarks.initials(wiseRecipientTitle(r));
+            mark.style.setProperty('--mark', RowMarks.colorFor(r.name));
+            const text = document.createElement('span');
+            text.className = 'wise-picker-text';
+            const title = document.createElement('span');
+            title.className = 'wise-picker-title';
+            title.textContent = wiseRecipientTitle(r);
+            text.appendChild(title);
+            const subText = wiseRecipientSub(r);
+            if (subText) {
+                const sub = document.createElement('span');
+                sub.className = 'wise-picker-sub';
+                sub.textContent = subText;
+                text.appendChild(sub);
+            }
+            const cur = document.createElement('span');
+            cur.className = 'wise-picker-cur';
+            cur.textContent = r.currency || '';
+            frag.appendChild(mark); frag.appendChild(text); frag.appendChild(cur);
+            return frag;
+        }
+
+        // Nel modulo del bonifico si vedono solo i beneficiari a cui è stato dato un nome in Numbers.
+        // Gli altri restano su Wise e in «Nomi beneficiari»: basta dargli un nome per farli comparire.
+        function wiseNamedRecipients() {
+            return ((wiseData && wiseData.recipients) || []).filter(r => r.label);
+        }
+        const WISE_NO_NAMED = 'Nessun beneficiario con un nome: dagliene uno da «Nomi beneficiari».';
+
+        function showWisePicked(r) {
+            const value = document.getElementById('wisePickerValue');
+            value.textContent = '';
+            value.classList.toggle('is-empty', !r);
+            if (r) value.appendChild(wiseRecipientRow(r));
+            else value.textContent = wiseNamedRecipients().length ? 'Scegli…' : WISE_NO_NAMED;
+        }
+
+        function renderWisePickerList() {
+            const list = document.getElementById('wisePickerList');
+            const q = document.getElementById('wisePickerSearch').value.trim().toLowerCase();
+            const chosen = document.getElementById('wisePayRecipient').value;
+            const rows = wiseNamedRecipients()
+                .filter(r => !q || `${r.label || ''} ${r.name} ${r.account || ''} ${r.currency || ''}`.toLowerCase().includes(q))
+                .sort((a, b) => wiseRecipientTitle(a).localeCompare(wiseRecipientTitle(b), 'it') || String(a.account).localeCompare(String(b.account)));
+            list.innerHTML = '';
+            if (rows.length === 0) {
+                const empty = document.createElement('p');
+                empty.className = 'wise-picker-empty';
+                empty.textContent = q ? 'Nessun beneficiario con questo nome.' : WISE_NO_NAMED;
+                list.appendChild(empty);
+                return;
+            }
+            rows.forEach(r => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'wise-picker-row';
+                b.setAttribute('role', 'option');
+                b.setAttribute('aria-selected', String(r.id) === chosen ? 'true' : 'false');
+                b.appendChild(wiseRecipientRow(r));
+                b.addEventListener('click', () => pickWiseRecipient(r.id));
+                list.appendChild(b);
+            });
+        }
+
+        function toggleWisePicker() {
+            const panel = document.getElementById('wisePickerPanel');
+            if (!panel.hidden) { closeWisePicker(); return; }
+            panel.hidden = false;
+            document.getElementById('wisePickerButton').setAttribute('aria-expanded', 'true');
+            renderWisePickerList();
+            document.getElementById('wisePickerSearch').focus();
+        }
+
+        function closeWisePicker() {
+            document.getElementById('wisePickerPanel').hidden = true;
+            document.getElementById('wisePickerButton').setAttribute('aria-expanded', 'false');
+        }
+
+        function pickWiseRecipient(id) {
+            const r = ((wiseData && wiseData.recipients) || []).find(x => String(x.id) === String(id));
+            document.getElementById('wisePayRecipient').value = r ? String(r.id) : '';
+            showWisePicked(r || null);
+            closeWisePicker();
+            document.getElementById('wisePickerSearch').value = '';
+            updateWisePayForm();
+            if (r) document.getElementById('wisePayAmount').focus();
+        }
+
+        // Si chiude toccando fuori o con Esc.
+        document.addEventListener('click', e => {
+            const picker = document.getElementById('wisePicker');
+            if (picker && !picker.contains(e.target)) closeWisePicker();
+        });
+        document.addEventListener('keydown', e => {
+            const panel = document.getElementById('wisePickerPanel');
+            if (e.key === 'Escape' && panel && !panel.hidden) { closeWisePicker(); document.getElementById('wisePickerButton').focus(); }
+        });
 
         function renderWiseMessage(text, isError) {
             const msg = document.getElementById('wiseMessage');
@@ -4166,13 +4327,15 @@
                 : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
             const recipients = (wiseData && wiseData.recipients) || [];
             const sel = document.getElementById('wisePayRecipient');
-            sel.innerHTML = `<option value="">${recipients.length ? 'Scegli…' : 'Nessun beneficiario: aggiungine uno'}</option>`;
-            [...recipients].sort((a, b) => wiseRecipientTitle(a).localeCompare(wiseRecipientTitle(b), 'it')).forEach(r => {
+            sel.innerHTML = '<option value=""></option>';
+            recipients.forEach(r => {
                 const o = document.createElement('option');
                 o.value = r.id;
-                o.textContent = `${wiseRecipientTitle(r)} · ${r.currency}${r.account ? ' · ' + r.account : ''}`;
                 sel.appendChild(o);
             });
+            closeWisePicker();
+            document.getElementById('wisePickerSearch').value = '';
+            showWisePicked(null);
             const src = document.getElementById('wisePaySource');
             src.innerHTML = '';
             ((wiseData && wiseData.balances) || []).forEach(b => {
@@ -4181,7 +4344,7 @@
                 o.textContent = `${b.currency} · ${wiseMoney(b.amount, b.currency)}`;
                 src.appendChild(o);
             });
-            document.getElementById('wisePaySubmit').disabled = recipients.length === 0;
+            document.getElementById('wisePaySubmit').disabled = wiseNamedRecipients().length === 0;
             updateWisePayForm();
         }
 
@@ -4228,6 +4391,11 @@
         document.getElementById('wisePayForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('wisePaySubmit');
+            if (!document.getElementById('wisePayRecipient').value) {
+                showToast('Scegli un beneficiario', 'info');
+                toggleWisePicker();
+                return;
+            }
             btn.disabled = true;
             try {
                 await apiCall('POST', `/companies/${currentCompanyId}/wise/payments`, {

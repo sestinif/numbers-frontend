@@ -93,7 +93,8 @@
         balances: [{ currency: 'USD', amount: 12480 }, { currency: 'EUR', amount: 3210.5 }, { currency: 'GBP', amount: 0 }],
         recipients: [
             { id: 5, name: 'Maria Rossi', currency: 'EUR', country: 'IT', type: 'iban', account: 'IT60 •••• 3456', label: 'Assistente' },
-            { id: 6, name: 'Blue Frame Video Ltd', currency: 'USD', country: 'US', type: 'aba', account: '•••• 6789' },
+            { id: 6, name: 'Blue Frame Video Ltd', currency: 'USD', country: 'US', type: 'aba', account: '•••• 6789', label: 'Video editor' },
+            { id: 8, name: 'Maria Rossi', currency: 'EUR', country: 'LT', type: 'iban', account: 'LT43 •••• 3594', label: 'Assistente – conto Revolut' },
             { id: 7, name: 'Studio Eridano di Marco Bianchi e Associati', currency: 'EUR', country: 'IT', type: 'iban', account: 'IT12 •••• 9012' }
         ],
         payments: [
