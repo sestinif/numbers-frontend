@@ -1642,19 +1642,6 @@
                                     <label>Causale</label>
                                     <input type="text" id="wisePayReference" maxlength="140" autocomplete="off" placeholder="Es: Compenso ottobre">
                                 </div>
-                                <div class="form-group">
-                                    <label>Categoria della spesa</label>
-                                    <select id="wisePayCategory">
-                                        <option value="Personale">Personale e stipendi</option>
-                                        <option value="Consulenze">Consulenze professionali</option>
-                                        <option value="Software">Software e abbonamenti</option>
-                                        <option value="Marketing">Marketing e pubblicità</option>
-                                        <option value="Ufficio">Ufficio e materiali</option>
-                                        <option value="Trasporti">Trasporti e viaggi</option>
-                                        <option value="Utenze">Utenze e servizi</option>
-                                        <option value="Altro">Altro</option>
-                                    </select>
-                                </div>
                                 <p id="wisePayQuote" class="wise-quote" aria-live="polite"></p>
                                 <p class="wise-note">Numbers prepara il bonifico. Per farlo partire, Federico deve confermarlo nell'app di Wise.</p>
                                 <button type="submit" class="btn btn-primary" id="wisePaySubmit">Invia bonifico</button>
@@ -4404,9 +4391,8 @@
                     amount: parseFloat(document.getElementById('wisePayAmount').value),
                     sourceCurrency: document.getElementById('wisePaySource').value,
                     reference: document.getElementById('wisePayReference').value,
-                    category: document.getElementById('wisePayCategory').value,
-                    // Ogni bonifico partito finisce nelle Spese di Numbers: non è più una scelta del modulo.
-                    trackExpense: true
+                    // I bonifici non finiscono nelle Spese di Numbers: si vedono solo qui in Pagamenti.
+                    trackExpense: false
                 });
                 showToast('Bonifico preparato: Federico deve confermarlo nell\'app di Wise', 'success');
                 await loadPayments();
