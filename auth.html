@@ -95,6 +95,17 @@
             <div id="errorMessage" class="error-message"></div>
             <div id="successMessage" class="success-message"></div>
 
+            <!-- Accesso con il codice solo: compare quando il server lo ha attivo (vedi /auth/mode). -->
+            <div id="codeForm" class="form-section">
+                <form onsubmit="handleCode(event)">
+                    <div class="form-group">
+                        <label for="accessCode">Codice di accesso</label>
+                        <input type="password" id="accessCode" placeholder="Incolla il codice" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+                    </div>
+                    <button type="submit" class="btn" id="codeBtn">Entra</button>
+                </form>
+            </div>
+
             <!-- Login Form -->
             <div id="loginForm" class="form-section active">
                 <form onsubmit="handleLogin(event)">
@@ -292,6 +303,49 @@
                 setLoading(false);
             }
         }
+
+        // Handle access with the code only
+        async function handleCode(e) {
+            e.preventDefault();
+            hideMessages();
+            const code = document.getElementById('accessCode').value;
+            setLoading(true);
+            try {
+                const response = await fetch(`${API_URL}/auth/code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || 'Accesso non riuscito');
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                window.location.href = 'index.html';
+            } catch (error) {
+                document.getElementById('accessCode').value = '';
+                showError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Il server dice se si entra con il codice solo o con email e password.
+        // Se non risponde resta il modulo di prima: meglio di una pagina vuota.
+        function showCodeOnly() {
+            document.querySelector('.auth-tabs').style.display = 'none';
+            document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
+            document.getElementById('codeForm').classList.add('active');
+            document.getElementById('accessCode').focus();
+        }
+        window.addEventListener('DOMContentLoaded', async () => {
+            setLoading(true);
+            try {
+                const res = await fetch(`${API_URL}/auth/mode`);
+                const data = res.ok ? await res.json() : null;
+                if (data && data.mode === 'code') showCodeOnly();
+            } catch (e) { /* resta il modulo con email e password */ }
+            setLoading(false);
+        });
 
         // Check if already logged in
         window.addEventListener('DOMContentLoaded', () => {
