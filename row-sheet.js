@@ -15,7 +15,7 @@
         invoicesTable: 'Fattura', customersTable: 'Cliente', expensesTable: 'Spesa',
         recurringTable: 'Spesa ricorrente', remindersTable: 'Scadenza', notesTable: 'Nota',
         expenseNotesTable: 'Rimborso', companiesTable: 'Azienda',
-        wiseRecipientsTable: 'Beneficiario', wisePaymentsTable: 'Bonifico'
+        wisePaymentsTable: 'Bonifico'
     };
     // La colonna che dà il nome alla riga, in ordine di apparizione.
     const MAIN_LABELS = ['cliente', 'descrizione', 'nome', 'titolo', 'nome azienda', 'beneficiario'];

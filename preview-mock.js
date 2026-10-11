@@ -150,7 +150,7 @@
             invoice: 'openInvoiceModal', expense: 'openExpenseModal', recurring: 'openRecurringModal',
             reminder: 'openReminderModal', note: 'openNoteModal', customer: 'openCustomerModal',
             company: 'openCompanyModal', refund: 'openExpenseNoteModal', settings: 'openCompanySettings',
-            wisepay: 'openWisePayModal', wiserecipient: 'openWiseRecipientModal'
+            wiserecipient: 'openWiseRecipientModal'
         };
         const opener = openers[params.get('modal')];
         if (opener && typeof window[opener] === 'function') window[opener]();

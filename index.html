@@ -1071,7 +1071,8 @@
         .row-sheet[data-table="customersTable"] .row-sheet__amount { color: var(--money-in); }
 
         /* ===== PAGAMENTI (WISE) ===== */
-        .wise-hint { font-size: 13px; color: var(--text-secondary); margin: 0 0 20px; line-height: 1.5; }
+        .wise-pay-card { max-width: 640px; margin-top: 20px; }
+        .wise-pay-card form { margin-top: 4px; }
         .wise-message { padding: 16px 18px; margin: 0 0 24px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
         .wise-message[hidden], #wiseBody[hidden] { display: none; }
         .wise-message.is-error { color: var(--danger); }
@@ -1084,11 +1085,10 @@
         .badge-danger { color: var(--danger); }
         @media (max-width: 768px) {
             /* Prima linea della riga: il nome del beneficiario (l'importo ci va già da solo). */
-            #wiseRecipientsTable td:nth-child(1), #wisePaymentsTable td:nth-child(2) {
+            #wisePaymentsTable td:nth-child(2) {
                 order: 1; flex: 1 1 0; font-size: 14px; color: var(--text-primary); overflow-wrap: anywhere;
             }
-            #wiseRecipientsTable td:nth-child(1)::before, #wisePaymentsTable td:nth-child(2)::before,
-            #wiseRecipientsTable td:nth-child(2)::before, #wisePaymentsTable td:nth-child(1)::before { content: none; }
+            #wisePaymentsTable td:nth-child(2)::before, #wisePaymentsTable td:nth-child(1)::before { content: none; }
         }
 
         /* ===== PERIODO (period.js) =====
@@ -1550,28 +1550,50 @@
                             </div>
                         </div>
                         <div class="toolbar-actions">
-                            <button class="btn btn-primary" onclick="openWisePayModal()">+ Bonifico</button>
                             <button class="btn btn-secondary" onclick="openWiseRecipientModal()">+ Beneficiario</button>
                         </div>
                     </div>
                     <div id="wiseMessage" class="wise-message" hidden></div>
                     <div id="wiseBody">
-                        <p class="wise-hint">Numbers prepara il bonifico. Per farlo partire, Federico deve confermarlo nell'app di Wise.</p>
-                        <div class="card">
-                            <h2>Beneficiari</h2>
-                            <div class="table-container">
-                                <table id="wiseRecipientsTable" class="list-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Beneficiario</th>
-                                            <th>Conto</th>
-                                            <th>Valuta</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
+                        <div class="card wise-pay-card">
+                            <h2>Nuovo bonifico</h2>
+                            <form id="wisePayForm">
+                                <div class="form-group">
+                                    <label>Beneficiario *</label>
+                                    <select id="wisePayRecipient" required onchange="updateWisePayForm()"></select>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label id="wisePayAmountLabel" for="wisePayAmount">Importo che deve arrivare *</label>
+                                        <input type="number" id="wisePayAmount" step="0.01" min="0.01" required placeholder="0.00" oninput="scheduleWiseQuote()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Paga dal saldo</label>
+                                        <select id="wisePaySource" onchange="scheduleWiseQuote()"></select>
+                                    </div>
+                                </div>
+                                <p id="wisePayCurrencyNote" class="wise-note" hidden></p>
+                                <div class="form-group">
+                                    <label>Causale</label>
+                                    <input type="text" id="wisePayReference" maxlength="140" autocomplete="off" placeholder="Es: Compenso ottobre">
+                                </div>
+                                <div class="form-group">
+                                    <label>Categoria della spesa</label>
+                                    <select id="wisePayCategory">
+                                        <option value="Personale">Personale e stipendi</option>
+                                        <option value="Consulenze">Consulenze professionali</option>
+                                        <option value="Software">Software e abbonamenti</option>
+                                        <option value="Marketing">Marketing e pubblicità</option>
+                                        <option value="Ufficio">Ufficio e materiali</option>
+                                        <option value="Trasporti">Trasporti e viaggi</option>
+                                        <option value="Utenze">Utenze e servizi</option>
+                                        <option value="Altro">Altro</option>
+                                    </select>
+                                </div>
+                                <p id="wisePayQuote" class="wise-quote" aria-live="polite"></p>
+                                <p class="wise-note">Numbers prepara il bonifico. Per farlo partire, Federico deve confermarlo nell'app di Wise.</p>
+                                <button type="submit" class="btn btn-primary" id="wisePaySubmit">Invia bonifico</button>
+                            </form>
                         </div>
                         <div class="card">
                             <h2>Bonifici preparati</h2>
@@ -1990,50 +2012,6 @@
 
                 <button type="submit" class="btn btn-primary">Salva spesa</button>
                 <button type="button" class="btn btn-secondary" onclick="closeExpenseModal()">Annulla</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="wisePayModal" class="modal">
-        <div class="modal-content">
-            <h2>Nuovo bonifico</h2>
-            <form id="wisePayForm">
-                <div class="form-group">
-                    <label>Beneficiario *</label>
-                    <select id="wisePayRecipient" required onchange="updateWisePayForm()"></select>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label id="wisePayAmountLabel" for="wisePayAmount">Importo che deve arrivare *</label>
-                        <input type="number" id="wisePayAmount" step="0.01" min="0.01" required placeholder="0.00" oninput="scheduleWiseQuote()">
-                    </div>
-                    <div class="form-group">
-                        <label>Paga dal saldo</label>
-                        <select id="wisePaySource" onchange="scheduleWiseQuote()"></select>
-                    </div>
-                </div>
-                <p id="wisePayCurrencyNote" class="wise-note" hidden></p>
-                <div class="form-group">
-                    <label>Causale</label>
-                    <input type="text" id="wisePayReference" maxlength="140" autocomplete="off" placeholder="Es: Compenso ottobre">
-                </div>
-                <div class="form-group">
-                    <label>Categoria della spesa</label>
-                    <select id="wisePayCategory">
-                        <option value="Personale">Personale e stipendi</option>
-                        <option value="Consulenze">Consulenze professionali</option>
-                        <option value="Software">Software e abbonamenti</option>
-                        <option value="Marketing">Marketing e pubblicità</option>
-                        <option value="Ufficio">Ufficio e materiali</option>
-                        <option value="Trasporti">Trasporti e viaggi</option>
-                        <option value="Utenze">Utenze e servizi</option>
-                        <option value="Altro">Altro</option>
-                    </select>
-                </div>
-                <p id="wisePayQuote" class="wise-quote" aria-live="polite"></p>
-                <p class="wise-note">Il bonifico viene solo preparato: non parte finché Federico non lo conferma nell'app di Wise.</p>
-                <button type="submit" class="btn btn-primary" id="wisePaySubmit">Invia bonifico</button>
-                <button type="button" class="btn btn-secondary" onclick="closeWisePayModal()">Annulla</button>
             </form>
         </div>
     </div>
@@ -4122,23 +4100,7 @@
                 </div>`);
             document.getElementById('wiseStats').innerHTML = stats.join('');
 
-            const rBody = document.querySelector('#wiseRecipientsTable tbody');
-            rBody.innerHTML = '';
-            if ((wiseData.recipients || []).length === 0) {
-                rBody.innerHTML = '<tr><td colspan="4" class="empty-state">Nessun beneficiario. Aggiungi il primo!</td></tr>';
-            } else {
-                [...wiseData.recipients].sort((a, b) => a.name.localeCompare(b.name, 'it')).forEach(r => {
-                    const row = rBody.insertRow();
-                    row.innerHTML = `
-                        <td>${escapeHtml(r.name)}</td>
-                        <td>${escapeHtml(r.account || '')}</td>
-                        <td>${escapeHtml(r.currency || '')}</td>
-                        <td class="action-btns">
-                            <button class="btn btn-secondary" onclick="openWisePayModal(${Number(r.id)})">Paga</button>
-                        </td>
-                    `;
-                });
-            }
+            resetWisePayForm();
 
             const pBody = document.querySelector('#wisePaymentsTable tbody');
             pBody.innerHTML = '';
@@ -4162,39 +4124,32 @@
             }
         }
 
-        function openWisePayModal(recipientId = null) {
-            if (!currentCompanyId) { alert('Seleziona prima un\'azienda!'); return; }
-            if (!wiseData) { showToast('Wise non è collegato', 'info'); return; }
-            if ((wiseData.recipients || []).length === 0) { showToast('Aggiungi prima un beneficiario', 'info'); return; }
+        // Il modulo del bonifico sta nella pagina: si svuota e si riempie a ogni caricamento.
+        function resetWisePayForm() {
+            clearTimeout(wiseQuoteTimer);
             document.getElementById('wisePayForm').reset();
-            // Una chiave per ogni apertura del modulo: due invii dello stesso modulo non fanno due bonifici.
+            // Una chiave per ogni modulo nuovo: due invii dello stesso modulo non fanno due bonifici.
             wisePayKey = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
                 : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
+            const recipients = (wiseData && wiseData.recipients) || [];
             const sel = document.getElementById('wisePayRecipient');
-            sel.innerHTML = '<option value="">Scegli…</option>';
-            [...wiseData.recipients].sort((a, b) => a.name.localeCompare(b.name, 'it')).forEach(r => {
+            sel.innerHTML = `<option value="">${recipients.length ? 'Scegli…' : 'Nessun beneficiario: aggiungine uno'}</option>`;
+            [...recipients].sort((a, b) => a.name.localeCompare(b.name, 'it')).forEach(r => {
                 const o = document.createElement('option');
                 o.value = r.id;
                 o.textContent = `${r.name} · ${r.currency}${r.account ? ' · ' + r.account : ''}`;
                 sel.appendChild(o);
             });
-            if (recipientId) sel.value = String(recipientId);
             const src = document.getElementById('wisePaySource');
             src.innerHTML = '';
-            (wiseData.balances || []).forEach(b => {
+            ((wiseData && wiseData.balances) || []).forEach(b => {
                 const o = document.createElement('option');
                 o.value = b.currency;
                 o.textContent = `${b.currency} · ${wiseMoney(b.amount, b.currency)}`;
                 src.appendChild(o);
             });
+            document.getElementById('wisePaySubmit').disabled = recipients.length === 0;
             updateWisePayForm();
-            document.getElementById('wisePaySubmit').disabled = false;
-            document.getElementById('wisePayModal').classList.add('active');
-        }
-
-        function closeWisePayModal() {
-            clearTimeout(wiseQuoteTimer);
-            document.getElementById('wisePayModal').classList.remove('active');
         }
 
         // Scelto il beneficiario: valuta fissata, e si paga dal saldo nella stessa valuta se c'è.
@@ -4252,7 +4207,6 @@
                     // Ogni bonifico partito finisce nelle Spese di Numbers: non è più una scelta del modulo.
                     trackExpense: true
                 });
-                closeWisePayModal();
                 showToast('Bonifico preparato: Federico deve confermarlo nell\'app di Wise', 'success');
                 await loadPayments();
             } catch (err) {

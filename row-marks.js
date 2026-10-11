@@ -47,7 +47,7 @@
     }
 
     // Quale colonna dà il segno, lista per lista.
-    const BY_CLIENT = { invoicesTable: 2, customersTable: 0, expenseNotesTable: 2, customerReportTable: 0, companiesTable: 0, wiseRecipientsTable: 0, wisePaymentsTable: 1 };
+    const BY_CLIENT = { invoicesTable: 2, customersTable: 0, expenseNotesTable: 2, customerReportTable: 0, companiesTable: 0, wisePaymentsTable: 1 };
     const BY_CATEGORY = { expensesTable: 2, recurringTable: 1 };
     const BY_STATE = { remindersTable: { icon: 'calendar', status: 3 }, notesTable: { icon: 'note', status: 2 } };
 
@@ -83,7 +83,7 @@
     const HOST = {
         invoicesTable: 2, customersTable: 0, expensesTable: 1, recurringTable: 0,
         expenseNotesTable: 1, remindersTable: 0, notesTable: 0, customerReportTable: 0, companiesTable: 0,
-        wiseRecipientsTable: 0, wisePaymentsTable: 1
+        wisePaymentsTable: 1
     };
 
     function install(doc) {

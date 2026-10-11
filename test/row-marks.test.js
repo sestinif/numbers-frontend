@@ -67,8 +67,6 @@ test('una lista che non conosce non prende niente', () => {
     assert.strictEqual(M.markFor('invoicesTable', { texts: [] }), null);
 });
 
-test('beneficiari e bonifici di Wise prendono le iniziali del beneficiario', () => {
-    assert.deepStrictEqual(M.markFor('wiseRecipientsTable', { texts: ['Maria Rossi', 'IT60 •••• 3456', 'EUR', ''] }),
-        { kind: 'text', label: 'MR', color: M.colorFor('Maria Rossi') });
+test('i bonifici di Wise prendono le iniziali del beneficiario', () => {
     assert.strictEqual(M.markFor('wisePaymentsTable', { texts: ['11/10/2026', 'Maria Rossi', 'Compenso ottobre', 'Da confermare su Wise', '€350,00', ''] }).label, 'MR');
 });
