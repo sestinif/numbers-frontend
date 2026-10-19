@@ -1134,6 +1134,8 @@
         .wise-picker-sub { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .wise-picker-cur { flex-shrink: 0; font-size: 12px; color: var(--text-secondary); }
         .wise-picker-empty { margin: 0; padding: 14px 8px; font-size: 13px; color: var(--text-secondary); }
+        .wise-pin { letter-spacing: 0.3em; font-variant-numeric: tabular-nums; max-width: 160px; }
+        #wisePayPinGroup[hidden] { display: none; }
         .wise-labels { margin: 0 0 18px; }
         .wise-label-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border-color); }
         .wise-label-row:first-child { border-top: 0; }
@@ -1657,8 +1659,12 @@
                                     <label>Causale</label>
                                     <input type="text" id="wisePayReference" maxlength="140" autocomplete="off" placeholder="Es: Compenso ottobre">
                                 </div>
+                                <div class="form-group" id="wisePayPinGroup" hidden>
+                                    <label for="wisePayPin">PIN per inviare</label>
+                                    <input type="password" id="wisePayPin" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" placeholder="••••" class="wise-pin">
+                                </div>
                                 <p id="wisePayQuote" class="wise-quote" aria-live="polite"></p>
-                                <p class="wise-note">Numbers prepara il bonifico. Per farlo partire, Federico deve confermarlo nell'app di Wise.</p>
+                                <p class="wise-note" id="wisePayNote">Numbers prepara il bonifico. Per farlo partire, Federico deve confermarlo nell'app di Wise.</p>
                                 <button type="submit" class="btn btn-primary" id="wisePaySubmit">Invia bonifico</button>
                             </form>
                         </div>
@@ -2166,6 +2172,22 @@
                 <p class="wise-note" id="invoiceMailNote"></p>
                 <button type="submit" class="btn btn-primary" id="invoiceMailSubmit">Invia email</button>
                 <button type="button" class="btn btn-secondary" onclick="closeInvoiceMail()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="wiseSendModal" class="modal">
+        <div class="modal-content">
+            <h2>Invia il bonifico</h2>
+            <form id="wiseSendForm">
+                <input type="hidden" id="wiseSendId">
+                <p class="wise-note" id="wiseSendWhat"></p>
+                <div class="form-group">
+                    <label for="wiseSendPin">PIN per inviare</label>
+                    <input type="password" id="wiseSendPin" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" required placeholder="••••" class="wise-pin">
+                </div>
+                <button type="submit" class="btn btn-primary" id="wiseSendSubmit">Invia bonifico</button>
+                <button type="button" class="btn btn-secondary" onclick="closeWiseSend()">Annulla</button>
             </form>
         </div>
     </div>
@@ -4569,6 +4591,7 @@
                         <td><span class="badge ${tone[p.state] || 'badge-muted'}">${escapeHtml(p.status_label)}</span></td>
                         <td class="num"><strong>${wiseMoney(p.target_amount, p.target_currency)}</strong></td>
                         <td class="action-btns">
+                            ${p.state === 'waiting' && wiseData.directSend ? `<button class="btn btn-secondary" onclick="openWiseSend(${Number(p.id)})">Invia</button>` : ''}
                             ${p.state === 'waiting' ? `<button class="btn btn-danger" onclick="cancelWisePayment(${Number(p.id)})">Annulla</button>` : ''}
                         </td>
                     `;
@@ -4603,6 +4626,13 @@
                 src.appendChild(o);
             });
             document.getElementById('wisePaySubmit').disabled = wiseNamedRecipients().length === 0;
+            // Con l'invio con PIN attivo il bonifico parte da qui; altrimenti si prepara e si conferma su Wise.
+            const direct = !!(wiseData && wiseData.directSend);
+            document.getElementById('wisePayPinGroup').hidden = !direct;
+            document.getElementById('wisePayPin').value = '';
+            document.getElementById('wisePayNote').textContent = direct
+                ? 'Il bonifico parte subito, con il PIN. Se Wise lo rifiuta resta preparato, e lo confermi dall\'app di Wise.'
+                : 'Numbers prepara il bonifico. Per farlo partire, Federico deve confermarlo nell\'app di Wise.';
             updateWisePayForm();
         }
 
@@ -4646,6 +4676,10 @@
             }, 500);
         }
 
+        function wiseMoneyShort(amount, currency) {
+            return wiseMoney(amount, currency);
+        }
+
         document.getElementById('wisePayForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('wisePaySubmit');
@@ -4654,21 +4688,75 @@
                 toggleWisePicker();
                 return;
             }
+            const direct = !!(wiseData && wiseData.directSend);
+            const pinInput = document.getElementById('wisePayPin');
+            if (direct && !pinInput.value.trim()) {
+                showToast('Scrivi il PIN per inviare', 'info');
+                pinInput.focus();
+                return;
+            }
+            const recipient = ((wiseData && wiseData.recipients) || []).find(r => String(r.id) === document.getElementById('wisePayRecipient').value);
+            const amount = parseFloat(document.getElementById('wisePayAmount').value);
+            if (direct) {
+                // Ultimo controllo prima che i soldi partano: a chi e quanto.
+                const ok = await showConfirm(`${wiseMoneyShort(amount, recipient ? recipient.currency : '')} a ${recipient ? wiseRecipientTitle(recipient) : ''}`,
+                    { title: 'Inviare il bonifico?', okLabel: 'Invia', okClass: 'btn-primary' });
+                if (!ok) return;
+            }
             btn.disabled = true;
             try {
                 await apiCall('POST', `/companies/${currentCompanyId}/wise/payments`, {
                     clientKey: wisePayKey,
                     recipientId: document.getElementById('wisePayRecipient').value,
-                    amount: parseFloat(document.getElementById('wisePayAmount').value),
+                    amount,
                     sourceCurrency: document.getElementById('wisePaySource').value,
                     reference: document.getElementById('wisePayReference').value,
                     // I bonifici non finiscono nelle Spese di Numbers: si vedono solo qui in Pagamenti.
-                    trackExpense: false
+                    trackExpense: false,
+                    send: direct,
+                    pin: direct ? pinInput.value : undefined
                 });
-                showToast('Bonifico preparato: Federico deve confermarlo nell\'app di Wise', 'success');
+                showToast(direct ? 'Bonifico inviato' : 'Bonifico preparato: Federico deve confermarlo nell\'app di Wise', 'success');
                 await loadPayments();
             } catch (err) {
-                showToast('Bonifico non preparato: ' + err.message, 'error');
+                showToast((direct ? 'Bonifico non inviato: ' : 'Bonifico non preparato: ') + err.message, 'error');
+                pinInput.value = '';
+                btn.disabled = false;
+                // Con un PIN sbagliato il modulo resta com'è. Si ricarica solo se il bonifico è stato preparato
+                // ma non è partito: ora è in lista, e il modulo riparte pulito.
+                if (direct && /è stato preparato ma non è partito/.test(err.message)) { try { await loadPayments(); } catch (e2) { /* resta il messaggio */ } }
+            }
+        });
+
+        // ----- Invio di un bonifico già preparato (serve il PIN)
+        function openWiseSend(paymentId) {
+            const p = ((wiseData && wiseData.payments) || []).find(x => x.id == paymentId);
+            if (!p) return;
+            document.getElementById('wiseSendId').value = p.id;
+            document.getElementById('wiseSendWhat').textContent = `${wiseMoney(p.target_amount, p.target_currency)} a ${p.recipient_label || p.recipient_name}` + (p.reference ? ` — ${p.reference}` : '');
+            document.getElementById('wiseSendPin').value = '';
+            document.getElementById('wiseSendSubmit').disabled = false;
+            document.getElementById('wiseSendModal').classList.add('active');
+            document.getElementById('wiseSendPin').focus();
+        }
+
+        function closeWiseSend() {
+            document.getElementById('wiseSendModal').classList.remove('active');
+            document.getElementById('wiseSendPin').value = '';
+        }
+
+        document.getElementById('wiseSendForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('wiseSendSubmit');
+            btn.disabled = true;
+            try {
+                await apiCall('POST', `/companies/${currentCompanyId}/wise/payments/${document.getElementById('wiseSendId').value}/send`, { pin: document.getElementById('wiseSendPin').value });
+                closeWiseSend();
+                showToast('Bonifico inviato', 'success');
+                await loadPayments();
+            } catch (err) {
+                showToast('Bonifico non inviato: ' + err.message, 'error');
+                document.getElementById('wiseSendPin').value = '';
                 btn.disabled = false;
             }
         });

@@ -97,7 +97,7 @@
         ]
     };
     const wiseMock = {
-        configured: true, changed: 0,
+        configured: true, changed: 0, directSend: params.get('nodirect') !== '1',
         balances: [{ currency: 'USD', amount: 12480 }, { currency: 'EUR', amount: 3210.5 }, { currency: 'GBP', amount: 0 }],
         recipients: [
             { id: 5, name: 'Maria Rossi', currency: 'EUR', country: 'IT', type: 'iban', account: 'IT60 •••• 3456', label: 'Assistente' },
@@ -126,6 +126,16 @@
         if (/\/wise$/.test(path)) {
             if (params.get('wiseerr') === '1') return Promise.resolve(new Response(JSON.stringify({ error: 'Wise non riconosce il token: è sbagliato, scaduto o cancellato.' }), { status: 502, headers: { 'Content-Type': 'application/json' } }));
             return json(params.get('nowise') === '1' ? { configured: false } : wiseMock);
+        }
+        // Invio con PIN: il PIN giusto nell'anteprima è 0000 (?pinlock=1 simula troppi tentativi).
+        if (method === 'POST' && /\/wise\/payments(\/\d+\/send)?$/.test(path)) {
+            const b = JSON.parse((opts && opts.body) || '{}');
+            const wants = /\/send$/.test(path) || b.send === true;
+            const fail = (status, error) => Promise.resolve(new Response(JSON.stringify({ error }), { status, headers: { 'Content-Type': 'application/json' } }));
+            if (wants && params.get('pinlock') === '1') return fail(429, 'Troppi PIN sbagliati: l\'invio è fermo, riprova tra 15 minuti.');
+            if (wants && String(b.pin) !== '0000') return fail(400, 'PIN sbagliato.');
+            if (wants && params.get('wisefail') === '1') return fail(422, 'Il saldo Wise non basta per questo bonifico. Il bonifico è stato preparato ma non è partito: lo trovi in lista, puoi riprovare con il PIN o confermarlo dall\'app di Wise.');
+            return json({ id: 777, ok: true });
         }
         if (/\/wise\/quote$/.test(path)) {
             const b = JSON.parse((opts && opts.body) || '{}');
@@ -161,8 +171,9 @@
             invoice: 'openInvoiceModal', expense: 'openExpenseModal', recurring: 'openRecurringModal',
             reminder: 'openReminderModal', note: 'openNoteModal', customer: 'openCustomerModal',
             company: 'openCompanyModal', refund: 'openExpenseNoteModal', settings: 'openCompanySettings',
-            wiserecipient: 'openWiseRecipientModal', wiselabels: 'openWiseLabelsModal'
+            wiserecipient: 'openWiseRecipientModal', wiselabels: 'openWiseLabelsModal', wisesend: '__wisesend'
         };
+        if (params.get('modal') === 'wisesend' && typeof window.openWiseSend === 'function') window.openWiseSend(3);
         const opener = openers[params.get('modal')];
         if (opener && typeof window[opener] === 'function') window[opener]();
         if (params.get('confirm') === '1') showConfirm('Questa azione non si può annullare.');
