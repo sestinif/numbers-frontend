@@ -33,7 +33,7 @@
         }
         if (expense.cost_type === 'variable') {
             return isFalse(expense.amount_confirmed)
-                ? { text: 'Variabile · da confermare', tone: 'pending', title: 'Importo stimato: aprila e metti la cifra della fattura' }
+                ? { text: 'Variabile · da confermare', tone: 'pending', title: 'Importo stimato: premi «Conferma» e metti la cifra della fattura' }
                 : { text: 'Variabile', tone: 'auto', title: 'Costo variabile, cifra confermata' };
         }
         if (expense.cost_type === 'fixed') return { text: 'Fisso', tone: 'auto', title: 'Costo fisso ricorrente' };

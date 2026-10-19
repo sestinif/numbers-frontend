@@ -2151,6 +2151,23 @@
         </div>
     </div>
 
+    <div id="expenseConfirmModal" class="modal">
+        <div class="modal-content">
+            <h2>Conferma la spesa</h2>
+            <form id="expenseConfirmForm">
+                <input type="hidden" id="expenseConfirmId">
+                <p class="wise-note" id="expenseConfirmWhat"></p>
+                <div class="form-group">
+                    <label for="expenseConfirmAmount">Cifra della fattura *</label>
+                    <input type="number" id="expenseConfirmAmount" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <p class="wise-note">La cifra scritta è una stima. Se è già quella giusta confermala così, altrimenti metti quella della fattura. I mesi dopo restano alla stima.</p>
+                <button type="submit" class="btn btn-primary" id="expenseConfirmSubmit">Conferma</button>
+                <button type="button" class="btn btn-secondary" onclick="closeExpenseConfirm()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
     <div id="invoiceMailModal" class="modal">
         <div class="modal-content">
             <h2 id="invoiceMailTitle">Invia la fattura</h2>
@@ -4190,6 +4207,54 @@
             }
         });
 
+        // ----- Conferma di una spesa variabile (la cifra della regola è una stima)
+        function openExpenseConfirm(expenseId) {
+            const expense = expenses.find(e => e.id == expenseId);
+            if (!expense) return;
+            const date = new Date((expense.expense_date || expense.date || '').split('T')[0] + 'T12:00:00');
+            document.getElementById('expenseConfirmId').value = expense.id;
+            document.getElementById('expenseConfirmWhat').textContent =
+                `${expense.description} · ${date.toLocaleDateString('it-IT')}` + (expense.account ? ` · ${expense.account}` : '');
+            document.getElementById('expenseConfirmAmount').value = expense.amount;
+            document.getElementById('expenseConfirmSubmit').disabled = false;
+            document.getElementById('expenseConfirmModal').classList.add('active');
+            const input = document.getElementById('expenseConfirmAmount');
+            input.focus();
+            input.select();
+        }
+
+        function closeExpenseConfirm() {
+            document.getElementById('expenseConfirmModal').classList.remove('active');
+        }
+
+        // Salvare la spesa con la cifra vera è ciò che la conferma: il server la segna come confermata.
+        document.getElementById('expenseConfirmForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('expenseConfirmSubmit');
+            btn.disabled = true;
+            try {
+                const id = document.getElementById('expenseConfirmId').value;
+                const expense = expenses.find(x => x.id == id);
+                const data = {
+                    date: (expense.expense_date || expense.date || '').split('T')[0],
+                    description: expense.description,
+                    category: expense.category || '',
+                    account: expense.account || '',
+                    amount: parseFloat(document.getElementById('expenseConfirmAmount').value)
+                };
+                if (expense.notes != null) data.notes = expense.notes;
+                await apiCall('PUT', `/expenses/${id}`, data);
+                expenses = await apiCall('GET', `/companies/${currentCompanyId}/expenses`) || [];
+                closeExpenseConfirm();
+                loadExpenses();
+                updateDashboard();
+                showToast('Spesa confermata', 'success');
+            } catch (err) {
+                showToast('Non confermata: ' + err.message, 'error');
+                btn.disabled = false;
+            }
+        });
+
         function loadExpenses() {
             if (!currentCompanyId) return;
 
@@ -4220,6 +4285,7 @@
                     <td>${expense.account ? escapeHtml(expense.account) : ''}</td>
                     <td class="num"><strong>${formatCurrency(expense.amount)}</strong></td>
                     <td class="action-btns">
+                        ${badge && badge.tone === 'pending' ? `<button class="btn btn-primary" onclick="openExpenseConfirm(${expense.id})">Conferma</button>` : ''}
                         <button class="btn btn-secondary" onclick="openExpenseModal(${expense.id})">Modifica</button>
                         <button class="btn btn-danger" onclick="deleteExpense(${expense.id})">Elimina</button>
                     </td>

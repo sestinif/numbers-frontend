@@ -5,7 +5,7 @@ const C = require('../cost-labels.js');
 test('una voce variabile non ancora confermata lo dice, in ambra', () => {
     for (const flag of [false, 'f', 0, 'false']) {
         assert.deepStrictEqual(C.expenseBadge({ auto_source: 'rule:7', cost_type: 'variable', amount_confirmed: flag }),
-            { text: 'Variabile · da confermare', tone: 'pending', title: 'Importo stimato: aprila e metti la cifra della fattura' });
+            { text: 'Variabile · da confermare', tone: 'pending', title: 'Importo stimato: premi «Conferma» e metti la cifra della fattura' });
     }
 });
 
