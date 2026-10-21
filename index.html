@@ -5791,7 +5791,6 @@
             const cmpNow = prevPeriod ? appPeriod : { mode: 'A', year: currentYear, month: 1 };
             const cmpPrev = prevPeriod || { mode: 'A', year: currentYear - 1, month: 1 };
             const versus = prevPeriod ? Period.previousLabel(appPeriod) : 'anno scorso';
-            const noCompare = prevPeriod ? versus : String(currentYear - 1);
             const curYearRevenue = sumOf(Period.filter(invoices, invoiceDate, cmpNow), 'total');
             const prevYearRevenue = sumOf(Period.filter(invoices, invoiceDate, cmpPrev), 'total');
             const curYearExp = sumOf(Period.filter(expenses, expenseDate, cmpNow), 'amount');
@@ -5814,8 +5813,8 @@
                         arrow = '→'; txt = 'stabile vs ' + versus;
                     }
                 } else {
-                    // Nessun dato dell'anno precedente: pillola neutra, no colore fuorviante
-                    txt = `nessun confronto · ${noCompare}`;
+                    // Nessun dato con cui confrontare: la riga resta vuota
+                    txt = '';
                 }
                 el.className = 'stat-trend ' + cls;
                 el.innerHTML = (arrow ? `<span>${arrow}</span> ` : '') + txt;
@@ -5825,10 +5824,7 @@
             pill(document.getElementById('totalRevenueTrend'), curYearRevenue, prevYearRevenue, false);
             pill(document.getElementById('totalExpensesTrend'), curYearExp, prevYearExp, true);
             const netTrend = document.getElementById('netRevenueTrend');
-            if (netTrend) {
-                netTrend.className = 'stat-trend ' + (netRevenue >= 0 ? 'up' : 'down');
-                netTrend.innerHTML = `<span>${netRevenue >= 0 ? '↑' : '↓'}</span> ${netRevenue >= 0 ? 'In utile' : 'In perdita'}`;
-            }
+            if (netTrend) { netTrend.className = 'stat-trend'; netTrend.textContent = ''; }
             const compensiTrend = document.getElementById('totalCompensiTrend');
             if (compensiTrend) {
                 compensiTrend.className = 'stat-trend';
@@ -5837,7 +5833,7 @@
                     : '';
             }
             const monthTrend = document.getElementById('monthInvoicesTrend');
-            if (monthTrend) { monthTrend.className = 'stat-trend'; monthTrend.textContent = appPeriod.mode === 'T' ? '' : `su ${invoices.length} totali`; }
+            if (monthTrend) { monthTrend.className = 'stat-trend'; monthTrend.textContent = ''; }
 
             updateFinanceChart();
         }
