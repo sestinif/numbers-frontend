@@ -122,6 +122,21 @@
         if (!u.startsWith(API)) return realFetch(url, opts);
         const method = (opts && opts.method) || 'GET';
         const path = u.slice(API.length).split('?')[0];
+        if (method === 'POST' && /\/accounts\/move$/.test(path)) {
+            const b = JSON.parse(opts.body || '{}');
+            return json({ expenses: 3, rules: 2, to: b.to });
+        }
+        if (method === 'POST' && /\/accounts\/move$/.test(path)) {
+            const b = JSON.parse(opts.body || '{}');
+            return json({ expenses: 3, rules: 2, to: b.to });
+        }
+        // Compensi personali (prelievi che contano): date in ottobre solo per vederli in anteprima.
+        if (/\/withdrawals$/.test(path)) {
+            return json({ start_month: '2026-11', items: [
+                { date: dayOffset(-2).slice(0, 10), transfer_id: '12', name: 'Assistente – conto Revolut', amount_eur: 1500, share: 1, counted_eur: 1500 },
+                { date: dayOffset(-9).slice(0, 10), transfer_id: '11', name: 'Affitto', amount_eur: 800, share: 0.5, counted_eur: 400 }
+            ] });
+        }
         // Pagamenti (Wise): ?nowise=1 mostra la pagina non collegata, ?wiseerr=1 l'errore.
         if (/\/wise$/.test(path)) {
             if (params.get('wiseerr') === '1') return Promise.resolve(new Response(JSON.stringify({ error: 'Wise non riconosce il token: è sbagliato, scaduto o cancellato.' }), { status: 502, headers: { 'Content-Type': 'application/json' } }));

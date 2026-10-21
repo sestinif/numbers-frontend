@@ -458,7 +458,7 @@
 
         /* ===== STATS GRID ===== */
         .stats-grid {
-            display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px;
+            display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px;
             margin: 0 0 28px; padding-bottom: 28px; border-bottom: 1px solid var(--border-color);
         }
 
@@ -599,6 +599,8 @@
 
         .badge-pending { background: none; border: 0; color: var(--warning); }
 
+        .badge-compenso { color: var(--primary-green); margin-left: 8px; cursor: help; }
+        .badge-spesa { color: var(--text-secondary); margin-left: 8px; }
         .badge-auto { background: none; border: 0; color: var(--text-secondary); margin-left: 8px; cursor: help; }
 
         /* ===== QUICK ACTIONS ===== */
@@ -1346,7 +1348,7 @@
                 <div class="nav-group-label">Spese</div>
                 <button class="sidebar-nav-item" onclick="showSection('expenses', this)">
                     <i data-lucide="credit-card"></i>
-                    <span>Spese</span>
+                    <span>Movimenti</span>
                 </button>
                 <button class="sidebar-nav-item" onclick="showSection('recurring', this)">
                     <i data-lucide="repeat"></i>
@@ -1469,6 +1471,11 @@
                             <h3>Netto</h3>
                             <div class="value" id="netRevenue">&#8364;0</div>
                             <div class="stat-trend" id="netRevenueTrend"></div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Compensi personali</h3>
+                            <div class="value" id="totalCompensi">&#8364;0</div>
+                            <div class="stat-trend" id="totalCompensiTrend"></div>
                         </div>
                         <div class="stat-card">
                             <h3>Fatture</h3>
@@ -1600,6 +1607,10 @@
                                 <span class="mini-stat-value" id="miniExpenseTotal">€0</span>
                             </div>
                             <div class="mini-stat">
+                                <span class="mini-stat-label">Compensi</span>
+                                <span class="mini-stat-value" id="miniCompensiTotal">€0</span>
+                            </div>
+                            <div class="mini-stat">
                                 <span class="mini-stat-label">Operazioni</span>
                                 <span class="mini-stat-value" id="miniExpenseCount">0</span>
                             </div>
@@ -1610,6 +1621,7 @@
                         </div>
                         <div class="toolbar-actions">
                             <button class="btn btn-primary" onclick="openExpenseModal()">+ Spesa</button>
+                            <button class="btn btn-secondary" onclick="openAccountMoveModal()">Cambia conto</button>
                             <button class="btn btn-secondary" onclick="exportExpensesToCSV()">CSV</button>
                         </div>
                     </div>
@@ -1651,6 +1663,7 @@
                         </div>
                         <div class="toolbar-actions">
                             <button class="btn btn-primary" onclick="openRecurringModal()">+ Ricorrente</button>
+                            <button class="btn btn-secondary" onclick="openAccountMoveModal()">Cambia conto</button>
                         </div>
                     </div>
                     <div class="card">
@@ -2287,6 +2300,25 @@
         </div>
     </div>
 
+    <div id="accountMoveModal" class="modal">
+        <div class="modal-content">
+            <h2>Cambia conto</h2>
+            <form id="accountMoveForm">
+                <p class="wise-note">Sposta in un colpo solo spese e ricorrenti da un conto a un altro, storico compreso. Per cambiare una voce sola, usa «Modifica» sulla sua riga.</p>
+                <div class="form-group">
+                    <label>Da quale conto</label>
+                    <select id="accountMoveFrom"></select>
+                </div>
+                <div class="form-group">
+                    <label>A quale conto *</label>
+                    <input type="text" id="accountMoveTo" required list="accountOptions" maxlength="120" autocomplete="off" placeholder="Es: Wise">
+                </div>
+                <button type="submit" class="btn btn-primary" id="accountMoveSubmit">Sposta</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAccountMoveModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
     <div id="wiseRecipientModal" class="modal">
         <div class="modal-content">
             <h2>Nuovo beneficiario</h2>
@@ -2672,6 +2704,9 @@
         let notes = [];
         let expenseNotes = [];
         let recurringRules = [];
+        // Compensi personali: i prelievi dal conto Wise che contano (con le quote scelte), da novembre 2026.
+        const COMPENSI_FROM = '2026-11';
+        let compensi = [];
 
         // Currency symbols
         const currencySymbols = {
@@ -2808,7 +2843,7 @@
         function initTableTools() {
             const configs = [
                 { id: 'invoicesTable', ph: 'Cerca fattura o cliente…', sort: [0,1,2,3] },
-                { id: 'expensesTable', ph: 'Cerca spesa…', sort: [0,1,2,3,4] },
+                { id: 'expensesTable', ph: 'Cerca movimento…', sort: [0,1,2,3,4] },
                 { id: 'customersTable', ph: 'Cerca cliente…', sort: [0,1] },
                 { id: 'remindersTable', ph: 'Cerca scadenza…', sort: [0,1] },
                 { id: 'notesTable', ph: 'Cerca nota…', sort: [0,1] },
@@ -2950,7 +2985,7 @@
             moveNavIndicator(btn);
 
             // Update main header title
-            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Spese', recurring: 'Ricorrenti', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Rimborsi', payments: 'Pagamenti', mail: 'Email', reports: 'Report', companies: 'Aziende' };
+            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Movimenti', recurring: 'Ricorrenti', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Rimborsi', payments: 'Pagamenti', mail: 'Email', reports: 'Report', companies: 'Aziende' };
             document.getElementById('mainHeaderTitle').textContent = titles[sectionId] || sectionId;
             renderPeriodBar(sectionId);
 
@@ -2958,6 +2993,7 @@
             document.querySelector('.sidebar').classList.remove('sidebar-open');
             document.querySelector('.sidebar-overlay').classList.remove('active');
 
+            if (sectionId === 'dashboard' || sectionId === 'expenses') refreshCompensi();
             if (sectionId === 'dashboard') {
                 updateDashboard();
                 checkReminders();
@@ -3123,6 +3159,22 @@
             tbody.innerHTML = html;
         }
 
+        // Non blocca niente: se Wise o il server non rispondono, i compensi restano quelli che c'erano.
+        async function refreshCompensi() {
+            if (!currentCompanyId) return;
+            const companyId = currentCompanyId;
+            try {
+                const res = await apiCall('GET', `/companies/${companyId}/withdrawals`);
+                if (companyId !== currentCompanyId) return;
+                compensi = (res && res.items) || [];
+            } catch (e) {
+                console.error('Compensi non caricati:', e);
+                return;
+            }
+            const active = document.querySelector('.section.active');
+            if (active && (active.id === 'dashboard' || active.id === 'expenses')) PERIOD_SECTIONS[active.id]();
+        }
+
         async function loadAllData() {
             if (!currentCompanyId) return;
             // Skeleton mentre carica
@@ -3152,6 +3204,7 @@
             } catch(e) {
                 console.error('Errore caricamento dati:', e);
             }
+            refreshCompensi();
         }
 
         async function selectCompany(companyId) {
@@ -4321,32 +4374,53 @@
             }
         });
 
+        // «Movimenti»: le spese di business e i compensi personali, in un'unica lista, ognuno con la sua etichetta.
+        // I compensi arrivano da Wise e non si modificano da qui: la quota si sceglie in «Nomi beneficiari».
+        function compensoQuota(c) {
+            return c.share === 1 ? 'tutto' : `metà di ${formatCurrency(c.amount_eur)}`;
+        }
+
         function loadExpenses() {
             if (!currentCompanyId) return;
 
             const tbody = document.querySelector('#expensesTable tbody');
             tbody.innerHTML = '';
 
-            if (expenses.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna spesa presente. Aggiungi la prima spesa!</td></tr>';
+            const shownExpenses = Period.filter(expenses, expenseDate, appPeriod);
+            const shownCompensi = Period.filter(compensi, c => c.date, appPeriod);
+            const moves = [
+                ...shownExpenses.map(e => ({ kind: 'spesa', date: e.expense_date || e.date, e })),
+                ...shownCompensi.map(c => ({ kind: 'compenso', date: c.date, c }))
+            ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (expenses.length === 0 && compensi.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessun movimento presente. Aggiungi la prima spesa!</td></tr>';
                 refreshAccountOptions();
                 return;
             }
-
-            const shown = Period.filter(expenses, expenseDate, appPeriod);
-            const sortedExpenses = shown.sort((a, b) => new Date(b.expense_date || b.date) - new Date(a.expense_date || a.date));
-
-            if (shown.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessuna spesa in questo periodo.</td></tr>';
+            if (moves.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nessun movimento in questo periodo.</td></tr>';
             }
 
-            sortedExpenses.forEach(expense => {
-                const date = expense.expense_date || expense.date;
-                const badge = CostLabels.expenseBadge(expense);
+            moves.forEach(m => {
                 const row = tbody.insertRow();
+                if (m.kind === 'compenso') {
+                    const c = m.c;
+                    row.innerHTML = `
+                        <td>${new Date(c.date).toLocaleDateString('it-IT')}</td>
+                        <td>${escapeHtml(c.name || 'Prelievo')}<span class="badge badge-compenso badge-inline" title="Soldi tuoi presi dall'azienda: non sono una spesa e non toccano il netto">Compenso</span></td>
+                        <td>Compenso personale · ${compensoQuota(c)}</td>
+                        <td>Wise</td>
+                        <td class="num"><strong>${formatCurrency(c.counted_eur)}</strong></td>
+                        <td class="action-btns"></td>
+                    `;
+                    return;
+                }
+                const expense = m.e;
+                const badge = CostLabels.expenseBadge(expense);
                 row.innerHTML = `
-                    <td>${new Date(date).toLocaleDateString('it-IT')}</td>
-                    <td>${escapeHtml(expense.description)}${badge ? `<span class="badge badge-${badge.tone} badge-inline" title="${escapeHtml(badge.title)}">${badge.text}</span>` : ''}</td>
+                    <td>${new Date(m.date).toLocaleDateString('it-IT')}</td>
+                    <td>${escapeHtml(expense.description)}<span class="badge badge-spesa badge-inline">Spesa</span>${badge ? `<span class="badge badge-${badge.tone} badge-inline" title="${escapeHtml(badge.title)}">${badge.text}</span>` : ''}</td>
                     <td>${expense.category ? escapeHtml(expense.category) : '-'}</td>
                     <td>${expense.account ? escapeHtml(expense.account) : ''}</td>
                     <td class="num"><strong>${formatCurrency(expense.amount)}</strong></td>
@@ -4358,12 +4432,14 @@
                 `;
             });
 
-            // Mini-stats spese, sul periodo scelto
-            const totalExp = shown.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
-            const pending = shown.filter(e => { const b = CostLabels.expenseBadge(e); return b && b.tone === 'pending'; }).length;
+            // Mini-stats, sul periodo scelto
+            const totalExp = shownExpenses.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+            const totalCompensi = shownCompensi.reduce((s, c) => s + (c.counted_eur || 0), 0);
+            const pending = shownExpenses.filter(e => { const b = CostLabels.expenseBadge(e); return b && b.tone === 'pending'; }).length;
             const pendingEl = document.getElementById('miniExpensePending');
             document.getElementById('miniExpenseTotal').textContent = formatCurrency(totalExp);
-            document.getElementById('miniExpenseCount').textContent = shown.length;
+            document.getElementById('miniCompensiTotal').textContent = formatCurrency(totalCompensi);
+            document.getElementById('miniExpenseCount').textContent = moves.length;
             pendingEl.textContent = pending;
             pendingEl.classList.toggle('is-pending', pending > 0);
             refreshAccountOptions();
@@ -4904,6 +4980,56 @@
             }
             await loadPayments();
         }
+
+        // ===== CAMBIA CONTO IN BLOCCO =====
+        // Valori della tendina «Da»: '*' = tutti, '' = senza conto, altrimenti il nome del conto.
+        const accountMatches = (item, from) => {
+            const name = String(item.account || '').trim().toLowerCase();
+            if (from === '*') return true;
+            return from === '' ? name === '' : name === from.trim().toLowerCase();
+        };
+
+        function openAccountMoveModal() {
+            if (!currentCompanyId) { alert('Seleziona prima un\'azienda!'); return; }
+            const select = document.getElementById('accountMoveFrom');
+            select.innerHTML = '';
+            const add = (value, text) => { const o = document.createElement('option'); o.value = value; o.textContent = text; select.appendChild(o); };
+            const countOf = from => expenses.filter(e => accountMatches(e, from)).length + recurringRules.filter(r => accountMatches(r, from)).length;
+            add('*', `Tutti i conti (${countOf('*')})`);
+            CostLabels.knownAccounts(recurringRules, expenses).forEach(name => add(name, `${name} (${countOf(name)})`));
+            if (countOf('') > 0) add('', `Senza conto (${countOf('')})`);
+            document.getElementById('accountMoveTo').value = 'Wise';
+            document.getElementById('accountMoveSubmit').disabled = false;
+            document.getElementById('accountMoveModal').classList.add('active');
+        }
+
+        function closeAccountMoveModal() {
+            document.getElementById('accountMoveModal').classList.remove('active');
+        }
+
+        document.getElementById('accountMoveForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const from = document.getElementById('accountMoveFrom').value;
+            const to = document.getElementById('accountMoveTo').value.trim();
+            if (!to) return;
+            const n = expenses.filter(x => accountMatches(x, from) && String(x.account || '').trim().toLowerCase() !== to.toLowerCase()).length
+                + recurringRules.filter(x => accountMatches(x, from) && String(x.account || '').trim().toLowerCase() !== to.toLowerCase()).length;
+            if (n === 0) { showToast('Niente da spostare: sono già tutte su ' + to, 'info'); return; }
+            const what = from === '*' ? 'tutte le spese e le ricorrenti' : from === '' ? 'le voci senza conto' : `le voci di «${from}»`;
+            if (!(await showConfirm(`Sposto ${what} su «${to}»: ${n} ${n === 1 ? 'voce' : 'voci'}, storico compreso.`, { title: 'Cambiare conto?', okLabel: 'Sposta', okClass: 'btn-primary' }))) return;
+            const btn = document.getElementById('accountMoveSubmit');
+            btn.disabled = true;
+            try {
+                const body = from === '*' ? { all: true, to } : { from, to };
+                const res = await apiCall('POST', `/companies/${currentCompanyId}/accounts/move`, body);
+                closeAccountMoveModal();
+                showToast(`Spostate ${res.expenses} spese e ${res.rules} ricorrenti su ${res.to}`, 'success');
+                await refreshAfterRecurring();
+            } catch (err) {
+                showToast('Conto non cambiato: ' + err.message, 'error');
+                btn.disabled = false;
+            }
+        });
 
         function openWiseLabelsModal() {
             if (!wiseData) { showToast('Wise non è collegato', 'info'); return; }
@@ -5614,12 +5740,15 @@
                 .filter(exp => exp.category === 'Rimborso fatturato')
                 .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
             const netRevenue = totalRevenue - totalExpensesAmount;
+            // Compensi personali: soldi tuoi presi dall'azienda, non una spesa. Il Netto non li tocca.
+            const totalCompensi = Period.filter(compensi, c => c.date, appPeriod).reduce((s, c) => s + (c.counted_eur || 0), 0);
 
             const currentYear = new Date().getFullYear();
 
             animateValue(document.getElementById('totalRevenue'), totalRevenue, v => formatCurrency(v));
             animateValue(document.getElementById('totalExpenses'), totalExpensesAmount, v => formatCurrency(v));
             animateValue(document.getElementById('netRevenue'), netRevenue, v => formatCurrency(v));
+            animateValue(document.getElementById('totalCompensi'), totalCompensi, v => formatCurrency(v));
             animateValue(document.getElementById('monthInvoices'), companyInvoices.length, v => String(Math.round(v)));
 
             // Confronto. Con un mese o un anno: il periodo prima. Con «Tutto» i totali sono
@@ -5666,6 +5795,13 @@
             if (netTrend) {
                 netTrend.className = 'stat-trend ' + (netRevenue >= 0 ? 'up' : 'down');
                 netTrend.innerHTML = `<span>${netRevenue >= 0 ? '↑' : '↓'}</span> ${netRevenue >= 0 ? 'In utile' : 'In perdita'}`;
+            }
+            const compensiTrend = document.getElementById('totalCompensiTrend');
+            if (compensiTrend) {
+                compensiTrend.className = 'stat-trend';
+                compensiTrend.textContent = Period.endsBefore(appPeriod, COMPENSI_FROM)
+                    ? `si parte da ${Period.monthLabel(COMPENSI_FROM)}`
+                    : `netto dopo compensi ${formatCurrency(netRevenue - totalCompensi)}`;
             }
             const monthTrend = document.getElementById('monthInvoicesTrend');
             if (monthTrend) { monthTrend.className = 'stat-trend'; monthTrend.textContent = appPeriod.mode === 'T' ? '' : `su ${invoices.length} totali`; }
