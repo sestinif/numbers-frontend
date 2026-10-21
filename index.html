@@ -2314,7 +2314,7 @@
                 <div class="form-group">
                     <label>A quale conto *</label>
                     <select class="account-select" data-for="accountMoveTo" data-none="0" aria-label="Conto"></select>
-                    <input hidden type="text" id="accountMoveTo" required maxlength="120" autocomplete="off" placeholder="Es: Wise">
+                    <input hidden type="text" id="accountMoveTo" required maxlength="120" autocomplete="off" placeholder="Es: Wise Business">
                 </div>
                 <button type="submit" class="btn btn-primary" id="accountMoveSubmit">Sposta</button>
                 <button type="button" class="btn btn-secondary" onclick="closeAccountMoveModal()">Annulla</button>
@@ -4415,7 +4415,7 @@
                         <td>${new Date(c.date).toLocaleDateString('it-IT')}</td>
                         <td>${escapeHtml(c.name || 'Prelievo')}<span class="badge badge-compenso badge-inline" title="Soldi tuoi presi dall'azienda: non sono una spesa e non toccano il netto">Compenso</span></td>
                         <td>Compenso personale · ${compensoQuota(c)}</td>
-                        <td>Wise</td>
+                        <td>Wise Business</td>
                         <td class="num"><strong>${formatCurrency(c.counted_eur)}</strong></td>
                         <td class="action-btns"></td>
                     `;
@@ -5003,7 +5003,7 @@
             add('*', `Tutti i conti (${countOf('*')})`);
             CostLabels.knownAccounts(recurringRules, expenses).forEach(name => add(name, `${name} (${countOf(name)})`));
             if (countOf('') > 0) add('', `Senza conto (${countOf('')})`);
-            document.getElementById('accountMoveTo').value = 'Wise';
+            document.getElementById('accountMoveTo').value = 'Wise Business';
             initAccountPicker('accountMoveTo');
             document.getElementById('accountMoveSubmit').disabled = false;
             document.getElementById('accountMoveModal').classList.add('active');
@@ -5145,7 +5145,7 @@
             if (!input || !select) return;
             const current = (input.value || '').trim();
             const names = CostLabels.knownAccounts(recurringRules, expenses);
-            [ 'Wise', current ].forEach(n => { if (n && !names.some(x => x.toLowerCase() === n.toLowerCase())) names.push(n); });
+            [ 'Wise Business', current ].forEach(n => { if (n && !names.some(x => x.toLowerCase() === n.toLowerCase())) names.push(n); });
             names.sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
             select.innerHTML = '';
             const add = (value, text) => { const o = document.createElement('option'); o.value = value; o.textContent = text; select.appendChild(o); };
