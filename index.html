@@ -599,6 +599,7 @@
 
         .badge-pending { background: none; border: 0; color: var(--warning); }
 
+        .account-select + input { margin-top: 8px; }
         .badge-compenso { color: var(--primary-green); margin-left: 8px; cursor: help; }
         .badge-spesa { color: var(--text-secondary); margin-left: 8px; }
         .badge-auto { background: none; border: 0; color: var(--text-secondary); margin-left: 8px; cursor: help; }
@@ -2220,7 +2221,8 @@
 
                 <div class="form-group">
                     <label>Conto</label>
-                    <input type="text" id="expenseAccount" list="accountOptions" maxlength="120" autocomplete="off" placeholder="Es: Revolut Business">
+                    <select class="account-select" data-for="expenseAccount" data-none="1" aria-label="Conto"></select>
+                    <input hidden type="text" id="expenseAccount" maxlength="120" autocomplete="off" placeholder="Es: Revolut Business">
                 </div>
 
                 <button type="submit" class="btn btn-primary">Salva spesa</button>
@@ -2311,7 +2313,8 @@
                 </div>
                 <div class="form-group">
                     <label>A quale conto *</label>
-                    <input type="text" id="accountMoveTo" required list="accountOptions" maxlength="120" autocomplete="off" placeholder="Es: Wise">
+                    <select class="account-select" data-for="accountMoveTo" data-none="0" aria-label="Conto"></select>
+                    <input hidden type="text" id="accountMoveTo" required maxlength="120" autocomplete="off" placeholder="Es: Wise">
                 </div>
                 <button type="submit" class="btn btn-primary" id="accountMoveSubmit">Sposta</button>
                 <button type="button" class="btn btn-secondary" onclick="closeAccountMoveModal()">Annulla</button>
@@ -2393,7 +2396,8 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Conto di addebito</label>
-                        <input type="text" id="recurringAccount" list="accountOptions" maxlength="120" autocomplete="off" placeholder="Es: Revolut Business">
+                        <select class="account-select" data-for="recurringAccount" data-none="1" aria-label="Conto"></select>
+                        <input hidden type="text" id="recurringAccount" maxlength="120" autocomplete="off" placeholder="Es: Revolut Business">
                     </div>
                     <div class="form-group">
                         <label>Tipo</label>
@@ -4289,6 +4293,7 @@
                 setupExpenseDate();
             }
 
+            initAccountPicker('expenseAccount');
             modal.classList.add('active');
         }
 
@@ -4999,6 +5004,7 @@
             CostLabels.knownAccounts(recurringRules, expenses).forEach(name => add(name, `${name} (${countOf(name)})`));
             if (countOf('') > 0) add('', `Senza conto (${countOf('')})`);
             document.getElementById('accountMoveTo').value = 'Wise';
+            initAccountPicker('accountMoveTo');
             document.getElementById('accountMoveSubmit').disabled = false;
             document.getElementById('accountMoveModal').classList.add('active');
         }
@@ -5129,6 +5135,32 @@
                 btn.disabled = false;
             }
         });
+
+        // Il conto si sceglie da una tendina con tutti i conti già usati (e Wise); «Altro conto…» fa scrivere un nome nuovo.
+        // Il valore vero resta nella casella di testo collegata (stesso id di prima), così il resto del codice non cambia.
+        const NEW_ACCOUNT = '__new__';
+        function initAccountPicker(inputId) {
+            const input = document.getElementById(inputId);
+            const select = document.querySelector(`select[data-for="${inputId}"]`);
+            if (!input || !select) return;
+            const current = (input.value || '').trim();
+            const names = CostLabels.knownAccounts(recurringRules, expenses);
+            [ 'Wise', current ].forEach(n => { if (n && !names.some(x => x.toLowerCase() === n.toLowerCase())) names.push(n); });
+            names.sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }));
+            select.innerHTML = '';
+            const add = (value, text) => { const o = document.createElement('option'); o.value = value; o.textContent = text; select.appendChild(o); };
+            if (select.dataset.none === '1') add('', 'Nessun conto');
+            names.forEach(n => add(n, n));
+            add(NEW_ACCOUNT, 'Altro conto…');
+            const match = names.find(n => n.toLowerCase() === current.toLowerCase());
+            select.value = match || (select.dataset.none === '1' ? '' : names[0]);
+            input.value = select.value === NEW_ACCOUNT ? '' : select.value;
+            input.hidden = true;
+            select.onchange = () => {
+                if (select.value === NEW_ACCOUNT) { input.value = ''; input.hidden = false; input.focus(); }
+                else { input.value = select.value; input.hidden = true; }
+            };
+        }
 
         // I conti già usati in regole e spese, riproposti nei due moduli.
         function refreshAccountOptions() {
@@ -5262,6 +5294,7 @@
                 document.getElementById('recurringModalTitle').textContent = 'Nuova spesa ricorrente';
                 document.getElementById('recurringStart').value = nowPeriod();
             }
+            initAccountPicker('recurringAccount');
             document.getElementById('recurringModal').classList.add('active');
         }
 
