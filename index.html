@@ -5834,7 +5834,7 @@
                 compensiTrend.className = 'stat-trend';
                 compensiTrend.textContent = Period.endsBefore(appPeriod, COMPENSI_FROM)
                     ? `si parte da ${Period.monthLabel(COMPENSI_FROM)}`
-                    : `netto dopo compensi ${formatCurrency(netRevenue - totalCompensi)}`;
+                    : '';
             }
             const monthTrend = document.getElementById('monthInvoicesTrend');
             if (monthTrend) { monthTrend.className = 'stat-trend'; monthTrend.textContent = appPeriod.mode === 'T' ? '' : `su ${invoices.length} totali`; }
