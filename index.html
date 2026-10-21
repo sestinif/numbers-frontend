@@ -1141,11 +1141,13 @@
         .wise-label-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border-color); }
         .wise-label-row:first-child { border-top: 0; }
         .wise-label-who { font-size: 13px; color: var(--text-secondary); line-height: 1.4; overflow-wrap: anywhere; }
-        .wise-label-row input {
+        .wise-label-fields { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .wise-label-row input, .wise-label-row select {
             width: 100%; height: 40px; padding: 0 12px; background: transparent; border: 1px solid var(--border-strong); border-radius: 8px;
             color: var(--text-primary); font-family: var(--font-body); font-size: 14px; font-weight: 400;
         }
-        .wise-label-row input:focus { outline: none; border-color: var(--primary-green); }
+        .wise-label-row select { color-scheme: dark; }
+        .wise-label-row input:focus, .wise-label-row select:focus { outline: none; border-color: var(--primary-green); }
         .badge-muted { color: var(--text-secondary); }
         .badge-danger { color: var(--danger); }
         @media (max-width: 768px) {
@@ -2277,6 +2279,7 @@
             <h2>Nomi dei beneficiari</h2>
             <form id="wiseLabelsForm">
                 <p class="wise-note">Nel bonifico si possono scegliere solo i beneficiari che hanno un nome qui. Dagli un nome che capisci al volo, tipo «Assistente» o «Mio conto N26». Chi resta vuoto non compare. Su Wise non cambia niente.</p>
+                <p class="wise-note">«Prelievo» serve alla pagina Withdrawals di Personals: i bonifici verso un conto tuo contano per intero («tutto») o per metà («metà», per l'affitto). Si parte da novembre 2026; chi resta su «non conta» non entra nel totale.</p>
                 <div id="wiseLabelsList" class="wise-labels"></div>
                 <button type="submit" class="btn btn-primary" id="wiseLabelsSubmit">Salva nomi</button>
                 <button type="button" class="btn btn-secondary" onclick="closeWiseLabelsModal()">Annulla</button>
@@ -4922,8 +4925,22 @@
                 const who = document.createElement('span');
                 who.className = 'wise-label-who';
                 who.textContent = `${r.name} · ${r.currency}${r.account ? ' · ' + r.account : ''}`;
+                const share = document.createElement('select');
+                share.dataset.share = r.id;
+                share.setAttribute('aria-label', `Prelievo per ${r.name}`);
+                [['none', 'Prelievo: non conta'], ['all', 'Prelievo: tutto'], ['half', 'Prelievo: metà']].forEach(([value, text]) => {
+                    const opt = document.createElement('option');
+                    opt.value = value;
+                    opt.textContent = text;
+                    share.appendChild(opt);
+                });
+                share.value = r.withdrawal || 'none';
+                const fields = document.createElement('div');
+                fields.className = 'wise-label-fields';
+                fields.appendChild(input);
+                fields.appendChild(share);
                 row.appendChild(who);
-                row.appendChild(input);
+                row.appendChild(fields);
                 list.appendChild(row);
             });
             document.getElementById('wiseLabelsSubmit').disabled = recipients.length === 0;
@@ -4939,7 +4956,7 @@
             const btn = document.getElementById('wiseLabelsSubmit');
             btn.disabled = true;
             try {
-                const labels = [...document.querySelectorAll('#wiseLabelsList input')].map(i => ({ recipientId: i.dataset.recipient, label: i.value }));
+                const labels = [...document.querySelectorAll('#wiseLabelsList input')].map(i => ({ recipientId: i.dataset.recipient, label: i.value, share: document.querySelector(`#wiseLabelsList select[data-share="${i.dataset.recipient}"]`).value }));
                 await apiCall('PUT', `/companies/${currentCompanyId}/wise/recipient-labels`, { labels });
                 closeWiseLabelsModal();
                 showToast('Nomi salvati', 'success');
