@@ -114,3 +114,9 @@ test('il dominio della LLC sta su Namecheap', () => {
     assert.strictEqual(M.vendorFor('Rinnovo dominio LLC'), 'namecheap.com');
     assert.strictEqual(M.vendorFor('Dominio personale'), null);
 });
+
+test('FACEIT e NordPass hanno il loro logo', () => {
+    assert.strictEqual(M.vendorFor('FACEIT'), 'faceit.com');
+    assert.strictEqual(M.vendorFor('faceit.com abbonamento'), 'faceit.com');
+    assert.strictEqual(M.vendorFor('NordPass Business'), 'nordpass.com');
+});

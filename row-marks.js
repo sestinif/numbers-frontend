@@ -48,7 +48,7 @@
         ['zapier', 'zapier.com'], ['make.com', 'make.com'], ['integromat', 'make.com'], ['n8n', 'n8n.io'],
         ['airtable', 'airtable.com'], ['clickup', 'clickup.com'], ['monday', 'monday.com'], ['asana', 'asana.com'],
         ['trello', 'trello.com'], ['miro', 'miro.com'], ['linear', 'linear.app'], ['dropbox', 'dropbox.com'],
-        ['1password', '1password.com'], ['grammarly', 'grammarly.com'], ['microsoft', 'microsoft.com'], ['office 365', 'microsoft.com'],
+        ['1password', '1password.com'], ['nordpass', 'nordpass.com'], ['nordvpn', 'nordvpn.com'], ['faceit', 'faceit.com'], ['grammarly', 'grammarly.com'], ['microsoft', 'microsoft.com'], ['office 365', 'microsoft.com'],
         ['apple', 'apple.com'], ['icloud', 'icloud.com'], ['spotify', 'spotify.com'], ['netflix', 'netflix.com'],
         ['activecampaign', 'activecampaign.com'], ['active campaign', 'activecampaign.com'], ['klaviyo', 'klaviyo.com'],
         ['mailchimp', 'mailchimp.com'], ['brevo', 'brevo.com'], ['sendinblue', 'brevo.com'], ['convertkit', 'kit.com'],
