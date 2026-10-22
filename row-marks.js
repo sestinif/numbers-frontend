@@ -40,7 +40,7 @@
         ['vercel', 'vercel.com'], ['render', 'render.com'], ['netlify', 'netlify.com'], ['cloudflare', 'cloudflare.com'],
         ['supabase', 'supabase.com'], ['turso', 'turso.tech'], ['heroku', 'heroku.com'], ['digitalocean', 'digitalocean.com'],
         ['hetzner', 'hetzner.com'], ['aws', 'aws.amazon.com'], ['amazon', 'amazon.com'], ['hostinger', 'hostinger.com'],
-        ['godaddy', 'godaddy.com'], ['namecheap', 'namecheap.com'], ['aruba', 'aruba.it'], ['siteground', 'siteground.com'],
+        ['godaddy', 'godaddy.com'], ['namecheap', 'namecheap.com'], ['dominio llc', 'namecheap.com'], ['aruba', 'aruba.it'], ['siteground', 'siteground.com'],
         ['apify', 'apify.com'], ['notion', 'notion.so'], ['canva', 'canva.com'], ['figma', 'figma.com'], ['adobe', 'adobe.com'],
         ['capcut', 'capcut.com'], ['descript', 'descript.com'], ['loom', 'loom.com'], ['fathom', 'fathom.video'],
         ['zoom', 'zoom.us'], ['slack', 'slack.com'], ['discord', 'discord.com'], ['telegram', 'telegram.org'],

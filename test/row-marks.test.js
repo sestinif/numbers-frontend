@@ -108,3 +108,9 @@ test('il nome attaccato al bollino si legge lo stesso, se arriva coi pezzi separ
     assert.strictEqual(m.kind, 'logo');
     assert.strictEqual(m.label, 'render.com');
 });
+
+test('il dominio della LLC sta su Namecheap', () => {
+    assert.strictEqual(M.vendorFor('Dominio LLC'), 'namecheap.com');
+    assert.strictEqual(M.vendorFor('Rinnovo dominio LLC'), 'namecheap.com');
+    assert.strictEqual(M.vendorFor('Dominio personale'), null);
+});
