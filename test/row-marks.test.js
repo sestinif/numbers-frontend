@@ -42,11 +42,18 @@ test('fatture, clienti e rimborsi prendono le iniziali del cliente', () => {
     assert.strictEqual(M.markFor('customerReportTable', { texts: ['Castello Fitness', '4', '€3.800,50', '€950,13'] }).label, 'CF');
 });
 
-test('spese e ricorrenti prendono la lettera e il colore della categoria', () => {
-    assert.deepStrictEqual(M.markFor('expensesTable', { texts: ['17/10/2026', 'Meta Ads', 'Marketing', '€640,00', ''] }),
+test('spese e ricorrenti senza fornitore noto prendono la lettera e il colore della categoria', () => {
+    assert.deepStrictEqual(M.markFor('expensesTable', { texts: ['17/10/2026', 'Sponsorizzata evento', 'Marketing', '€640,00', ''] }),
         { kind: 'text', label: 'M', color: M.categoryColor('Marketing') });
-    assert.deepStrictEqual(M.markFor('recurringTable', { texts: ['Render', 'Software', 'Mese', '09/2025', 'Attiva', '€19,00', ''] }),
+    assert.deepStrictEqual(M.markFor('recurringTable', { texts: ['Server di casa', 'Software', 'Mese', '09/2025', 'Attiva', '€19,00', ''] }),
         { kind: 'text', label: 'S', color: M.categoryColor('Software') });
+});
+
+test('Meta Ads e Render, che stanno tra le spese vere, prendono il loro logo', () => {
+    assert.deepStrictEqual(M.markFor('expensesTable', { texts: ['17/10/2026', 'Meta Ads', 'Marketing', '€640,00', ''] }),
+        { kind: 'logo', label: 'meta.com', fallback: 'M', color: M.categoryColor('Marketing') });
+    assert.deepStrictEqual(M.markFor('recurringTable', { texts: ['Render', 'Software', 'Mese', '09/2025', 'Attiva', '€19,00', ''] }),
+        { kind: 'logo', label: 'render.com', fallback: 'S', color: M.categoryColor('Software') });
 });
 
 test('scadenze e note prendono l\'icona e il colore dello stato', () => {
@@ -69,4 +76,35 @@ test('una lista che non conosce non prende niente', () => {
 
 test('i bonifici di Wise prendono le iniziali del beneficiario', () => {
     assert.strictEqual(M.markFor('wisePaymentsTable', { texts: ['11/10/2026', 'Maria Rossi', 'Compenso ottobre', 'Da confermare su Wise', '€350,00', ''] }).label, 'MR');
+});
+
+test('il fornitore si riconosce dal nome della spesa, a parola intera', () => {
+    assert.strictEqual(M.vendorFor('OpenAI API'), 'openai.com');
+    assert.strictEqual(M.vendorFor('Abbonamento ChatGPT Plus'), 'openai.com');
+    assert.strictEqual(M.vendorFor('Render.com — backend'), 'render.com');
+    assert.strictEqual(M.vendorFor('notion'), 'notion.so');
+    assert.strictEqual(M.vendorFor('Google Workspace'), 'workspace.google.com');
+    assert.strictEqual(M.vendorFor('Spese di rendering video'), null);
+    assert.strictEqual(M.vendorFor('Affitto ufficio'), null);
+    assert.strictEqual(M.vendorFor(''), null);
+    assert.strictEqual(M.vendorFor(null), null);
+});
+
+test('spese e ricorrenti col fornitore noto prendono il logo, con la lettera di riserva', () => {
+    const exp = M.markFor('expensesTable', { texts: ['12/10/2026', 'Apify — scraping', 'Software', '€ 30'] });
+    assert.strictEqual(exp.kind, 'logo');
+    assert.strictEqual(exp.label, 'apify.com');
+    assert.strictEqual(exp.fallback, 'S');
+    const rec = M.markFor('recurringTable', { texts: ['Canva Pro', 'Software', '€ 12'] });
+    assert.strictEqual(rec.kind, 'logo');
+    assert.strictEqual(rec.label, 'canva.com');
+    const none = M.markFor('recurringTable', { texts: ['Commercialista', 'Consulenze', '€ 200'] });
+    assert.strictEqual(none.kind, 'text');
+    assert.strictEqual(M.logoUrl('apify.com'), 'https://www.google.com/s2/favicons?domain=apify.com&sz=64');
+});
+
+test('il nome attaccato al bollino si legge lo stesso, se arriva coi pezzi separati', () => {
+    const m = M.markFor('expensesTable', { texts: ['', 'RenderSpesaVariabile', 'Software', ''], hostText: 'Render Spesa Variabile · da confermare' });
+    assert.strictEqual(m.kind, 'logo');
+    assert.strictEqual(m.label, 'render.com');
 });

@@ -1210,6 +1210,9 @@
         .row-mark::before { content: attr(data-label); }
         .row-mark:not([data-label]) { color: var(--mark); }
         .row-mark svg { width: 15px; height: 15px; }
+        /* Il logo del fornitore: un cerchio da 20px dentro il tondo, come in Wealth. */
+        .row-mark img { width: 20px; height: 20px; display: block; border-radius: 50%; object-fit: cover; }
+        .row-mark:has(> img) { background: rgba(255, 255, 255, 0.08); }
         /* A schermo largo il tondo sta fuori dal flusso del testo: un nome lungo che va a capo
            resta allineato al nome, non scivola sotto il tondo. */
         @media (min-width: 769px) {
