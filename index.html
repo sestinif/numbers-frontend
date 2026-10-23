@@ -611,7 +611,9 @@
         .inbox-row.unread .inbox-title, .inbox-row.unread .inbox-from { color: var(--text-primary); font-weight: 600; }
         .inbox-pager { display: flex; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border-color); }
         .inbox-pager .btn { margin: 0; }
-        .inbox-back { margin: 0 0 14px; }
+        .inbox-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; align-items: center; }
+        .inbox-actions .btn { margin: 0; }
+        .inbox-attach { display: inline-block; margin: 0 8px 6px 0; }
         .inbox-subject { margin: 0 0 10px; font-size: 20px; font-weight: 500; overflow-wrap: anywhere; }
         .inbox-meta { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; margin: 0 0 14px; font-size: 13px; }
         .inbox-meta dt { color: var(--text-secondary); }
@@ -619,7 +621,7 @@
         .inbox-frame { display: block; width: 100%; height: 62vh; min-height: 320px; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; }
         .inbox-text { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-body); font-size: 14px; line-height: 1.5; margin: 0; }
         .inbox-images .btn { margin: 0 0 0 8px; }
-        #navInbox[hidden] { display: none; }
+        #navInbox[hidden], #navMail[hidden], #navPayments[hidden] { display: none; }
         .header-right { display: flex; align-items: center; gap: 16px; min-width: 0; }
         .inbox-bell { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; background: none; border: 1px solid var(--border-strong); border-radius: 50%; color: var(--text-primary); cursor: pointer; }
         .inbox-bell[hidden] { display: none; }
@@ -1392,7 +1394,7 @@
                     <i data-lucide="receipt"></i>
                     <span>Rimborsi</span>
                 </button>
-                <button class="sidebar-nav-item" onclick="showSection('payments', this)">
+                <button class="sidebar-nav-item" id="navPayments" onclick="showSection('payments', this)">
                     <i data-lucide="send"></i>
                     <span>Pagamenti</span>
                 </button>
@@ -1407,7 +1409,7 @@
                     <span>Note</span>
                     <span class="reminder-badge" id="notesBadge" style="display:none;">0</span>
                 </button>
-                <button class="sidebar-nav-item" onclick="showSection('mail', this)">
+                <button class="sidebar-nav-item" id="navMail" onclick="showSection('mail', this)">
                     <i data-lucide="mail"></i>
                     <span>Email</span>
                 </button>
@@ -1824,6 +1826,7 @@
                         </div>
                         <div class="toolbar-actions">
                             <select id="inboxFolder" class="inbox-folder" aria-label="Cartella" onchange="loadInbox(0)"></select>
+                            <button class="btn btn-primary" onclick="composeInbox({})">Nuova email</button>
                             <button class="btn btn-secondary" onclick="markAllInboxSeen()" title="Toglie il pallino delle nuove email solo in Numbers: nella casella non cambia niente">Segna come viste</button>
                             <button class="btn btn-secondary" onclick="loadInbox(inboxPage)">Aggiorna</button>
                         </div>
@@ -1837,11 +1840,19 @@
                                 <button class="btn btn-secondary" id="inboxOlder" onclick="loadInbox(inboxPage + 1)">Più vecchi →</button>
                             </div>
                         </div>
-                        <p class="wise-note">Casella in sola lettura: da qui non si risponde né si cancella niente, e aprire un messaggio non lo segna come letto. Per rispondere usa la webmail.</p>
+                        <p class="wise-note">Apri un messaggio per rispondere, inoltrare, spostarlo o eliminarlo. «Elimina» lo manda nel Cestino; solo dal Cestino sparisce per sempre.</p>
                     </div>
                     <div id="inboxMessageView" hidden>
                         <div class="card">
-                            <button class="btn btn-secondary inbox-back" onclick="closeInboxMessage()">← Posta</button>
+                            <div class="inbox-actions">
+                                <button class="btn btn-secondary" onclick="closeInboxMessage()">← Posta</button>
+                                <button class="btn btn-primary" onclick="replyInbox(false)">Rispondi</button>
+                                <button class="btn btn-secondary" id="inboxReplyAllBtn" onclick="replyInbox(true)">Rispondi a tutti</button>
+                                <button class="btn btn-secondary" onclick="forwardInbox()">Inoltra</button>
+                                <button class="btn btn-secondary" onclick="unreadInbox()">Segna non letta</button>
+                                <select id="inboxMoveTo" class="inbox-folder" aria-label="Sposta in" onchange="moveInbox(this.value)"></select>
+                                <button class="btn btn-danger" id="inboxDeleteBtn" onclick="deleteInbox()">Elimina</button>
+                            </div>
                             <h2 class="inbox-subject" id="inboxSubject"></h2>
                             <dl class="inbox-meta" id="inboxMeta"></dl>
                             <div class="wise-note inbox-images" id="inboxImages" hidden>
@@ -2384,6 +2395,37 @@
                 <div id="wiseLabelsList" class="wise-labels"></div>
                 <button type="submit" class="btn btn-primary" id="wiseLabelsSubmit">Salva nomi</button>
                 <button type="button" class="btn btn-secondary" onclick="closeWiseLabelsModal()">Annulla</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="inboxComposeModal" class="modal">
+        <div class="modal-content">
+            <h2 id="inboxComposeTitle">Nuova email</h2>
+            <form id="inboxComposeForm">
+                <div class="form-group">
+                    <label for="inboxTo">A *</label>
+                    <input type="text" id="inboxTo" required autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="nome@azienda.it — più indirizzi separati da virgola" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-inbox-to">
+                </div>
+                <div class="form-group">
+                    <label for="inboxCc">Cc</label>
+                    <input type="text" id="inboxCc" autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-inbox-cc">
+                </div>
+                <div class="form-group">
+                    <label for="inboxSubjectInput">Oggetto *</label>
+                    <input type="text" id="inboxSubjectInput" required maxlength="300" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-inbox-subject">
+                </div>
+                <div class="form-group">
+                    <label for="inboxBody">Testo *</label>
+                    <textarea id="inboxBody" rows="11" required autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-inbox-body"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="inboxFiles">Allegati</label>
+                    <input type="file" id="inboxFiles" multiple>
+                </div>
+                <p class="wise-note" id="inboxComposeNote"></p>
+                <button type="submit" class="btn btn-primary" id="inboxComposeSubmit">Invia</button>
+                <button type="button" class="btn btn-secondary" onclick="closeInboxCompose()">Annulla</button>
             </form>
         </div>
     </div>
@@ -3124,6 +3166,162 @@
         let inboxOpenUid = null;
         let inboxFoldersLoaded = false;
 
+        // ----- Posta: rispondere, inoltrare, nuova email, spostare, eliminare, allegati -----
+        let inboxCurrent = null;   // il messaggio aperto
+
+        // L'indirizzo dentro «Nome <a@b.it>», in minuscolo.
+        function addrOf(text) {
+            const m = String(text || '').match(/<([^<>\s]+)>/);
+            return (m ? m[1] : String(text || '')).trim().toLowerCase();
+        }
+        function inboxInTrash() {
+            const folder = document.getElementById('inboxFolder').value;
+            return /^(trash|cestino|deleted items|deleted messages|posta eliminata|eliminati)$/i.test(folder);
+        }
+        function fillInboxMoveSelect() {
+            const sel = document.getElementById('inboxMoveTo');
+            const current = document.getElementById('inboxFolder').value;
+            sel.innerHTML = '<option value="">Sposta in…</option>';
+            [...document.querySelectorAll('#inboxFolder option')].filter(o => o.value !== current).forEach(o => {
+                const opt = document.createElement('option'); opt.value = o.value; opt.textContent = o.textContent; sel.appendChild(opt);
+            });
+        }
+
+        // La casella segna il messaggio come letto quando lo apri qui, come in una webmail. Senza rumore se fallisce.
+        async function setInboxSeenOnServer(uid, seen) {
+            try {
+                await apiCall('POST', `/companies/${currentCompanyId}/inbox/messages/${uid}/seen`, { folder: document.getElementById('inboxFolder').value || 'INBOX', seen });
+                if (seen) pollInbox();
+            } catch (e) { /* il pallino si riallinea al prossimo controllo */ }
+        }
+        async function unreadInbox() {
+            if (!inboxCurrent) return;
+            try {
+                await apiCall('POST', `/companies/${currentCompanyId}/inbox/messages/${inboxCurrent.uid}/seen`, { folder: document.getElementById('inboxFolder').value || 'INBOX', seen: false });
+                const seenSet = loadInboxSeen(); seenSet.delete(inboxCurrent.uid); saveInboxSeen(seenSet);
+                showToast('Segnata come non letta', 'success');
+                pollInbox();
+                loadInbox(inboxPage);
+            } catch (e) { showToast('Non riesco a segnarla: ' + e.message, 'error'); }
+        }
+        async function moveInbox(dest) {
+            if (!dest || !inboxCurrent) return;
+            try {
+                await apiCall('POST', `/companies/${currentCompanyId}/inbox/messages/${inboxCurrent.uid}/move`, { folder: document.getElementById('inboxFolder').value || 'INBOX', to: dest });
+                showToast('Messaggio spostato', 'success');
+                pollInbox();
+                loadInbox(inboxPage);
+            } catch (e) { showToast('Non riesco a spostarlo: ' + e.message, 'error'); fillInboxMoveSelect(); }
+        }
+        async function deleteInbox() {
+            if (!inboxCurrent) return;
+            const forever = inboxInTrash();
+            const ok = await showConfirm(forever ? 'Il messaggio sparirà per sempre, non si può recuperare.' : 'Il messaggio va nel Cestino: lo puoi recuperare da lì.',
+                { title: forever ? 'Eliminare per sempre?' : 'Eliminare il messaggio?', okLabel: forever ? 'Elimina per sempre' : 'Elimina' });
+            if (!ok) return;
+            try {
+                await apiCall('POST', `/companies/${currentCompanyId}/inbox/messages/${inboxCurrent.uid}/delete`, { folder: document.getElementById('inboxFolder').value || 'INBOX' });
+                showToast(forever ? 'Eliminato per sempre' : 'Spostato nel Cestino', 'success');
+                pollInbox();
+                loadInbox(inboxPage);
+            } catch (e) { showToast('Non riesco a eliminarlo: ' + e.message, 'error'); }
+        }
+
+        // Gli allegati si scaricano con la tua sessione (un semplice link non porterebbe il permesso).
+        async function downloadInboxAttachment(uid, index, filename) {
+            try {
+                const folder = encodeURIComponent(document.getElementById('inboxFolder').value || 'INBOX');
+                const res = await fetch(`${API_BASE}/companies/${currentCompanyId}/inbox/messages/${uid}/attachments/${index}?folder=${folder}`, { headers: getHeaders() });
+                if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.error || 'Errore nello scarico'); }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = filename || 'allegato';
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 10000);
+            } catch (e) { showToast('Allegato non scaricato: ' + e.message, 'error'); }
+        }
+
+        // Il testo di un messaggio, per citarlo: quello semplice, o l'HTML ridotto a testo.
+        function inboxPlainText(m) {
+            if (m.text && m.text.trim()) return m.text.trim();
+            if (!m.html) return '';
+            const doc = new DOMParser().parseFromString(m.html, 'text/html');
+            return (doc.body.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+        }
+        function quoteInbox(m) {
+            const when = m.date ? new Date(m.date).toLocaleString('it-IT') : '';
+            const who = (m.from || [])[0] || '';
+            return `\n\nIl ${when}, ${who} ha scritto:\n` + inboxPlainText(m).split('\n').map(l => '> ' + l).join('\n');
+        }
+
+        function composeInbox({ to = '', cc = '', subject = '', body = '', inReplyTo = null, references = [], title = 'Nuova email', note = '' }) {
+            inboxComposeCtx = { inReplyTo, references };
+            document.getElementById('inboxComposeTitle').textContent = title;
+            document.getElementById('inboxTo').value = to;
+            document.getElementById('inboxCc').value = cc;
+            document.getElementById('inboxSubjectInput').value = subject;
+            document.getElementById('inboxBody').value = body;
+            document.getElementById('inboxFiles').value = '';
+            document.getElementById('inboxComposeNote').textContent = (inboxState.address ? `Parte da ${inboxState.address}. ` : '') + note;
+            document.getElementById('inboxComposeSubmit').disabled = false;
+            document.getElementById('inboxComposeModal').classList.add('active');
+            setTimeout(() => document.getElementById(to ? 'inboxBody' : 'inboxTo').focus(), 50);
+        }
+        let inboxComposeCtx = { inReplyTo: null, references: [] };
+        function closeInboxCompose() { document.getElementById('inboxComposeModal').classList.remove('active'); }
+
+        function replyInbox(all) {
+            const m = inboxCurrent; if (!m) return;
+            const me = String(inboxState.address || '').toLowerCase();
+            const first = m.replyTo || (m.from || [])[0] || '';
+            let to = [first], cc = [];
+            if (all) {
+                const others = [...(m.to || []), ...(m.cc || [])].filter(x => addrOf(x) !== me && addrOf(x) !== addrOf(first));
+                cc = others;
+            }
+            composeInbox({
+                to: to.map(addrOf).join(', '), cc: cc.map(addrOf).join(', '),
+                subject: /^re:/i.test(m.subject) ? m.subject : 'Re: ' + m.subject,
+                body: quoteInbox(m), inReplyTo: m.messageId || null, references: m.references || [],
+                title: all ? 'Rispondi a tutti' : 'Rispondi'
+            });
+        }
+        function forwardInbox() {
+            const m = inboxCurrent; if (!m) return;
+            const head = `\n\n---------- Messaggio inoltrato ----------\nDa: ${(m.from || []).join(', ')}\nData: ${m.date ? new Date(m.date).toLocaleString('it-IT') : ''}\nOggetto: ${m.subject}\nA: ${(m.to || []).join(', ')}\n\n`;
+            composeInbox({
+                subject: /^(fwd|i):/i.test(m.subject) ? m.subject : 'Fwd: ' + m.subject,
+                body: head + inboxPlainText(m), title: 'Inoltra',
+                note: m.attachments && m.attachments.length ? 'Gli allegati dell\'originale non si inoltrano: aggiungili tu qui sotto.' : ''
+            });
+        }
+
+        document.getElementById('inboxComposeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('inboxComposeSubmit');
+            const to = document.getElementById('inboxTo').value;
+            const files = [...document.getElementById('inboxFiles').files];
+            const total = files.reduce((sum, f) => sum + f.size, 0);
+            if (total > MAIL_MAX_BYTES) { showToast('Allegati troppo grandi: al massimo 8 MB in tutto', 'error'); return; }
+            const ok = await showConfirm(`A: ${to}` + (files.length ? ` · ${files.length === 1 ? '1 allegato' : files.length + ' allegati'}` : ''), { title: 'Inviare l\'email?', okLabel: 'Invia', okClass: 'btn-primary' });
+            if (!ok) return;
+            btn.disabled = true;
+            try {
+                const attachments = [];
+                for (const f of files) attachments.push({ filename: f.name, mimeType: f.type || 'application/octet-stream', base64: await blobToBase64(f) });
+                const r = await apiCall('POST', `/companies/${currentCompanyId}/inbox/send`, {
+                    to, cc: document.getElementById('inboxCc').value, subject: document.getElementById('inboxSubjectInput').value,
+                    text: document.getElementById('inboxBody').value, attachments, inReplyTo: inboxComposeCtx.inReplyTo, references: inboxComposeCtx.references
+                });
+                closeInboxCompose();
+                showToast(r && r.savedToSent === false ? 'Email inviata (la copia in Inviata non si è salvata)' : 'Email inviata', 'success');
+            } catch (err) {
+                showToast('Email non inviata: ' + err.message, 'error');
+                btn.disabled = false;
+            }
+        });
+
         // ----- Pallino delle nuove email, visibile da ogni pagina -----
         // «Nuova» = non letta nella casella E non aperta da Numbers. Aprire un messaggio qui non lo segna letto
         // nella casella (è in sola lettura), quindi Numbers si ricorda da solo cosa hai già aperto, in questo browser.
@@ -3229,9 +3427,13 @@
                 inboxState = { enabled: false };
             }
             nav.hidden = !inboxState.enabled;
+            // Dove c'è la casella (Posta) non serve anche «Email», quella che manda le fatture da Gmail.
+            const mailNav = document.getElementById('navMail');
+            if (mailNav) mailNav.hidden = !!inboxState.enabled;
             if (inboxState.enabled) startInboxPolling(); else { stopInboxPolling(); renderInboxBadge(); }
             const active = document.querySelector('.section.active');
             if (!inboxState.enabled && active && active.id === 'inbox') showSection('dashboard', document.querySelector('.sidebar-nav-item'));
+            if (inboxState.enabled && active && active.id === 'mail') showSection('inbox', nav);
         }
 
         function inboxShowError(message) {
@@ -3325,8 +3527,25 @@
                 }
                 document.getElementById('inboxImages').hidden = !m.imagesBlocked;
                 const att = document.getElementById('inboxAttachments');
-                att.hidden = !(m.attachments && m.attachments.length);
-                att.textContent = att.hidden ? '' : 'Allegati (da scaricare dalla webmail): ' + m.attachments.map(a => `${a.filename} (${Math.max(1, Math.round(a.size / 1024))} KB)`).join(', ');
+att.hidden = !(m.attachments && m.attachments.length);
+                att.innerHTML = '';
+                if (!att.hidden) {
+                    att.appendChild(document.createTextNode('Allegati: '));
+                    m.attachments.forEach((a, i) => {
+                        const b = document.createElement('button');
+                        b.type = 'button';
+                        b.className = 'btn btn-secondary inbox-attach';
+                        b.textContent = `${a.filename} (${Math.max(1, Math.round(a.size / 1024))} KB)`;
+                        b.onclick = () => downloadInboxAttachment(uid, i, a.filename);
+                        att.appendChild(b);
+                    });
+                }
+                inboxCurrent = m;
+                const others = [...(m.to || []), ...(m.cc || [])].filter(x => addrOf(x) !== String(inboxState.address || '').toLowerCase());
+                document.getElementById('inboxReplyAllBtn').hidden = others.length === 0;
+                fillInboxMoveSelect();
+                document.getElementById('inboxDeleteBtn').textContent = inboxInTrash() ? 'Elimina per sempre' : 'Elimina';
+                if (!showImages) setInboxSeenOnServer(uid, true);
                 window.scrollTo({ top: 0 });
             } catch (e) {
                 inboxShowError(e.message);
@@ -3470,9 +3689,32 @@
             tbody.innerHTML = html;
         }
 
+        // ----- Wise appartiene a UNA azienda (quella del token): dalle altre Pagamenti e Compensi spariscono -----
+        let wiseEnabled = true;
+        async function refreshWiseNav() {
+            const companyId = currentCompanyId;
+            try {
+                const r = await apiCall('GET', `/companies/${companyId}/wise/enabled`);
+                if (companyId !== currentCompanyId) return;
+                wiseEnabled = !!(r && r.enabled);
+            } catch (e) { return; /* se non risponde, resta com'era */ }
+            const nav = document.getElementById('navPayments');
+            if (nav) nav.hidden = !wiseEnabled;
+            const card = document.getElementById('totalCompensi');
+            if (card && card.closest('.stat-card')) card.closest('.stat-card').hidden = !wiseEnabled;
+            const mini = document.getElementById('miniCompensiTotal');
+            if (mini && mini.closest('.mini-stat')) mini.closest('.mini-stat').hidden = !wiseEnabled;
+            if (!wiseEnabled) {
+                compensi = [];
+                const active = document.querySelector('.section.active');
+                if (active && active.id === 'payments') showSection('dashboard', document.querySelector('.sidebar-nav-item'));
+                else if (active && PERIOD_SECTIONS[active.id]) PERIOD_SECTIONS[active.id]();
+            }
+        }
+
         // Non blocca niente: se Wise o il server non rispondono, i compensi restano quelli che c'erano.
         async function refreshCompensi() {
-            if (!currentCompanyId) return;
+            if (!currentCompanyId || !wiseEnabled) return;
             const companyId = currentCompanyId;
             try {
                 const res = await apiCall('GET', `/companies/${companyId}/withdrawals`);
@@ -3515,7 +3757,7 @@
             } catch(e) {
                 console.error('Errore caricamento dati:', e);
             }
-            refreshCompensi();
+            refreshWiseNav().then(() => refreshCompensi());
             refreshInboxNav();
         }
 
@@ -4858,7 +5100,8 @@
             try {
                 const attachments = [];
                 for (const f of files) attachments.push({ filename: f.name, mimeType: f.blob.type || 'application/octet-stream', base64: await blobToBase64(f.blob) });
-                await apiCall('POST', `/companies/${currentCompanyId}/email/send`, { to, subject, text, attachments, invoiceId: invoiceId || null });
+                // Se l'azienda ha la sua casella (Posta), l'email parte da lì; altrimenti da Gmail, come prima.
+                await apiCall('POST', `/companies/${currentCompanyId}/${inboxState.enabled ? 'inbox' : 'email'}/send`, { to, subject, text, attachments, invoiceId: invoiceId || null });
                 showToast('Email inviata', 'success');
                 return true;
             } catch (err) {
@@ -4887,8 +5130,10 @@
         async function openInvoiceMail(invoiceId) {
             const invoice = invoices.find(i => i.id == invoiceId);
             if (!invoice) return;
-            try { if (!mailData) await fetchMailStatus(); } catch (e) { showToast('Non riesco a leggere lo stato delle email: ' + e.message, 'error'); return; }
-            if (!mailData.configured) { showToast('La casella email non è ancora collegata', 'info'); return; }
+            if (!inboxState.enabled) {
+                try { if (!mailData) await fetchMailStatus(); } catch (e) { showToast('Non riesco a leggere lo stato delle email: ' + e.message, 'error'); return; }
+                if (!mailData.configured) { showToast('La casella email non è ancora collegata', 'info'); return; }
+            }
 
             const customer = customers.find(c => c.id == (invoice.customer_id || invoice.customerId));
             const company = companies.find(c => c.id == currentCompanyId);
@@ -4907,7 +5152,7 @@
                 `Buongiorno,\n\nin allegato la fattura n. ${number} del ${date}, per un totale di ${formatCurrency(invoice.total, symbol)}.\n\n` +
                 `Per qualsiasi domanda basta rispondere a questa email.\n\nGrazie,\n${companyName}`.trimEnd();
             document.getElementById('invoiceMailAttachment').textContent = `Allegato: ${pdf.fileName}`;
-            document.getElementById('invoiceMailNote').textContent = mailNoteText() +
+            document.getElementById('invoiceMailNote').textContent = (inboxState.enabled ? `Parte da ${inboxState.address}. ` : mailNoteText()) +
                 (customer && !customer.email ? ' L\'indirizzo che scrivi qui viene salvato sul cliente.' : '');
             document.getElementById('invoiceMailSubmit').disabled = false;
             document.getElementById('invoiceMailModal').classList.add('active');

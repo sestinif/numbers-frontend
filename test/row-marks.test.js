@@ -83,6 +83,10 @@ test('il fornitore si riconosce dal nome della spesa, a parola intera', () => {
     assert.strictEqual(M.vendorFor('Abbonamento ChatGPT Plus'), 'openai.com');
     assert.strictEqual(M.vendorFor('Render.com — backend'), 'render.com');
     assert.strictEqual(M.vendorFor('notion'), 'notion.so');
+    assert.strictEqual(M.vendorFor('Northwest Registered Agent — rinnovo annuale'), 'northwestregisteredagent.com');
+    assert.strictEqual(M.vendorFor('Northwest LLC'), 'northwestregisteredagent.com');
+    assert.strictEqual(M.vendorFor('Registered agent Oakstone'), 'northwestregisteredagent.com');
+    assert.strictEqual(M.vendorFor('Southwest Airlines'), null, 'parola intera: southwest non è northwest');
     assert.strictEqual(M.vendorFor('Google Workspace'), 'workspace.google.com');
     assert.strictEqual(M.vendorFor('Spese di rendering video'), null);
     assert.strictEqual(M.vendorFor('Affitto ufficio'), null);

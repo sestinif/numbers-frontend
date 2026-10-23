@@ -144,10 +144,13 @@
         }
         if (/\/inbox\/messages\/\d+$/.test(path)) {
             const imgs = u.indexOf('images=1') >= 0;
-            return json({ uid: 2000, folder: 'INBOX', subject: 'Benvenuto in Oakstone Thirteen', from: ['Business Identity <support@businessidentity.llc>'], to: ['info@oakstonethirteen.com'], cc: [], date: new Date().toISOString(),
+            return json({ uid: 2000, folder: 'INBOX', subject: 'Benvenuto in Oakstone Thirteen', from: ['Business Identity <support@businessidentity.llc>'], to: ['info@oakstonethirteen.com', 'socio@esempio.it'], cc: [], replyTo: 'Business Identity <support@businessidentity.llc>', messageId: '<abc123@businessidentity.llc>', references: [], date: new Date().toISOString(),
                 html: '<h2>Benvenuto!</h2><p>La tua LLC è pronta. Ecco i documenti: <a href="https://esempio.it/doc" target="_blank" rel="noopener noreferrer nofollow">apri</a>.</p>' + (imgs ? '<p>[qui ci sarebbe un\u2019immagine remota]</p>' : '<p>[immagine bloccata]</p>'),
                 text: '', imagesBlocked: !imgs, attachments: [{ filename: 'EIN-letter.pdf', size: 84000, contentType: 'application/pdf' }] });
         }
+        if (method === 'POST' && /\/inbox\/send$/.test(path)) { window.__lastSend = JSON.parse(opts.body || '{}'); return json({ ok: true, savedToSent: true }); }
+        if (method === 'POST' && /\/inbox\/messages\/\d+\/(seen|move|delete)$/.test(path)) { (window.__inboxCalls = window.__inboxCalls || []).push(path.split('/').slice(-1)[0] + ':' + (opts.body || '')); return json({ ok: true }); }
+        if (/\/wise\/enabled$/.test(path)) return json({ enabled: params.get('nowise2') !== '1' });
         // Compensi personali (prelievi che contano): date in ottobre solo per vederli in anteprima.
         if (/\/withdrawals$/.test(path)) {
             return json({ start_month: '2026-11', items: [
