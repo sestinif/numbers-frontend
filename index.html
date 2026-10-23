@@ -600,6 +600,8 @@
         .badge-pending { background: none; border: 0; color: var(--warning); }
 
         .account-select + input { margin-top: 8px; }
+        .source-link { display: inline-block; margin-left: 8px; color: var(--text-secondary); text-decoration: none; font-size: 12px; line-height: 1; padding: 2px 4px; border: 1px solid var(--border-strong); border-radius: 6px; }
+        .source-link:hover { color: var(--text-primary); border-color: var(--text-secondary); }
         .badge-compenso { color: var(--primary-green); margin-left: 8px; cursor: help; }
         .badge-spesa { color: var(--text-secondary); margin-left: 8px; }
         .badge-auto { background: none; border: 0; color: var(--text-secondary); margin-left: 8px; cursor: help; }
@@ -2401,6 +2403,10 @@
                         <label>Conto di addebito</label>
                         <select class="account-select" data-for="recurringAccount" data-none="1" aria-label="Conto"></select>
                         <input hidden type="text" id="recurringAccount" maxlength="120" autocomplete="off" placeholder="Es: Revolut Business" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-recurring-account">
+                    </div>
+                    <div class="form-group">
+                        <label>Link per controllare</label>
+                        <input type="url" id="recurringLink" maxlength="500" autocomplete="off" placeholder="https://… (la pagina dove vedi fattura o consumo)">
                     </div>
                     <div class="form-group">
                         <label>Tipo</label>
@@ -4384,6 +4390,29 @@
 
         // «Movimenti»: le spese di business e i compensi personali, in un'unica lista, ognuno con la sua etichetta.
         // I compensi arrivano da Wise e non si modificano da qui: la quota si sceglie in «Nomi beneficiari».
+        // Dove controllare una voce: le spese automatiche dei servizi a consumo hanno una pagina fissa;
+        // le voci nate da una ricorrente usano il link scritto sulla regola.
+        const SOURCE_LINKS = {
+            gemini: 'https://console.cloud.google.com/billing/01F0AD-0D3B87-D7699C/reports',
+            apify: 'https://console.apify.com/billing/usage',
+            openai: 'https://platform.openai.com/settings/organization/usage'
+        };
+        function sourceLinkFor(expense) {
+            const src = String(expense.auto_source || '');
+            let url = SOURCE_LINKS[src] || null;
+            if (!url && src.indexOf('rule:') === 0) {
+                const rule = recurringRules.find(r => String(r.id) === src.slice(5));
+                url = rule && rule.link ? rule.link : null;
+            }
+            return url;
+        }
+        function sourceLinkHtml(url) {
+            if (!url) return '';
+            let host = url;
+            try { host = new URL(url).hostname.replace(/^www\./, ''); } catch (e) { /* resta l'indirizzo */ }
+            return `<a class="source-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" title="Controlla su ${escapeHtml(host)}" aria-label="Controlla su ${escapeHtml(host)}">↗</a>`;
+        }
+
         function compensoQuota(c) {
             return c.share === 1 ? 'tutto' : `metà di ${formatCurrency(c.amount_eur)}`;
         }
@@ -4428,7 +4457,7 @@
                 const badge = CostLabels.expenseBadge(expense);
                 row.innerHTML = `
                     <td>${new Date(m.date).toLocaleDateString('it-IT')}</td>
-                    <td>${escapeHtml(expense.description)}<span class="badge badge-spesa badge-inline">Spesa</span>${badge ? `<span class="badge badge-${badge.tone} badge-inline" title="${escapeHtml(badge.title)}">${badge.text}</span>` : ''}</td>
+                    <td>${escapeHtml(expense.description)}<span class="badge badge-spesa badge-inline">Spesa</span>${sourceLinkHtml(sourceLinkFor(expense))}${badge ? `<span class="badge badge-${badge.tone} badge-inline" title="${escapeHtml(badge.title)}">${badge.text}</span>` : ''}</td>
                     <td>${expense.category ? escapeHtml(expense.category) : '-'}</td>
                     <td>${expense.account ? escapeHtml(expense.account) : ''}</td>
                     <td class="num"><strong>${formatCurrency(expense.amount)}</strong></td>
@@ -5255,7 +5284,7 @@
                         : `<span class="badge badge-pending" title="Interrotta">Interrotta ${fmtPeriod(rule.end_period)}</span>`;
                     const row = tbody.insertRow();
                     row.innerHTML = `
-                        <td>${escapeHtml(rule.name)}</td>
+                        <td>${escapeHtml(rule.name)}${sourceLinkHtml(rule.link)}</td>
                         <td>${rule.category ? escapeHtml(rule.category) : '-'}</td>
                         <td>${freq}</td>
                         <td>${fmtPeriod(rule.start_period)}</td>
@@ -5297,6 +5326,7 @@
                 document.getElementById('recurringStart').value = rule.start_period || nowPeriod();
                 document.getElementById('recurringEnd').value = rule.end_period || '';
                 document.getElementById('recurringAccount').value = rule.account || '';
+                document.getElementById('recurringLink').value = rule.link || '';
                 document.getElementById('recurringCostType').value = CostLabels.ruleType(rule);
             } else {
                 document.getElementById('recurringModalTitle').textContent = 'Nuova spesa ricorrente';
@@ -5335,6 +5365,7 @@
                     start_period: document.getElementById('recurringStart').value || nowPeriod(),
                     end_period: document.getElementById('recurringEnd').value || null,
                     account: document.getElementById('recurringAccount').value,
+                    link: document.getElementById('recurringLink').value.trim(),
                     cost_type: document.getElementById('recurringCostType').value
                 };
                 if (id) {

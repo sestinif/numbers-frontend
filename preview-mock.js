@@ -63,7 +63,7 @@
     if (params.get('neg') === '1') liveExpenses.push({ id: eid++, expense_date: dayOffset(0), description: 'Acquisto attrezzatura', category: 'Ufficio', amount: 9800 });
 
     const recurring = [
-        { id: 1, name: 'Render', category: 'Software', frequency: 'monthly', day_of_month: 14, start_period: period(13), end_period: null, amount: 30, account: 'Revolut Business', cost_type: 'variable' },
+        { id: 1, name: 'Render', category: 'Software', frequency: 'monthly', day_of_month: 14, start_period: period(13), end_period: null, amount: 30, account: 'Revolut Business', cost_type: 'variable', link: 'https://dashboard.render.com/billing' },
         { id: 2, name: 'Vercel Pro', category: 'Software', frequency: 'monthly', day_of_month: 1, start_period: period(13), end_period: null, amount: 20, account: 'Mercury', cost_type: 'fixed' },
         { id: 3, name: 'Dominio scalingcatalyst.com', category: 'Software', frequency: 'yearly', day_of_month: 10, start_period: period(9), end_period: null, amount: 24, account: 'Revolut Business', cost_type: 'fixed' },
         { id: 4, name: 'Notion Team', category: 'Software', frequency: 'monthly', day_of_month: 5, start_period: period(11), end_period: period(2), amount: 16 }
