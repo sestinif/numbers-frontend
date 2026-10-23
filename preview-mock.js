@@ -130,6 +130,23 @@
             const b = JSON.parse(opts.body || '{}');
             return json({ expenses: 3, rules: 2, to: b.to });
         }
+        // Posta in sola lettura: ?noinbox=1 la nasconde, ?inboxerr=1 mostra l'errore della casella.
+        if (/\/inbox$/.test(path)) return json(params.get('noinbox') === '1' ? { enabled: false, address: null } : { enabled: true, address: 'info@oakstonethirteen.com' });
+        if (/\/inbox\/folders$/.test(path)) {
+            if (params.get('inboxerr') === '1') return Promise.resolve(new Response(JSON.stringify({ error: 'La casella ha rifiutato utente o password: controlla IMAP_USER e IMAP_PASS su Render.' }), { status: 502, headers: { 'Content-Type': 'application/json' } }));
+            return json({ folders: [{ path: 'INBOX', name: 'INBOX' }, { path: 'Sent', name: 'Inviata' }, { path: 'Spam', name: 'Spam' }] });
+        }
+        if (/\/inbox\/messages$/.test(path)) {
+            const page = Number(new URLSearchParams(u.split('?')[1] || '').get('page') || 0);
+            const msgs = Array.from({ length: 25 }, (_, i) => ({ uid: 2000 - page * 25 - i, subject: i === 0 ? 'Benvenuto in Oakstone Thirteen' : `Messaggio di prova ${i + 1} con un oggetto un po\u2019 lungo per vedere come va a capo su schermo piccolo`, from: i % 3 ? 'Mario Rossi <mario@esempio.it>' : 'Business Identity <support@businessidentity.llc>', date: new Date(Date.now() - (page * 25 + i) * 3600e3 * 7).toISOString(), seen: i % 4 === 0, size: 4000 }));
+            return json({ folder: 'INBOX', page, total: 61, messages: msgs, hasMore: page < 2 });
+        }
+        if (/\/inbox\/messages\/\d+$/.test(path)) {
+            const imgs = u.indexOf('images=1') >= 0;
+            return json({ uid: 2000, folder: 'INBOX', subject: 'Benvenuto in Oakstone Thirteen', from: ['Business Identity <support@businessidentity.llc>'], to: ['info@oakstonethirteen.com'], cc: [], date: new Date().toISOString(),
+                html: '<h2>Benvenuto!</h2><p>La tua LLC è pronta. Ecco i documenti: <a href="https://esempio.it/doc" target="_blank" rel="noopener noreferrer nofollow">apri</a>.</p>' + (imgs ? '<p>[qui ci sarebbe un\u2019immagine remota]</p>' : '<p>[immagine bloccata]</p>'),
+                text: '', imagesBlocked: !imgs, attachments: [{ filename: 'EIN-letter.pdf', size: 84000, contentType: 'application/pdf' }] });
+        }
         // Compensi personali (prelievi che contano): date in ottobre solo per vederli in anteprima.
         if (/\/withdrawals$/.test(path)) {
             return json({ start_month: '2026-11', items: [

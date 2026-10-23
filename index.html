@@ -600,6 +600,26 @@
         .badge-pending { background: none; border: 0; color: var(--warning); }
 
         .account-select + input { margin-top: 8px; }
+        .inbox-folder { height: 36px; padding: 0 10px; background: transparent; border: 1px solid var(--border-strong); border-radius: 8px; color: var(--text-primary); font-family: var(--font-body); font-size: 13px; color-scheme: dark; }
+        .inbox-list { display: flex; flex-direction: column; }
+        .inbox-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; width: 100%; padding: 12px 4px; text-align: left; background: none; border: 0; border-top: 1px solid var(--border-color); color: var(--text-primary); font-family: var(--font-body); cursor: pointer; }
+        .inbox-row:first-child { border-top: 0; }
+        .inbox-row:hover { background: rgba(255, 255, 255, 0.02); }
+        .inbox-from { font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .inbox-title { grid-column: 1; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .inbox-date { grid-column: 2; grid-row: 1; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+        .inbox-row.unread .inbox-title, .inbox-row.unread .inbox-from { color: var(--text-primary); font-weight: 600; }
+        .inbox-pager { display: flex; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border-color); }
+        .inbox-pager .btn { margin: 0; }
+        .inbox-back { margin: 0 0 14px; }
+        .inbox-subject { margin: 0 0 10px; font-size: 20px; font-weight: 500; overflow-wrap: anywhere; }
+        .inbox-meta { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; margin: 0 0 14px; font-size: 13px; }
+        .inbox-meta dt { color: var(--text-secondary); }
+        .inbox-meta dd { margin: 0; overflow-wrap: anywhere; }
+        .inbox-frame { display: block; width: 100%; height: 62vh; min-height: 320px; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; }
+        .inbox-text { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-body); font-size: 14px; line-height: 1.5; margin: 0; }
+        .inbox-images .btn { margin: 0 0 0 8px; }
+        #navInbox[hidden] { display: none; }
         .source-link { display: inline-block; margin-left: 8px; color: var(--text-secondary); text-decoration: none; font-size: 12px; line-height: 1; padding: 2px 4px; border: 1px solid var(--border-strong); border-radius: 6px; }
         .source-link:hover { color: var(--text-primary); border-color: var(--text-secondary); }
         .badge-compenso { color: var(--primary-green); margin-left: 8px; cursor: help; }
@@ -1383,6 +1403,10 @@
                     <i data-lucide="mail"></i>
                     <span>Email</span>
                 </button>
+                <button class="sidebar-nav-item" id="navInbox" hidden onclick="showSection('inbox', this)">
+                    <i data-lucide="inbox"></i>
+                    <span>Posta</span>
+                </button>
 
                 <div class="nav-group-label">Analisi</div>
                 <button class="sidebar-nav-item" onclick="showSection('reports', this)">
@@ -1774,6 +1798,50 @@
                 </div>
 
                 <!-- EMAIL (GMAIL, SOLO INVIO) -->
+                <div id="inbox" class="section">
+                    <div class="section-toolbar">
+                        <div class="mini-stats-bar">
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Casella</span>
+                                <span class="mini-stat-value mail-from" id="inboxAddress">-</span>
+                            </div>
+                            <div class="mini-stat">
+                                <span class="mini-stat-label">Messaggi</span>
+                                <span class="mini-stat-value" id="inboxTotal">0</span>
+                            </div>
+                        </div>
+                        <div class="toolbar-actions">
+                            <select id="inboxFolder" class="inbox-folder" aria-label="Cartella" onchange="loadInbox(0)"></select>
+                            <button class="btn btn-secondary" onclick="loadInbox(inboxPage)">Aggiorna</button>
+                        </div>
+                    </div>
+                    <div id="inboxError" class="wise-message is-error" hidden></div>
+                    <div id="inboxListView">
+                        <div class="card">
+                            <div id="inboxList" class="inbox-list"></div>
+                            <div class="inbox-pager" id="inboxPager" hidden>
+                                <button class="btn btn-secondary" id="inboxNewer" onclick="loadInbox(inboxPage - 1)">← Più recenti</button>
+                                <button class="btn btn-secondary" id="inboxOlder" onclick="loadInbox(inboxPage + 1)">Più vecchi →</button>
+                            </div>
+                        </div>
+                        <p class="wise-note">Casella in sola lettura: da qui non si risponde né si cancella niente, e aprire un messaggio non lo segna come letto. Per rispondere usa la webmail.</p>
+                    </div>
+                    <div id="inboxMessageView" hidden>
+                        <div class="card">
+                            <button class="btn btn-secondary inbox-back" onclick="closeInboxMessage()">← Posta</button>
+                            <h2 class="inbox-subject" id="inboxSubject"></h2>
+                            <dl class="inbox-meta" id="inboxMeta"></dl>
+                            <div class="wise-note inbox-images" id="inboxImages" hidden>
+                                Le immagini remote sono bloccate (servono ai mittenti per sapere che hai aperto l'email).
+                                <button class="btn btn-secondary" onclick="openInboxMessage(inboxOpenUid, true)">Mostra immagini</button>
+                            </div>
+                            <iframe id="inboxFrame" class="inbox-frame" title="Messaggio" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
+                            <pre id="inboxText" class="inbox-text" hidden></pre>
+                            <div id="inboxAttachments" class="wise-note" hidden></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="mail" class="section">
                     <div class="section-toolbar">
                         <div class="mini-stats-bar">
@@ -2998,7 +3066,7 @@
             moveNavIndicator(btn);
 
             // Update main header title
-            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Movimenti', recurring: 'Ricorrenti', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Rimborsi', payments: 'Pagamenti', mail: 'Email', reports: 'Report', companies: 'Aziende' };
+            const titles = { dashboard: 'Dashboard', invoices: 'Fatture', customers: 'Clienti', expenses: 'Movimenti', recurring: 'Ricorrenti', reminders: 'Scadenze', notes: 'Note', 'expense-notes': 'Rimborsi', payments: 'Pagamenti', mail: 'Email', inbox: 'Posta', reports: 'Report', companies: 'Aziende' };
             document.getElementById('mainHeaderTitle').textContent = titles[sectionId] || sectionId;
             renderPeriodBar(sectionId);
 
@@ -3032,6 +3100,130 @@
                 loadPayments();
             } else if (sectionId === 'mail') {
                 loadMail();
+            } else if (sectionId === 'inbox') {
+                loadInbox();
+            }
+        }
+
+        // ===== POSTA (casella email in sola lettura, solo per l'azienda che la ha) =====
+        let inboxState = { enabled: false, address: null };
+        let inboxPage = 0;
+        let inboxOpenUid = null;
+        let inboxFoldersLoaded = false;
+
+        async function refreshInboxNav() {
+            const nav = document.getElementById('navInbox');
+            if (!nav) return;
+            const companyId = currentCompanyId;
+            inboxFoldersLoaded = false;
+            try {
+                const st = await apiCall('GET', `/companies/${companyId}/inbox`);
+                if (companyId !== currentCompanyId) return;
+                inboxState = st || { enabled: false };
+            } catch (e) {
+                inboxState = { enabled: false };
+            }
+            nav.hidden = !inboxState.enabled;
+            const active = document.querySelector('.section.active');
+            if (!inboxState.enabled && active && active.id === 'inbox') showSection('dashboard', document.querySelector('.sidebar-nav-item'));
+        }
+
+        function inboxShowError(message) {
+            const box = document.getElementById('inboxError');
+            box.textContent = message || '';
+            box.hidden = !message;
+        }
+
+        function fmtInboxDate(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            const sameDay = d.toDateString() === new Date().toDateString();
+            return sameDay ? d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
+        }
+
+        async function loadInbox(page = 0) {
+            if (!currentCompanyId || !inboxState.enabled) return;
+            const list = document.getElementById('inboxList');
+            const select = document.getElementById('inboxFolder');
+            document.getElementById('inboxAddress').textContent = inboxState.address || '-';
+            closeInboxMessage();
+            inboxShowError('');
+            if (!inboxFoldersLoaded) {
+                try {
+                    const f = await apiCall('GET', `/companies/${currentCompanyId}/inbox/folders`);
+                    select.innerHTML = '';
+                    (f.folders || []).forEach(x => { const o = document.createElement('option'); o.value = x.path; o.textContent = x.path === 'INBOX' ? 'Posta in arrivo' : x.name; select.appendChild(o); });
+                    inboxFoldersLoaded = true;
+                } catch (e) {
+                    inboxShowError(e.message);
+                    list.innerHTML = '';
+                    return;
+                }
+            }
+            inboxPage = Math.max(0, page);
+            list.innerHTML = '<p class="wise-note" style="padding:12px 4px;margin:0">Carico i messaggi…</p>';
+            try {
+                const r = await apiCall('GET', `/companies/${currentCompanyId}/inbox/messages?folder=${encodeURIComponent(select.value || 'INBOX')}&page=${inboxPage}`);
+                document.getElementById('inboxTotal').textContent = r.total;
+                list.innerHTML = '';
+                if (!r.messages.length) list.innerHTML = '<p class="wise-note" style="padding:12px 4px;margin:0">Nessun messaggio in questa cartella.</p>';
+                r.messages.forEach(m => {
+                    const row = document.createElement('button');
+                    row.type = 'button';
+                    row.className = 'inbox-row' + (m.seen ? '' : ' unread');
+                    row.innerHTML = `<span class="inbox-from">${escapeHtml(m.from || '(mittente sconosciuto)')}</span><span class="inbox-date">${fmtInboxDate(m.date)}</span><span class="inbox-title">${escapeHtml(m.subject)}</span>`;
+                    row.onclick = () => openInboxMessage(m.uid, false);
+                    list.appendChild(row);
+                });
+                document.getElementById('inboxPager').hidden = !(inboxPage > 0 || r.hasMore);
+                document.getElementById('inboxNewer').disabled = inboxPage === 0;
+                document.getElementById('inboxOlder').disabled = !r.hasMore;
+            } catch (e) {
+                list.innerHTML = '';
+                inboxShowError(e.message);
+            }
+        }
+
+        function closeInboxMessage() {
+            document.getElementById('inboxMessageView').hidden = true;
+            document.getElementById('inboxListView').hidden = false;
+            document.getElementById('inboxFrame').srcdoc = '';
+            inboxOpenUid = null;
+        }
+
+        async function openInboxMessage(uid, showImages) {
+            const select = document.getElementById('inboxFolder');
+            inboxShowError('');
+            try {
+                const m = await apiCall('GET', `/companies/${currentCompanyId}/inbox/messages/${uid}?folder=${encodeURIComponent(select.value || 'INBOX')}${showImages ? '&images=1' : ''}`);
+                inboxOpenUid = uid;
+                document.getElementById('inboxListView').hidden = true;
+                document.getElementById('inboxMessageView').hidden = false;
+                document.getElementById('inboxSubject').textContent = m.subject;
+                const meta = document.getElementById('inboxMeta');
+                meta.innerHTML = '';
+                [['Da', (m.from || []).join(', ')], ['A', (m.to || []).join(', ')], ['Cc', (m.cc || []).join(', ')], ['Data', m.date ? new Date(m.date).toLocaleString('it-IT') : '']]
+                    .filter(([, v]) => v).forEach(([k, v]) => {
+                        const dt = document.createElement('dt'); dt.textContent = k;
+                        const dd = document.createElement('dd'); dd.textContent = v;
+                        meta.appendChild(dt); meta.appendChild(dd);
+                    });
+                const frame = document.getElementById('inboxFrame');
+                const text = document.getElementById('inboxText');
+                if (m.html) {
+                    frame.hidden = false; text.hidden = true;
+                    frame.srcdoc = '<!doctype html><meta charset="utf-8"><base target="_blank"><style>body{font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#222;margin:12px;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}</style>' + m.html;
+                } else {
+                    frame.hidden = true; frame.srcdoc = '';
+                    text.hidden = false; text.textContent = m.text || '(messaggio vuoto)';
+                }
+                document.getElementById('inboxImages').hidden = !m.imagesBlocked;
+                const att = document.getElementById('inboxAttachments');
+                att.hidden = !(m.attachments && m.attachments.length);
+                att.textContent = att.hidden ? '' : 'Allegati (da scaricare dalla webmail): ' + m.attachments.map(a => `${a.filename} (${Math.max(1, Math.round(a.size / 1024))} KB)`).join(', ');
+                window.scrollTo({ top: 0 });
+            } catch (e) {
+                inboxShowError(e.message);
             }
         }
 
@@ -3218,6 +3410,7 @@
                 console.error('Errore caricamento dati:', e);
             }
             refreshCompensi();
+            refreshInboxNav();
         }
 
         async function selectCompany(companyId) {
