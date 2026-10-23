@@ -620,6 +620,13 @@
         .inbox-text { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-body); font-size: 14px; line-height: 1.5; margin: 0; }
         .inbox-images .btn { margin: 0 0 0 8px; }
         #navInbox[hidden] { display: none; }
+        .header-right { display: flex; align-items: center; gap: 16px; min-width: 0; }
+        .inbox-bell { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; background: none; border: 1px solid var(--border-strong); border-radius: 50%; color: var(--text-primary); cursor: pointer; }
+        .inbox-bell[hidden] { display: none; }
+        .inbox-bell:hover { border-color: var(--text-secondary); }
+        .inbox-bell-count { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger); color: var(--bg-primary); font-size: 11px; font-weight: 600; line-height: 18px; text-align: center; font-family: var(--font-display); }
+        .inbox-bell.is-quiet .inbox-bell-count { display: none; }
+        .inbox-bell-mobile { margin-left: auto; width: 32px; height: 32px; }
         .source-link { display: inline-block; margin-left: 8px; color: var(--text-secondary); text-decoration: none; font-size: 12px; line-height: 1; padding: 2px 4px; border: 1px solid var(--border-strong); border-radius: 6px; }
         .source-link:hover { color: var(--text-primary); border-color: var(--text-secondary); }
         .badge-compenso { color: var(--primary-green); margin-left: 8px; cursor: help; }
@@ -1328,6 +1335,7 @@
     <div class="mobile-header">
         <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
         <a class="mobile-logo" href="https://numbers-frontend-two.vercel.app" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;">Numbers</a>
+        <button type="button" class="inbox-bell inbox-bell-mobile" id="inboxBellMobile" hidden onclick="goToInbox()" aria-label="Posta: nuove email"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg><span class="inbox-bell-count"></span></button>
     </div>
 
     <div class="app-layout">
@@ -1406,6 +1414,7 @@
                 <button class="sidebar-nav-item" id="navInbox" hidden onclick="showSection('inbox', this)">
                     <i data-lucide="inbox"></i>
                     <span>Posta</span>
+                    <span class="reminder-badge" id="inboxNavBadge" style="display:none;">0</span>
                 </button>
 
                 <div class="nav-group-label">Analisi</div>
@@ -1440,7 +1449,10 @@
         <main class="main-content">
             <div class="main-header">
                 <h1 id="mainHeaderTitle">Dashboard</h1>
-                <div id="currentCompanyName" class="header-company-name">Nessuna azienda</div>
+                <div class="header-right">
+                    <button type="button" class="inbox-bell" id="inboxBell" hidden onclick="goToInbox()" aria-label="Posta: nuove email" title="Nuove email"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg><span class="inbox-bell-count"></span></button>
+                    <div id="currentCompanyName" class="header-company-name">Nessuna azienda</div>
+                </div>
             </div>
 
             <div class="content">
@@ -1802,8 +1814,8 @@
                     <div class="section-toolbar">
                         <div class="mini-stats-bar">
                             <div class="mini-stat">
-                                <span class="mini-stat-label">Casella</span>
-                                <span class="mini-stat-value mail-from" id="inboxAddress">-</span>
+                                <span class="mini-stat-label">Nuove</span>
+                                <span class="mini-stat-value" id="inboxNewCount">0</span>
                             </div>
                             <div class="mini-stat">
                                 <span class="mini-stat-label">Messaggi</span>
@@ -1812,6 +1824,7 @@
                         </div>
                         <div class="toolbar-actions">
                             <select id="inboxFolder" class="inbox-folder" aria-label="Cartella" onchange="loadInbox(0)"></select>
+                            <button class="btn btn-secondary" onclick="markAllInboxSeen()" title="Toglie il pallino delle nuove email solo in Numbers: nella casella non cambia niente">Segna come viste</button>
                             <button class="btn btn-secondary" onclick="loadInbox(inboxPage)">Aggiorna</button>
                         </div>
                     </div>
@@ -3111,6 +3124,98 @@
         let inboxOpenUid = null;
         let inboxFoldersLoaded = false;
 
+        // ----- Pallino delle nuove email, visibile da ogni pagina -----
+        // «Nuova» = non letta nella casella E non aperta da Numbers. Aprire un messaggio qui non lo segna letto
+        // nella casella (è in sola lettura), quindi Numbers si ricorda da solo cosa hai già aperto, in questo browser.
+        const INBOX_POLL_MS = 60 * 1000;
+        const BASE_TITLE = document.title;
+        let inboxUnread = { count: 0, uids: [] };
+        let inboxKnownUnread = null;
+        let inboxPollTimer = null;
+
+        function inboxSeenKey() { return 'numbers.inboxSeen.' + currentCompanyId; }
+        function loadInboxSeen() {
+            try { return new Set(JSON.parse(localStorage.getItem(inboxSeenKey()) || '[]')); } catch (e) { return new Set(); }
+        }
+        function saveInboxSeen(set) {
+            try { localStorage.setItem(inboxSeenKey(), JSON.stringify([...set].sort((a, b) => b - a).slice(0, 500))); } catch (e) { /* senza memoria locale il pallino torna */ }
+        }
+        function inboxNewTotal() {
+            const seen = loadInboxSeen();
+            return Math.max(0, inboxUnread.count - inboxUnread.uids.filter(u => seen.has(u)).length);
+        }
+
+        function renderInboxBadge() {
+            const n = inboxState.enabled ? inboxNewTotal() : 0;
+            const nav = document.getElementById('inboxNavBadge');
+            if (nav) { nav.textContent = n > 99 ? '99+' : n; nav.style.display = n > 0 ? 'flex' : 'none'; }
+            ['inboxBell', 'inboxBellMobile'].forEach(id => {
+                const b = document.getElementById(id);
+                if (!b) return;
+                b.hidden = !inboxState.enabled;
+                b.classList.toggle('is-quiet', n === 0);
+                b.querySelector('.inbox-bell-count').textContent = n > 99 ? '99+' : n;
+                b.title = n > 0 ? `${n} ${n === 1 ? 'nuova email' : 'nuove email'}` : 'Posta';
+            });
+            const cnt = document.getElementById('inboxNewCount');
+            if (cnt) cnt.textContent = n;
+            document.title = n > 0 ? `(${n}) ${BASE_TITLE}` : BASE_TITLE;
+        }
+
+        async function pollInbox() {
+            if (!currentCompanyId || !inboxState.enabled) return;
+            const companyId = currentCompanyId;
+            try {
+                const r = await apiCall('GET', `/companies/${companyId}/inbox/unread`);
+                if (companyId !== currentCompanyId) return;
+                const seen = loadInboxSeen();
+                const uids = (r && r.uids) || [];
+                if (inboxKnownUnread) {
+                    const fresh = uids.filter(u => !inboxKnownUnread.has(u) && !seen.has(u));
+                    if (fresh.length) showToast(fresh.length === 1 ? 'Nuova email in Posta' : `${fresh.length} nuove email in Posta`, 'info');
+                    const active = document.querySelector('.section.active');
+                    if (fresh.length && active && active.id === 'inbox' && !document.getElementById('inboxListView').hidden && inboxPage === 0) loadInbox(0);
+                }
+                inboxKnownUnread = new Set(uids);
+                inboxUnread = { count: (r && r.count) || 0, uids };
+            } catch (e) {
+                return; // niente rumore: si riprova al prossimo giro
+            }
+            renderInboxBadge();
+        }
+
+        function startInboxPolling() {
+            stopInboxPolling();
+            if (!inboxState.enabled) return;
+            pollInbox();
+            inboxPollTimer = setInterval(() => { if (!document.hidden) pollInbox(); }, INBOX_POLL_MS);
+        }
+        function stopInboxPolling() {
+            if (inboxPollTimer) clearInterval(inboxPollTimer);
+            inboxPollTimer = null;
+            inboxKnownUnread = null;
+            inboxUnread = { count: 0, uids: [] };
+        }
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) pollInbox(); });
+
+        function markInboxSeen(uid) {
+            const seen = loadInboxSeen();
+            seen.add(uid);
+            saveInboxSeen(seen);
+            renderInboxBadge();
+        }
+        function markAllInboxSeen() {
+            const seen = loadInboxSeen();
+            inboxUnread.uids.forEach(u => seen.add(u));
+            saveInboxSeen(seen);
+            renderInboxBadge();
+            if (!document.getElementById('inboxListView').hidden) loadInbox(inboxPage);
+        }
+        function goToInbox() {
+            const nav = document.getElementById('navInbox');
+            if (nav && !nav.hidden) showSection('inbox', nav);
+        }
+
         async function refreshInboxNav() {
             const nav = document.getElementById('navInbox');
             if (!nav) return;
@@ -3124,6 +3229,7 @@
                 inboxState = { enabled: false };
             }
             nav.hidden = !inboxState.enabled;
+            if (inboxState.enabled) startInboxPolling(); else { stopInboxPolling(); renderInboxBadge(); }
             const active = document.querySelector('.section.active');
             if (!inboxState.enabled && active && active.id === 'inbox') showSection('dashboard', document.querySelector('.sidebar-nav-item'));
         }
@@ -3145,7 +3251,6 @@
             if (!currentCompanyId || !inboxState.enabled) return;
             const list = document.getElementById('inboxList');
             const select = document.getElementById('inboxFolder');
-            document.getElementById('inboxAddress').textContent = inboxState.address || '-';
             closeInboxMessage();
             inboxShowError('');
             if (!inboxFoldersLoaded) {
@@ -3170,7 +3275,7 @@
                 r.messages.forEach(m => {
                     const row = document.createElement('button');
                     row.type = 'button';
-                    row.className = 'inbox-row' + (m.seen ? '' : ' unread');
+                    row.className = 'inbox-row' + (m.seen || loadInboxSeen().has(m.uid) ? '' : ' unread');
                     row.innerHTML = `<span class="inbox-from">${escapeHtml(m.from || '(mittente sconosciuto)')}</span><span class="inbox-date">${fmtInboxDate(m.date)}</span><span class="inbox-title">${escapeHtml(m.subject)}</span>`;
                     row.onclick = () => openInboxMessage(m.uid, false);
                     list.appendChild(row);
@@ -3197,6 +3302,7 @@
             try {
                 const m = await apiCall('GET', `/companies/${currentCompanyId}/inbox/messages/${uid}?folder=${encodeURIComponent(select.value || 'INBOX')}${showImages ? '&images=1' : ''}`);
                 inboxOpenUid = uid;
+                markInboxSeen(uid);
                 document.getElementById('inboxListView').hidden = true;
                 document.getElementById('inboxMessageView').hidden = false;
                 document.getElementById('inboxSubject').textContent = m.subject;

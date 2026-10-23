@@ -132,6 +132,7 @@
         }
         // Posta in sola lettura: ?noinbox=1 la nasconde, ?inboxerr=1 mostra l'errore della casella.
         if (/\/inbox$/.test(path)) return json(params.get('noinbox') === '1' ? { enabled: false, address: null } : { enabled: true, address: 'info@oakstonethirteen.com' });
+        if (/\/inbox\/unread$/.test(path)) return json(params.get('nounread') === '1' ? { count: 0, uids: [] } : { count: 3, uids: [2000, 1999, 1997] });
         if (/\/inbox\/folders$/.test(path)) {
             if (params.get('inboxerr') === '1') return Promise.resolve(new Response(JSON.stringify({ error: 'La casella ha rifiutato utente o password: controlla IMAP_USER e IMAP_PASS su Render.' }), { status: 502, headers: { 'Content-Type': 'application/json' } }));
             return json({ folders: [{ path: 'INBOX', name: 'INBOX' }, { path: 'Sent', name: 'Inviata' }, { path: 'Spam', name: 'Spam' }] });
