@@ -161,7 +161,7 @@
         // Pagamenti (Wise): ?nowise=1 mostra la pagina non collegata, ?wiseerr=1 l'errore.
         if (/\/wise$/.test(path)) {
             if (params.get('wiseerr') === '1') return Promise.resolve(new Response(JSON.stringify({ error: 'Wise non riconosce il token: è sbagliato, scaduto o cancellato.' }), { status: 502, headers: { 'Content-Type': 'application/json' } }));
-            return json(params.get('nowise') === '1' ? { configured: false } : wiseMock);
+            return json(params.get('nowise') === '1' ? { configured: false } : params.get('nowise2') === '1' ? { configured: false, otherCompany: true } : wiseMock);
         }
         // Invio con PIN: il PIN giusto nell'anteprima è 0000 (?pinlock=1 simula troppi tentativi).
         if (method === 'POST' && /\/wise\/payments(\/\d+\/send)?$/.test(path)) {

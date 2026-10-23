@@ -621,7 +621,7 @@
         .inbox-frame { display: block; width: 100%; height: 62vh; min-height: 320px; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; }
         .inbox-text { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-body); font-size: 14px; line-height: 1.5; margin: 0; }
         .inbox-images .btn { margin: 0 0 0 8px; }
-        #navInbox[hidden], #navMail[hidden], #navPayments[hidden] { display: none; }
+        #navInbox[hidden], #navMail[hidden] { display: none; }
         .header-right { display: flex; align-items: center; gap: 16px; min-width: 0; }
         .inbox-bell { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; background: none; border: 1px solid var(--border-strong); border-radius: 50%; color: var(--text-primary); cursor: pointer; }
         .inbox-bell[hidden] { display: none; }
@@ -3689,7 +3689,7 @@ att.hidden = !(m.attachments && m.attachments.length);
             tbody.innerHTML = html;
         }
 
-        // ----- Wise appartiene a UNA azienda (quella del token): dalle altre Pagamenti e Compensi spariscono -----
+        // ----- Ogni azienda ha il suo Wise: dove non c'è, i Compensi (che vengono dai suoi bonifici) non si mostrano -----
         let wiseEnabled = true;
         async function refreshWiseNav() {
             const companyId = currentCompanyId;
@@ -3698,8 +3698,6 @@ att.hidden = !(m.attachments && m.attachments.length);
                 if (companyId !== currentCompanyId) return;
                 wiseEnabled = !!(r && r.enabled);
             } catch (e) { return; /* se non risponde, resta com'era */ }
-            const nav = document.getElementById('navPayments');
-            if (nav) nav.hidden = !wiseEnabled;
             const card = document.getElementById('totalCompensi');
             if (card && card.closest('.stat-card')) card.closest('.stat-card').hidden = !wiseEnabled;
             const mini = document.getElementById('miniCompensiTotal');
@@ -3707,8 +3705,7 @@ att.hidden = !(m.attachments && m.attachments.length);
             if (!wiseEnabled) {
                 compensi = [];
                 const active = document.querySelector('.section.active');
-                if (active && active.id === 'payments') showSection('dashboard', document.querySelector('.sidebar-nav-item'));
-                else if (active && PERIOD_SECTIONS[active.id]) PERIOD_SECTIONS[active.id]();
+                if (active && PERIOD_SECTIONS[active.id]) PERIOD_SECTIONS[active.id]();
             }
         }
 
@@ -5334,8 +5331,9 @@ att.hidden = !(m.attachments && m.attachments.length);
                 return;
             }
             if (!wiseData || !wiseData.configured) {
+                const wise_otherCompany = !!(wiseData && wiseData.otherCompany);
                 wiseData = null;
-                renderWiseMessage('Wise non è ancora collegato. Serve il token di Wise sul server di Numbers (variabile WISE_API_TOKEN).');
+                renderWiseMessage(wise_otherCompany ? `Questa azienda non ha ancora un suo Wise: i conti delle altre aziende non si vedono e non si muovono da qui. Quando avrà i suoi conti, il collegamento si aggiunge sul server di Numbers (variabile WISE_API_TOKEN_${currentCompanyId}).` : 'Wise non è ancora collegato. Serve il token di Wise sul server di Numbers (variabile WISE_API_TOKEN).');
                 return;
             }
             document.getElementById('wiseMessage').hidden = true;
