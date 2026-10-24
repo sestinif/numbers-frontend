@@ -1,8 +1,8 @@
 // Numbers — tondi di riga.
 // Mette un tondo colorato all'inizio di ogni riga di lista: le iniziali del cliente,
 // la lettera della categoria di spesa, un'icona per scadenze e note. Nelle spese e nelle
-// spese ricorrenti, se il nome fa riconoscere il fornitore (OpenAI, Notion, Render…),
-// al posto della lettera c'è il suo logo, tondo; se il logo non arriva, torna la lettera. Lo stesso cliente
+// spese ricorrenti c'è il logo del fornitore, tondo: dal sito scritto nella voce (data-logo-domain
+// sulla riga) o, se manca, dal nome (OpenAI, Notion, Render…); se il logo non arriva, torna la lettera. Lo stesso cliente
 // e la stessa categoria hanno sempre lo stesso colore, così si riconoscono scorrendo.
 // È solo un segno in più: non tocca i dati né le funzioni di index.html. Il testo del
 // tondo è disegnato dal CSS (attr), quindi non entra in ricerca, ordinamento e scheda.
@@ -120,8 +120,9 @@
             if (!texts.length) return null;
             const cat = clean(texts[BY_CATEGORY[tableId]]);
             const letter = cat && cat !== '-' ? initials(cat)[0] : '?';
+            // Prima il sito scritto nella spesa o nella ricorrente (logoDomain), poi il nome.
             // hostText: il titolo della riga con gli spazi tra i pezzi (nome, bollino…), se c'è.
-            const vendor = vendorFor(row.hostText != null ? row.hostText : texts[HOST[tableId]]);
+            const vendor = row.logoDomain || vendorFor(row.hostText != null ? row.hostText : texts[HOST[tableId]]);
             if (vendor) return { kind: 'logo', label: vendor, fallback: letter, color: categoryColor(cat) };
             return { kind: 'text', label: letter, color: categoryColor(cat) };
         }
@@ -156,6 +157,7 @@
                 if (!host || host.classList.contains('empty-state') || row.querySelector('.skeleton')) return;
                 const mark = markFor(table.id, {
                     texts: Array.from(row.cells).map(td => td.textContent),
+                    logoDomain: row.dataset.logoDomain || null,
                     // textContent incolla nome e bollino («RenderSpesa…»): per il fornitore servono gli spazi.
                     hostText: Array.from(host.childNodes).filter(n => !(n.classList && n.classList.contains('row-mark'))).map(n => n.textContent).join(' '),
                     late: !!row.querySelector('span[style*="--danger"]')

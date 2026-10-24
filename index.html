@@ -2332,6 +2332,11 @@
                     <input hidden type="text" id="expenseAccount" maxlength="120" autocomplete="off" placeholder="Es: Revolut Business" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-expense-account">
                 </div>
 
+                <div class="form-group">
+                    <label>Sito del fornitore</label>
+                    <input type="text" id="expenseLink" maxlength="500" autocomplete="off" placeholder="Es: northwestregisteredagent.com (dà anche il logo)" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-expense-link">
+                </div>
+
                 <button type="submit" class="btn btn-primary">Salva spesa</button>
                 <button type="button" class="btn btn-secondary" onclick="closeExpenseModal()">Annulla</button>
             </form>
@@ -2541,8 +2546,8 @@
                         <input hidden type="text" id="recurringAccount" maxlength="120" autocomplete="off" placeholder="Es: Revolut Business" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-recurring-account">
                     </div>
                     <div class="form-group">
-                        <label>Link per controllare</label>
-                        <input type="url" id="recurringLink" maxlength="500" autocomplete="off" placeholder="https://… (la pagina dove vedi fattura o consumo)">
+                        <label>Sito o link per controllare</label>
+                        <input type="text" id="recurringLink" maxlength="500" autocomplete="off" placeholder="Es: render.com o la pagina della fattura (dà anche il logo)">
                     </div>
                     <div class="form-group">
                         <label>Tipo</label>
@@ -4861,6 +4866,7 @@ att.hidden = !(m.attachments && m.attachments.length);
                 document.getElementById('expenseDescription').value = expense.description;
                 document.getElementById('expenseCategory').value = expense.category || '';
                 document.getElementById('expenseAccount').value = expense.account || '';
+                document.getElementById('expenseLink').value = expense.link || '';
             } else {
                 document.getElementById('expenseModalTitle').textContent = 'Nuova spesa';
                 document.getElementById('expenseCurrency').value = 'EUR';
@@ -4885,7 +4891,8 @@ att.hidden = !(m.attachments && m.attachments.length);
                     category: document.getElementById('expenseCategory').value,
                     account: document.getElementById('expenseAccount').value,
                     amount: parseFloat(document.getElementById('expenseAmount').value),
-                    currency: document.getElementById('expenseCurrency').value
+                    currency: document.getElementById('expenseCurrency').value,
+                    link: normalizeLink(document.getElementById('expenseLink').value)
                 };
                 // Il modulo non ha il campo note: in modifica si ripassano quelle che c'erano, altrimenti il salvataggio le cancella.
                 const current = expenseId ? expenses.find(e => e.id == expenseId) : null;
@@ -4966,6 +4973,22 @@ att.hidden = !(m.attachments && m.attachments.length);
             apify: 'https://console.apify.com/billing/usage',
             openai: 'https://platform.openai.com/settings/organization/usage'
         };
+        // Quello che si scrive nel campo sito: «render.com» o un indirizzo intero. Il server vuole https.
+        function normalizeLink(value) {
+            const v = String(value || '').trim();
+            if (!v) return '';
+            return /^https?:\/\//i.test(v) ? v.replace(/^http:\/\//i, 'https://') : 'https://' + v;
+        }
+        // Il dominio di un sito, per il logo: «dashboard.render.com» → «render.com», «www.x.co.uk» → «x.co.uk».
+        function logoDomainOf(url) {
+            let host = '';
+            try { host = new URL(normalizeLink(url)).hostname.toLowerCase(); } catch (e) { return null; }
+            const parts = host.replace(/^www\./, '').split('.').filter(Boolean);
+            if (parts.length < 2) return null;
+            const short = parts.length > 2 && parts[parts.length - 1].length === 2 && parts[parts.length - 2].length <= 3;
+            return parts.slice(short ? -3 : -2).join('.');
+        }
+
         function sourceLinkFor(expense) {
             const src = String(expense.auto_source || '');
             let url = SOURCE_LINKS[src] || null;
@@ -5026,7 +5049,7 @@ att.hidden = !(m.attachments && m.attachments.length);
                 const badge = CostLabels.expenseBadge(expense);
                 row.innerHTML = `
                     <td>${new Date(m.date).toLocaleDateString('it-IT')}</td>
-                    <td>${escapeHtml(expense.description)}<span class="badge badge-spesa badge-inline">Spesa</span>${sourceLinkHtml(sourceLinkFor(expense))}${badge ? `<span class="badge badge-${badge.tone} badge-inline" title="${escapeHtml(badge.title)}">${badge.text}</span>` : ''}</td>
+                    <td>${escapeHtml(expense.description)}<span class="badge badge-spesa badge-inline">Spesa</span>${sourceLinkHtml(expense.link || sourceLinkFor(expense))}${badge ? `<span class="badge badge-${badge.tone} badge-inline" title="${escapeHtml(badge.title)}">${badge.text}</span>` : ''}</td>
                     <td>${expense.category ? escapeHtml(expense.category) : '-'}</td>
                     <td>${expense.account ? escapeHtml(expense.account) : ''}</td>
                     <td class="num">${(() => {
@@ -5041,6 +5064,10 @@ att.hidden = !(m.attachments && m.attachments.length);
                         <button class="btn btn-danger" onclick="deleteExpense(${expense.id})">Elimina</button>
                     </td>
                 `;
+                // Il sito della spesa (o della sua ricorrente) dà il logo del tondo.
+                const site = expense.link || sourceLinkFor(expense);
+                const domain = site ? logoDomainOf(site) : null;
+                if (domain) row.dataset.logoDomain = domain;
             });
 
             // Mini-stats, sul periodo scelto
@@ -5861,6 +5888,8 @@ att.hidden = !(m.attachments && m.attachments.length);
                         ? '<span class="badge badge-paid">Attiva</span>'
                         : `<span class="badge badge-pending" title="Interrotta">Interrotta ${fmtPeriod(rule.end_period)}</span>`;
                     const row = tbody.insertRow();
+                    const ruleDomain = rule.link ? logoDomainOf(rule.link) : null;
+                    if (ruleDomain) row.dataset.logoDomain = ruleDomain;
                     row.innerHTML = `
                         <td>${escapeHtml(rule.name)}${sourceLinkHtml(rule.link)}</td>
                         <td>${rule.category ? escapeHtml(rule.category) : '-'}</td>
@@ -5945,7 +5974,7 @@ att.hidden = !(m.attachments && m.attachments.length);
                     start_period: document.getElementById('recurringStart').value || nowPeriod(),
                     end_period: document.getElementById('recurringEnd').value || null,
                     account: document.getElementById('recurringAccount').value,
-                    link: document.getElementById('recurringLink').value.trim(),
+                    link: normalizeLink(document.getElementById('recurringLink').value),
                     cost_type: document.getElementById('recurringCostType').value
                 };
                 if (id) {

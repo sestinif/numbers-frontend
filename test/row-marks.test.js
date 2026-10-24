@@ -124,3 +124,12 @@ test('FACEIT e NordPass hanno il loro logo', () => {
     assert.strictEqual(M.vendorFor('faceit.com abbonamento'), 'faceit.com');
     assert.strictEqual(M.vendorFor('NordPass Business'), 'nordpass.com');
 });
+
+test('il sito scritto nella voce vince sul nome', () => {
+    const m = M.markFor('expensesTable', { texts: ['', 'Unique Suite Number', 'Ufficio', ''], logoDomain: 'northwestregisteredagent.com' });
+    assert.strictEqual(m.kind, 'logo');
+    assert.strictEqual(m.label, 'northwestregisteredagent.com');
+    assert.strictEqual(m.fallback, 'U');
+    const r = M.markFor('recurringTable', { texts: ['Notion Team', 'Software'], logoDomain: 'notion.com' });
+    assert.strictEqual(r.label, 'notion.com');
+});
