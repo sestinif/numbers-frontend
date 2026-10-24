@@ -1228,6 +1228,13 @@
             .period-mode { flex: 1; padding: 0; }
         }
 
+        /* ===== SPESE IN EURO O IN DOLLARI =====
+           Importo e valuta sulla stessa riga; in lista la cifra scritta, e sotto gli euro se è in dollari. */
+        .amount-cur { display: flex; gap: 8px; }
+        .amount-cur input { flex: 1; min-width: 0; }
+        .amount-cur select { width: 96px; flex-shrink: 0; }
+        .num-sub { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--text-secondary); }
+
         /* ===== TONDI DI RIGA (row-marks.js) =====
            Il testo del tondo arriva da attr(): non entra in ricerca, ordinamento e scheda. */
         .row-mark {
@@ -2292,7 +2299,10 @@
                     </div>
                     <div class="form-group">
                         <label>Importo *</label>
-                        <input type="number" id="expenseAmount" step="0.01" required placeholder="0.00" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-expense-amount">
+                        <div class="amount-cur">
+                            <input type="number" id="expenseAmount" step="0.01" required placeholder="0.00" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-expense-amount">
+                            <select id="expenseCurrency" aria-label="Valuta"><option value="EUR">€ EUR</option><option value="USD">$ USD</option></select>
+                        </div>
                     </div>
                 </div>
 
@@ -2492,7 +2502,10 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Importo *</label>
-                        <input type="number" id="recurringAmount" step="0.01" required placeholder="0.00" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-recurring-amount">
+                        <div class="amount-cur">
+                            <input type="number" id="recurringAmount" step="0.01" required placeholder="0.00" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-recurring-amount">
+                            <select id="recurringCurrency" aria-label="Valuta"><option value="EUR">€ EUR</option><option value="USD">$ USD</option></select>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Ogni</label>
@@ -2675,6 +2688,17 @@
             const n = parseFloat(amount);
             const abs = Math.abs(n).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: 'always' });
             return (n < 0 ? '-' : '') + symbol + abs;
+        }
+
+        // Una spesa (o una regola) nella valuta in cui è stata scritta. `amount` è sempre in euro:
+        // una spesa in dollari tiene i dollari in `amount_original`.
+        function writtenAmount(item) {
+            const cur = (item && item.currency) || 'EUR';
+            const original = item && item.amount_original != null ? parseFloat(item.amount_original) : null;
+            return { cur, value: cur !== 'EUR' && original != null ? original : parseFloat(item.amount) };
+        }
+        function formatIn(amount, cur) {
+            return formatCurrency(amount, currencySymbols[cur] || '\u20AC');
         }
 
         function formatCurrencyShort(amount, symbol = '\u20AC') {
@@ -4831,12 +4855,15 @@ att.hidden = !(m.attachments && m.attachments.length);
                 document.getElementById('expenseModalTitle').textContent = 'Modifica spesa';
                 document.getElementById('expenseId').value = expense.id;
                 document.getElementById('expenseDate').value = (expense.expense_date || expense.date || '').split('T')[0];
-                document.getElementById('expenseAmount').value = expense.amount;
+                const written = writtenAmount(expense);
+                document.getElementById('expenseAmount').value = written.value;
+                document.getElementById('expenseCurrency').value = written.cur;
                 document.getElementById('expenseDescription').value = expense.description;
                 document.getElementById('expenseCategory').value = expense.category || '';
                 document.getElementById('expenseAccount').value = expense.account || '';
             } else {
                 document.getElementById('expenseModalTitle').textContent = 'Nuova spesa';
+                document.getElementById('expenseCurrency').value = 'EUR';
                 setupExpenseDate();
             }
 
@@ -4857,7 +4884,8 @@ att.hidden = !(m.attachments && m.attachments.length);
                     description: document.getElementById('expenseDescription').value,
                     category: document.getElementById('expenseCategory').value,
                     account: document.getElementById('expenseAccount').value,
-                    amount: parseFloat(document.getElementById('expenseAmount').value)
+                    amount: parseFloat(document.getElementById('expenseAmount').value),
+                    currency: document.getElementById('expenseCurrency').value
                 };
                 // Il modulo non ha il campo note: in modifica si ripassano quelle che c'erano, altrimenti il salvataggio le cancella.
                 const current = expenseId ? expenses.find(e => e.id == expenseId) : null;
@@ -4886,7 +4914,9 @@ att.hidden = !(m.attachments && m.attachments.length);
             document.getElementById('expenseConfirmId').value = expense.id;
             document.getElementById('expenseConfirmWhat').textContent =
                 `${expense.description} · ${date.toLocaleDateString('it-IT')}` + (expense.account ? ` · ${expense.account}` : '');
-            document.getElementById('expenseConfirmAmount').value = expense.amount;
+            const written = writtenAmount(expense);
+            document.getElementById('expenseConfirmAmount').value = written.value;
+            document.querySelector('label[for="expenseConfirmAmount"]').textContent = `Cifra della fattura in ${written.cur} *`;
             document.getElementById('expenseConfirmSubmit').disabled = false;
             document.getElementById('expenseConfirmModal').classList.add('active');
             const input = document.getElementById('expenseConfirmAmount');
@@ -4911,7 +4941,8 @@ att.hidden = !(m.attachments && m.attachments.length);
                     description: expense.description,
                     category: expense.category || '',
                     account: expense.account || '',
-                    amount: parseFloat(document.getElementById('expenseConfirmAmount').value)
+                    amount: parseFloat(document.getElementById('expenseConfirmAmount').value),
+                    currency: expense.currency || 'EUR'
                 };
                 if (expense.notes != null) data.notes = expense.notes;
                 await apiCall('PUT', `/expenses/${id}`, data);
@@ -4998,7 +5029,12 @@ att.hidden = !(m.attachments && m.attachments.length);
                     <td>${escapeHtml(expense.description)}<span class="badge badge-spesa badge-inline">Spesa</span>${sourceLinkHtml(sourceLinkFor(expense))}${badge ? `<span class="badge badge-${badge.tone} badge-inline" title="${escapeHtml(badge.title)}">${badge.text}</span>` : ''}</td>
                     <td>${expense.category ? escapeHtml(expense.category) : '-'}</td>
                     <td>${expense.account ? escapeHtml(expense.account) : ''}</td>
-                    <td class="num"><strong>${formatCurrency(expense.amount)}</strong></td>
+                    <td class="num">${(() => {
+                        const w = writtenAmount(expense);
+                        return w.cur === 'EUR'
+                            ? `<strong>${formatCurrency(expense.amount)}</strong>`
+                            : `<strong>${formatIn(w.value, w.cur)}</strong><span class="num-sub">${formatCurrency(expense.amount)}</span>`;
+                    })()}</td>
                     <td class="action-btns">
                         ${badge && badge.tone === 'pending' ? `<button class="btn btn-primary" onclick="openExpenseConfirm(${expense.id})">Conferma</button>` : ''}
                         <button class="btn btn-secondary" onclick="openExpenseModal(${expense.id})">Modifica</button>
@@ -5833,7 +5869,7 @@ att.hidden = !(m.attachments && m.attachments.length);
                         <td>${stato}</td>
                         <td>${rule.account ? escapeHtml(rule.account) : ''}</td>
                         <td><span class="cost-type cost-type--${CostLabels.ruleType(rule)}">${CostLabels.ruleTypeLabel(rule)}</span></td>
-                        <td class="num"><strong>${formatCurrency(rule.amount)}</strong></td>
+                        <td class="num"><strong>${formatIn(rule.amount, rule.currency || 'EUR')}</strong></td>
                         <td class="action-btns">
                             <button class="btn btn-secondary" onclick="openRecurringModal(${rule.id})">Modifica</button>
                             ${active ? `<button class="btn btn-secondary" onclick="stopRecurring(${rule.id})">Stoppa</button>` : ''}
@@ -5862,6 +5898,7 @@ att.hidden = !(m.attachments && m.attachments.length);
                 document.getElementById('recurringId').value = rule.id;
                 document.getElementById('recurringName').value = rule.name;
                 document.getElementById('recurringAmount').value = rule.amount;
+                document.getElementById('recurringCurrency').value = rule.currency || 'EUR';
                 document.getElementById('recurringFrequency').value = rule.frequency || 'monthly';
                 document.getElementById('recurringDay').value = rule.day_of_month || 1;
                 document.getElementById('recurringCategory').value = rule.category || 'Software';
@@ -5901,6 +5938,7 @@ att.hidden = !(m.attachments && m.attachments.length);
                 const data = {
                     name: document.getElementById('recurringName').value,
                     amount: parseFloat(document.getElementById('recurringAmount').value),
+                    currency: document.getElementById('recurringCurrency').value,
                     frequency: document.getElementById('recurringFrequency').value,
                     day_of_month: parseInt(document.getElementById('recurringDay').value) || 1,
                     category: document.getElementById('recurringCategory').value,
