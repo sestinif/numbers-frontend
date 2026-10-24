@@ -17,8 +17,8 @@
     --text-secondary: #9A9AA8;
     --money-in: #4FD1A1;
     --error: #F58A9B;
-    --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 * {
