@@ -533,7 +533,9 @@
         .company-option > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         /* ===== LOGO DELL'AZIENDA (company-logo.js) =====
-           Un tondo come quelli delle righe: dentro il logo, un cerchio da 20px; senza logo le iniziali. */
+           Un tondo come quelli delle righe; senza logo le iniziali. Il logo sta intero nel quadrato
+           inscritto nel tondo (lato ≤ diametro/√2, con un po' di margine) e non si ritaglia mai:
+           un logo tondo resta tondo, uno largo (il monogramma SC) non perde punte e bordi. */
         .company-mark {
             display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
             width: 28px; height: 28px; border-radius: 50%;
@@ -541,9 +543,9 @@
             font-size: 11px; font-weight: 500; line-height: 1; letter-spacing: 0.02em;
         }
         .company-mark::before { content: attr(data-label); }
-        .company-mark img { width: 20px; height: 20px; display: block; border-radius: 50%; object-fit: contain; }
+        .company-mark img { width: 18px; height: 18px; display: block; object-fit: contain; }
         .company-selector .company-mark { width: 24px; height: 24px; margin: -3px 0; }
-        .company-selector .company-mark img { width: 18px; height: 18px; }
+        .company-selector .company-mark img { width: 15px; height: 15px; }
         .header-company { display: flex; align-items: center; gap: 10px; min-width: 0; }
         .company-mark[hidden] { display: none; }
 
@@ -561,7 +563,7 @@
             background: rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 13px; font-weight: 500;
         }
         .logo-preview::before { content: attr(data-label); }
-        .logo-preview img { width: 30px; height: 30px; display: block; object-fit: contain; }
+        .logo-preview img { width: 28px; height: 28px; display: block; object-fit: contain; }
         /* La fattura è bianca: l'anteprima del suo logo anche. */
         .logo-preview--invoice { border-radius: 8px; background: #fff; color: #8c8f94; }
         .logo-preview--invoice img.is-inverted { filter: invert(1); }
