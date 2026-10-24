@@ -185,6 +185,19 @@
         }
         // Email: ?nomail=1 mostra la casella non collegata.
         if (/\/email$/.test(path)) return json(params.get('nomail') === '1' ? { configured: false, from: null, copyToOwner: false, sent: [] } : mailMock);
+        // Logo dell'azienda: il file caricato diventa un data URL, come fa il server (che in più ripulisce gli SVG).
+        const logoM = path.match(/^\/companies\/(\d+)\/logo$/);
+        if (logoM) {
+            const co = companies.find(c => String(c.id) === logoM[1]);
+            const col = /kind=invoice/.test(u) ? 'logo_invoice' : 'logo';
+            if (method === 'DELETE') { co[col] = null; return json(co); }
+            const file = opts.body && opts.body.get && opts.body.get('file');
+            return new Promise(res => {
+                const r = new FileReader();
+                r.onload = () => { co[col] = String(r.result).replace(/^data:[^;,]*/, /\.png$/i.test(file.name) ? 'data:image/png' : 'data:image/svg+xml'); res(json(co)); };
+                r.readAsDataURL(file);
+            });
+        }
         if (method !== 'GET') return json({ id: 999, ok: true });
         if (path === '/companies') return json(noCompany ? [] : companies);
         const m = path.match(/^\/companies\/[^/]+\/([a-z-]+)$/);

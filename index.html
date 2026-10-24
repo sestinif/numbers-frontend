@@ -500,8 +500,8 @@
 
         .company-selector:hover { border-color: rgba(255, 255, 255, 0.24); }
 
-        .company-selector span:first-child {
-            flex: 1;
+        .company-selector #selectedCompany {
+            flex: 1; min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -529,7 +529,46 @@
             }
         }
 
-        .company-option { padding: 12px 16px; cursor: pointer; font-size: 13px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); }
+        .company-option { padding: 12px 16px; cursor: pointer; font-size: 13px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
+        .company-option > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* ===== LOGO DELL'AZIENDA (company-logo.js) =====
+           Un tondo come quelli delle righe: dentro il logo, un cerchio da 20px; senza logo le iniziali. */
+        .company-mark {
+            display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+            width: 28px; height: 28px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08); color: var(--text-secondary);
+            font-size: 11px; font-weight: 500; line-height: 1; letter-spacing: 0.02em;
+        }
+        .company-mark::before { content: attr(data-label); }
+        .company-mark img { width: 20px; height: 20px; display: block; border-radius: 50%; object-fit: contain; }
+        .company-selector .company-mark { width: 24px; height: 24px; margin: -3px 0; }
+        .company-selector .company-mark img { width: 18px; height: 18px; }
+        .header-company { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .company-mark[hidden] { display: none; }
+
+        /* Logo nelle impostazioni dell'azienda */
+        .logo-rows { display: grid; gap: 0; border: 1px solid var(--border-color); border-radius: 10px; }
+        .logo-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px 14px; }
+        .logo-row + .logo-row { border-top: 1px solid var(--border-color); }
+        .logo-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .logo-row-text strong { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+        .logo-row-text span { font-size: 12px; color: var(--text-secondary); }
+        .logo-row-actions { display: flex; gap: 8px; }
+        .logo-row-actions .btn { margin: 0; padding: 6px 12px; font-size: 12px; white-space: nowrap; }
+        .logo-preview {
+            width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            background: rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 13px; font-weight: 500;
+        }
+        .logo-preview::before { content: attr(data-label); }
+        .logo-preview img { width: 30px; height: 30px; display: block; object-fit: contain; }
+        /* La fattura è bianca: l'anteprima del suo logo anche. */
+        .logo-preview--invoice { border-radius: 8px; background: #fff; color: #8c8f94; }
+        .logo-preview--invoice img.is-inverted { filter: invert(1); }
+        @media (max-width: 560px) {
+            .logo-row { grid-template-columns: 44px minmax(0, 1fr); }
+            .logo-row-actions { grid-column: 1 / -1; }
+        }
 
         .company-option:last-child { border-bottom: none; }
 
@@ -705,7 +744,7 @@
         }
 
         /* ===== MOBILE RESPONSIVE ===== */
-        .company-selector span:last-child { font-size: 12px; color: var(--text-secondary); }
+        .company-selector .company-caret { font-size: 12px; color: var(--text-secondary); }
 
         #noteAlertModal .btn-success { background: var(--primary-green); color: var(--bg-primary); border-color: var(--primary-green); }
 
@@ -1436,8 +1475,9 @@
             <!-- Company Switcher at bottom -->
             <div class="sidebar-company">
                 <div class="company-selector" onclick="toggleCompanyDropdown()">
+                    <span id="selectedCompanyMark" class="company-mark" hidden></span>
                     <span id="selectedCompany">Seleziona Azienda</span>
-                    <span>&#9660;</span>
+                    <span class="company-caret">&#9660;</span>
                 </div>
                 <div class="company-dropdown" id="companyDropdown"></div>
             </div>
@@ -1460,7 +1500,10 @@
                 <h1 id="mainHeaderTitle">Dashboard</h1>
                 <div class="header-right">
                     <button type="button" class="inbox-bell" id="inboxBell" hidden onclick="goToInbox()" aria-label="Posta: nuove email" title="Nuove email"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg><span class="inbox-bell-count"></span></button>
-                    <div id="currentCompanyName" class="header-company-name">Nessuna azienda</div>
+                    <div class="header-company">
+                        <span id="currentCompanyMark" class="company-mark" hidden></span>
+                        <div id="currentCompanyName" class="header-company-name">Nessuna azienda</div>
+                    </div>
                 </div>
             </div>
 
@@ -2670,6 +2713,35 @@
                     <label>Informazioni di pagamento</label>
                     <textarea id="settingsCompanyPayment" rows="3" placeholder="IBAN, coordinate bancarie, etc." autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true" name="numbers-settings-company-payment"></textarea>
                 </div>
+                <!-- Logo: si carica e si toglie subito, senza passare da «Salva modifiche». -->
+                <div class="form-group">
+                    <label>Logo</label>
+                    <div class="logo-rows">
+                        <div class="logo-row">
+                            <span class="logo-preview logo-preview--app" id="settingsLogoApp"></span>
+                            <div class="logo-row-text">
+                                <strong>Logo dell'app</strong>
+                                <span>Nel tondo accanto al nome. SVG o PNG, massimo 512 KB.</span>
+                            </div>
+                            <div class="logo-row-actions">
+                                <button type="button" class="btn btn-secondary" onclick="pickCompanyLogo('app')">Carica logo</button>
+                                <button type="button" class="btn btn-secondary" id="settingsLogoAppRemove" onclick="removeCompanyLogo('app')">Rimuovi</button>
+                            </div>
+                        </div>
+                        <div class="logo-row">
+                            <span class="logo-preview logo-preview--invoice" id="settingsLogoInvoice"></span>
+                            <div class="logo-row-text">
+                                <strong>Logo per le fatture</strong>
+                                <span id="settingsLogoInvoiceHint">Scuro su bianco. Se manca, la fattura usa quello dell'app invertito.</span>
+                            </div>
+                            <div class="logo-row-actions">
+                                <button type="button" class="btn btn-secondary" onclick="pickCompanyLogo('invoice')">Carica logo</button>
+                                <button type="button" class="btn btn-secondary" id="settingsLogoInvoiceRemove" onclick="removeCompanyLogo('invoice')">Rimuovi</button>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="file" id="companyLogoFile" accept=".svg,.png,image/svg+xml,image/png" hidden>
+                </div>
                 <button type="submit" class="btn btn-primary">Salva modifiche</button>
                 <button type="button" class="btn btn-secondary" onclick="closeSettingsModal()">Annulla</button>
                 <button type="button" class="btn btn-danger" onclick="deleteCurrentCompany()" style="float: right;">Elimina azienda</button>
@@ -2680,6 +2752,7 @@
     <script src="config.js"></script>
     <datalist id="accountOptions"></datalist>
     <script src="notes-logic.js"></script>
+    <script src="company-logo.js"></script>
     <script src="cost-labels.js"></script>
     <script src="period.js"></script>
     <script>
@@ -3612,7 +3685,7 @@ att.hidden = !(m.attachments && m.attachments.length);
             companies.forEach(company => {
                 const option = document.createElement('div');
                 option.className = 'company-option';
-                option.textContent = company.name;
+                option.innerHTML = CompanyLogo.markHtml(company) + '<span>' + escapeHtml(company.name) + '</span>';
                 option.setAttribute('data-company-id', company.id);
                 option.onclick = () => selectCompany(company.id);
                 dropdown.appendChild(option);
@@ -3825,6 +3898,14 @@ att.hidden = !(m.attachments && m.attachments.length);
                 if (selectedEl) selectedEl.textContent = 'Seleziona Azienda';
                 if (nameEl) nameEl.textContent = 'Nessuna azienda selezionata';
             }
+            ['selectedCompanyMark', 'currentCompanyMark'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.outerHTML = company
+                    ? CompanyLogo.markHtml(company).replace('<span class="company-mark"', `<span id="${id}" class="company-mark"`)
+                    : `<span id="${id}" class="company-mark" hidden></span>`;
+            });
+            // Il logo della fattura si prepara adesso, così quando si apre una fattura è già pronto.
+            if (company) CompanyLogo.prepareInvoice(company);
         }
 
         function openCompanyModal(companyId = null) {
@@ -3947,8 +4028,78 @@ att.hidden = !(m.attachments && m.attachments.length);
             document.getElementById('settingsCompanyEmail').value = company.email || '';
             document.getElementById('settingsCompanyTaxId').value = company.tax_id || company.vat_number || company.taxId || '';
             document.getElementById('settingsCompanyPayment').value = company.payment_info || company.payment || '';
+            renderSettingsLogos(company);
 
             document.getElementById('settingsModal').classList.add('active');
+        }
+
+        // Anteprime dei due loghi nelle impostazioni.
+        function renderSettingsLogos(company) {
+            const app = CompanyLogo.appLogo(company);
+            const inv = CompanyLogo.invoiceSource(company);
+            const appBox = document.getElementById('settingsLogoApp');
+            const invBox = document.getElementById('settingsLogoInvoice');
+            appBox.innerHTML = app ? `<img src="${app}" alt="">` : '';
+            if (app) appBox.removeAttribute('data-label'); else appBox.setAttribute('data-label', CompanyLogo.initials(company.name));
+            invBox.innerHTML = inv ? `<img src="${inv.src}" alt=""${inv.invert ? ' class="is-inverted"' : ''}>` : '';
+            if (inv) invBox.removeAttribute('data-label'); else invBox.setAttribute('data-label', '—');
+            document.getElementById('settingsLogoAppRemove').hidden = !app;
+            document.getElementById('settingsLogoInvoiceRemove').hidden = !CompanyLogo.isLogo(company.logo_invoice);
+            document.getElementById('settingsLogoInvoiceHint').textContent = CompanyLogo.isLogo(company.logo_invoice)
+                ? 'Scuro su bianco: è quello che va in fattura.'
+                : app ? 'Per ora la fattura usa quello dell\'app invertito. Se non viene bene, caricane uno scuro.'
+                : 'Scuro su bianco. Se manca, la fattura usa quello dell\'app invertito.';
+        }
+
+        // Dopo un caricamento o una rimozione: l'azienda aggiornata prende il posto della vecchia.
+        function applyCompanyLogo(updated) {
+            if (!updated || !updated.id) return;
+            const i = companies.findIndex(c => c.id == updated.id);
+            if (i >= 0) companies[i] = updated;
+            renderSettingsLogos(updated);
+            updateCompanyDisplay();
+            updateCompanyDropdown();
+        }
+
+        let companyLogoKind = 'app';
+        function pickCompanyLogo(kind) {
+            companyLogoKind = kind;
+            const input = document.getElementById('companyLogoFile');
+            input.value = '';
+            input.click();
+        }
+
+        document.getElementById('companyLogoFile').addEventListener('change', async function () {
+            const file = this.files && this.files[0];
+            if (!file || !currentCompanyId) return;
+            if (file.size > 512 * 1024) { showToast('Il logo pesa troppo: massimo 512 KB.', 'error'); return; }
+            const formData = new FormData();
+            formData.append('file', file);
+            const headers = {};
+            const token = getToken();
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            progressStart();
+            try {
+                const response = await fetch(`${API_BASE}/companies/${currentCompanyId}/logo?kind=${companyLogoKind}`, { method: 'POST', headers, body: formData });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || 'Errore nel caricamento del logo');
+                applyCompanyLogo(data);
+                showToast('Logo caricato', 'success');
+            } catch (e) {
+                showToast(e.message, 'error');
+            } finally {
+                progressDone();
+            }
+        });
+
+        async function removeCompanyLogo(kind) {
+            if (!currentCompanyId) return;
+            try {
+                applyCompanyLogo(await apiCall('DELETE', `/companies/${currentCompanyId}/logo?kind=${kind}`));
+                showToast('Logo tolto', 'success');
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
         }
 
         function closeSettingsModal() {
@@ -4537,9 +4688,16 @@ att.hidden = !(m.attachments && m.attachments.length);
             };
         }
 
-        function viewInvoicePDF(invoiceId) {
+        // Il logo della fattura di solito è già pronto (si prepara quando si sceglie l'azienda).
+        function readyInvoiceLogo() {
+            return CompanyLogo.prepareInvoice(companies.find(c => c.id == currentCompanyId));
+        }
+
+        async function viewInvoicePDF(invoiceId) {
             const invoice = invoices.find(i => i.id == invoiceId);
-            if (invoice) generatePDF(buildInvoicePdfData(invoice), 'view');
+            if (!invoice) return;
+            await readyInvoiceLogo();
+            generatePDF(buildInvoicePdfData(invoice), 'view');
         }
 
         // Scarica fattura: se ci sono ricevute collegate -> ZIP (PDF + ricevute), altrimenti solo PDF
@@ -4547,6 +4705,7 @@ att.hidden = !(m.attachments && m.attachments.length);
             const invoice = invoices.find(i => i.id == invoiceId);
             if (!invoice) return;
             const pdfData = buildInvoicePdfData(invoice);
+            await readyInvoiceLogo();
 
             let receipts = [];
             try { receipts = await apiCall('GET', `/invoices/${invoiceId}/receipts`) || []; } catch(e) { receipts = []; }
@@ -4599,229 +4758,166 @@ att.hidden = !(m.attachments && m.attachments.length);
             const items = typeof invoice.items === 'string' ? JSON.parse(invoice.items) : invoice.items;
             const fmtAmount = (n) => `${symbol} ${parseFloat(n).toLocaleString('it-IT', {minimumFractionDigits: 2})}`;
 
-            // Palette
-            const ink = [22, 22, 24];
-            const dark = [70, 70, 74];
-            const mid = [140, 143, 148];
-            const soft = [188, 190, 194];
-            const line = [226, 227, 230];
-            const bg = [247, 248, 249];
-            const accent = [0, 178, 92];
-            const white = [255, 255, 255];
-            const m = 25; // margin
-            const invNumber = invoice.number || invoice.invoice_number || '';
+            // Stile svizzero: bianco, nero, un grigio per le etichette, linee sottili. Nessun colore.
+            const ink = [17, 17, 17];
+            const dark = [72, 72, 76];
+            const mid = [138, 140, 145];
+            const line = [222, 223, 226];
+            const m = 22; // margine
+            const right = pw - m;
+            const colTo = 112; // seconda colonna: «Fattura a»
 
-            // ─── HEADER ───────────────────────────────────
-            // Thin accent line top
-            doc.setFillColor(...accent);
-            doc.rect(0, 0, pw, 2.5, 'F');
+            // Etichetta piccola, maiuscola, spaziata. jsPDF non allinea a destra il testo spaziato:
+            // la larghezza si calcola a mano.
+            const label = (text, x, y, align) => {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(7);
+                doc.setTextColor(...mid);
+                const t = text.toUpperCase();
+                const cs = 0.45;
+                const w = doc.getTextWidth(t) + cs * (t.length - 1);
+                doc.text(t, align === 'right' ? x - w : x, y, { charSpace: cs });
+            };
+            const hair = (y, color, width, x1 = m, x2 = right) => {
+                doc.setDrawColor(...color);
+                doc.setLineWidth(width);
+                doc.line(x1, y, x2, y);
+            };
 
-            // Nome azienda
+            // ─── TESTATA: logo e nome a sinistra, «Fattura» a destra ───
+            const logo = CompanyLogo.readyInvoice(company);
+            let nameX = m;
+            if (logo) {
+                const lh = 16;
+                const lw = Math.min(lh * logo.ratio, 48);
+                doc.addImage(logo.dataUrl, 'PNG', m, 18, lw, lw / logo.ratio, 'company-logo', 'FAST');
+                nameX = m + lw + 5;
+            }
             doc.setTextColor(...ink);
-            doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
-            doc.text(company.name.toUpperCase(), m, 21.5);
-
-            // Right side: titolo FATTURA (nessun numero stampato)
-            doc.setTextColor(...soft);
-            doc.setFontSize(30);
-            doc.setFont('helvetica', 'bold');
-            doc.text('FATTURA', pw - m, 24, { align: 'right' });
-
-            // ─── SEPARATOR ────────────────────────────────
-            doc.setDrawColor(...line);
-            doc.setLineWidth(0.4);
-            doc.line(m, 32, pw - m, 32);
-
-            // ─── INFO COLUMNS ─────────────────────────────
-            let y = 44;
-
-            // LEFT: Da
-            doc.setFontSize(7.5);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...mid);
-            doc.text('D A', m, y);
-
-            y += 7;
             doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...ink);
-            doc.text(company.name, m, y);
+            doc.text(company.name, nameX, logo ? 27.5 : 29);
 
-            y += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(26);
+            doc.text('Fattura', right, 30, { align: 'right' });
+
+            hair(42, ink, 0.35);
+
+            // ─── DA · FATTURA A · DATA E VALUTA ───
+            const top = 54;
+            label('Da', m, top);
+            label('Fattura a', colTo, top);
+
+            let y = top + 7;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(...ink);
+            const fromName = doc.splitTextToSize(company.name, colTo - m - 8);
+            fromName.forEach(l => { doc.text(l, m, y); y += 5; });
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
             doc.setTextColor(...dark);
+            y += 0.5;
             if (company.address) {
-                const lines = doc.splitTextToSize(company.address, 70);
-                lines.forEach(l => { doc.text(l, m, y); y += 4.5; });
+                doc.splitTextToSize(company.address, colTo - m - 8).forEach(l => { doc.text(l, m, y); y += 4.5; });
             }
             if (company.email) { doc.text(company.email, m, y); y += 4.5; }
             const taxId = company.tax_id || company.vat_number || company.taxId;
             if (taxId) { doc.text(taxId, m, y); y += 4.5; }
 
-            // RIGHT: Fattura a
-            let ry = 44;
-            doc.setFontSize(7.5);
+            let ry = top + 7;
+            const custW = right - colTo;
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...mid);
-            doc.text('F A T T U R A   A', 125, ry);
-
-            ry += 7;
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
             doc.setTextColor(...ink);
-            doc.text(customer.name, 125, ry);
-
-            ry += 6;
+            doc.splitTextToSize(customer.name, custW).forEach(l => { doc.text(l, colTo, ry); ry += 5; });
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
             doc.setTextColor(...dark);
+            ry += 0.5;
             if (customer.address) {
-                const lines = doc.splitTextToSize(customer.address, 60);
-                lines.forEach(l => { doc.text(l, 125, ry); ry += 4.5; });
+                doc.splitTextToSize(customer.address, custW).forEach(l => { doc.text(l, colTo, ry); ry += 4.5; });
             }
-            if (customer.vat) { doc.text(customer.vat, 125, ry); }
+            if (customer.vat) { doc.text(customer.vat, colTo, ry); ry += 4.5; }
 
-            // ─── DATE ROW ─────────────────────────────────
+            // Data e valuta: una riga sola, sulla stessa griglia delle due colonne.
             let detY = Math.max(y, ry) + 10;
-            doc.setFillColor(...bg);
-            doc.roundedRect(m, detY - 4, pw - m * 2, 14, 2, 2, 'F');
-
-            doc.setFontSize(7.5);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...mid);
-            doc.text('D A T A', m + 8, detY + 2);
-            doc.text('V A L U T A', m + 80, detY + 2);
-
-            doc.setFontSize(10);
+            hair(detY - 6, line, 0.2);
+            label('Data', m, detY);
+            label('Valuta', colTo, detY);
             doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
             doc.setTextColor(...ink);
-            doc.text(invoiceDate.toLocaleDateString('it-IT'), m + 8, detY + 7);
-            doc.text(invoice.currency || 'EUR', m + 80, detY + 7);
+            doc.text(invoiceDate.toLocaleDateString('it-IT'), m, detY + 6);
+            doc.text(invoice.currency || 'EUR', colTo, detY + 6);
 
-            // ─── ITEMS TABLE ──────────────────────────────
-            let tY = detY + 22;
-
-            // Column headers
-            doc.setFontSize(7.5);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...mid);
-            doc.text('D E S C R I Z I O N E', m, tY);
-            doc.text('I M P O R T O', pw - m, tY, { align: 'right' });
-
-            tY += 4;
-            doc.setDrawColor(...accent);
-            doc.setLineWidth(0.6);
-            doc.line(m, tY, pw - m, tY);
-
+            // ─── VOCI ───
+            let tY = detY + 24;
+            label('Descrizione', m, tY);
+            label('Importo', right, tY, 'right');
+            tY += 3.5;
+            hair(tY, ink, 0.35);
             tY += 9;
 
-            // Rows
             items.forEach((item, i) => {
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(10);
                 doc.setTextColor(...ink);
-
-                const descLines = doc.splitTextToSize(item.description, 115);
+                const descLines = doc.splitTextToSize(item.description, 118);
                 doc.text(descLines[0], m, tY);
                 if (descLines[1]) {
                     doc.setFontSize(8.5);
                     doc.setTextColor(...dark);
                     doc.text(descLines[1], m, tY + 5);
                 }
-
-                doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
                 doc.setTextColor(...ink);
-                doc.text(fmtAmount(item.amount), pw - m, tY, { align: 'right' });
-
+                doc.text(fmtAmount(item.amount), right, tY, { align: 'right' });
                 tY += descLines.length > 1 ? 15 : 11;
-
-                if (i < items.length - 1) {
-                    doc.setDrawColor(...line);
-                    doc.setLineWidth(0.15);
-                    doc.line(m, tY - 4, pw - m, tY - 4);
-                }
+                if (i < items.length - 1) hair(tY - 5, line, 0.2);
             });
 
-            // ─── TOTAL ────────────────────────────────────
-            tY += 4;
-            doc.setDrawColor(...line);
-            doc.setLineWidth(0.3);
-            doc.line(pw / 2 + 10, tY, pw - m, tY);
-
-            // Subtotal row
-            tY += 8;
-            doc.setFontSize(9);
+            // ─── TOTALI ───
+            tY += 2;
+            hair(tY - 5, ink, 0.35);
+            const totX = colTo;
+            tY += 5;
             doc.setFont('helvetica', 'normal');
-            doc.setTextColor(...mid);
-            doc.text('Subtotale', pw - m - 52, tY);
-            doc.setTextColor(...ink);
-            doc.text(fmtAmount(invoice.total), pw - m, tY, { align: 'right' });
-
-            // Total box
-            tY += 12;
-            doc.setFillColor(...ink);
-            doc.roundedRect(pw / 2 + 10, tY - 6, pw / 2 - 10 - m, 20, 3, 3, 'F');
-
-            // Green accent on total box
-            doc.setFillColor(...accent);
-            doc.roundedRect(pw / 2 + 10, tY - 6, 4, 20, 3, 0, 'F');
-            doc.setFillColor(...ink);
-            doc.rect(pw / 2 + 13, tY - 6, 2, 20, 'F');
-
             doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...white);
-            doc.text('T O T A L E', pw / 2 + 22, tY + 5);
+            doc.setTextColor(...mid);
+            doc.text('Subtotale', totX, tY);
+            doc.setTextColor(...ink);
+            doc.text(fmtAmount(invoice.total), right, tY, { align: 'right' });
 
-            doc.setFontSize(18);
+            tY += 6;
+            hair(tY, line, 0.2, totX);
+            tY += 11;
+            label('Totale', totX, tY - 1);
             doc.setFont('helvetica', 'bold');
-            doc.text(fmtAmount(invoice.total), pw - m - 5, tY + 7, { align: 'right' });
+            doc.setFontSize(20);
+            doc.setTextColor(...ink);
+            doc.text(fmtAmount(invoice.total), right, tY, { align: 'right' });
 
-            // ─── PAYMENT INFO ─────────────────────────────
+            // ─── ESTREMI DI PAGAMENTO ───
             const paymentInfo = company.payment_info || company.payment;
             if (paymentInfo) {
-                tY += 30;
-                const payLines = doc.splitTextToSize(paymentInfo, pw - m * 2 - 20);
-                const boxH = payLines.length * 5 + 16;
-
-                doc.setDrawColor(...line);
-                doc.setLineWidth(0.3);
-                doc.roundedRect(m, tY - 5, pw - m * 2, boxH, 2, 2, 'S');
-
-                // Green left accent
-                doc.setFillColor(...accent);
-                doc.roundedRect(m, tY - 5, 3, boxH, 2, 0, 'F');
-                doc.setFillColor(255, 255, 255);
-                doc.rect(m + 2, tY - 4, 2, boxH - 2, 'F');
-
-                doc.setFontSize(7.5);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(...mid);
-                doc.text('E S T R E M I   D I   P A G A M E N T O', m + 10, tY + 2);
-
+                tY += 26;
+                hair(tY - 7, line, 0.2);
+                label('Estremi di pagamento', m, tY);
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(9);
                 doc.setTextColor(...dark);
-                let py = tY + 9;
-                payLines.forEach(l => { doc.text(l, m + 10, py); py += 5; });
+                let py = tY + 6.5;
+                doc.splitTextToSize(paymentInfo, colTo - m - 8 + custW).forEach(l => { doc.text(l, m, py); py += 4.8; });
             }
 
-            // ─── FOOTER ──────────────────────────────────
-            doc.setDrawColor(...line);
-            doc.setLineWidth(0.15);
-            doc.line(m, ph - 18, pw - m, ph - 18);
-
-            doc.setTextColor(...soft);
-            doc.setFontSize(7.5);
+            // ─── PIEDE ───
+            hair(ph - 20, line, 0.2);
             doc.setFont('helvetica', 'normal');
-            doc.text('Grazie per la collaborazione.', pw / 2, ph - 12, { align: 'center' });
-
-            // Bottom accent
-            doc.setFillColor(...accent);
-            doc.rect(0, ph - 3, pw, 3, 'F');
+            doc.setFontSize(7.5);
+            doc.setTextColor(...mid);
+            doc.text('Grazie per la collaborazione.', m, ph - 13);
 
             // Output secondo la modalità richiesta
             const fileName = `Fattura_${customer.name.replace(/\s+/g, '_')}_${invoiceDate.toISOString().split('T')[0]}.pdf`;
@@ -5201,6 +5297,7 @@ att.hidden = !(m.attachments && m.attachments.length);
             const number = invoice.invoice_number || invoice.number;
             const date = new Date(invoice.invoice_date || invoice.date).toLocaleDateString('it-IT');
             const symbol = currencySymbols[invoice.currency || 'EUR'] || '\u20AC';
+            await readyInvoiceLogo();
             const pdf = generatePDF(buildInvoicePdfData(invoice), 'blob');
             invoiceMailFile = { name: pdf.fileName, blob: pdf.blob };
 
