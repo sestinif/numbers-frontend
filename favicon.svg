@@ -4,13 +4,8 @@
       <stop offset="0" stop-color="#2bff9e"/>
       <stop offset="1" stop-color="#00b85c"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.5">
-      <stop offset="0" stop-color="#00d26a" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#00d26a" stop-opacity="0"/>
-    </radialGradient>
   </defs>
   <rect width="32" height="32" rx="7.5" fill="#1B1B24"/>
-  <circle cx="16" cy="14" r="11" fill="url(#glow)"/>
   <rect x="0.9" y="0.9" width="30.2" height="30.2" rx="6.7" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="1.6"/>
   <g fill="url(#n)">
     <path d="M9 8h3.5v16H9z"/>
@@ -18,3 +13,5 @@
     <path d="M9 8h3.5L23 24h-3.5z"/>
   </g>
 </svg>
+
+
