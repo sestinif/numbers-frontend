@@ -63,6 +63,11 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Movimento ridotto: l'errore compare in dissolvenza, senza scossa */
+        @media (prefers-reduced-motion: reduce) {
+            .error-message.active { animation: fadeIn 0.2s ease; }
+        }
     </style>
 </head>
 <body>

@@ -109,11 +109,11 @@
             border-radius: 12px; background: var(--bg-card);
             border: 1px solid var(--border-color); box-shadow: var(--elev-4);
             color: var(--text-primary); font-size: 14px; font-weight: 400; line-height: 1.4;
-            pointer-events: auto; transform: translateX(120%); opacity: 0;
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+            pointer-events: auto; transform: translateY(12px); filter: blur(4px); opacity: 0;
+            transition: transform 300ms ease-out, opacity 300ms ease-out, filter 300ms ease-out;
         }
-        .toast.show { transform: translateX(0); opacity: 1; }
-        .toast.hide { transform: translateX(120%); opacity: 0; }
+        .toast.show { transform: none; filter: blur(0); opacity: 1; }
+        .toast.hide { transform: translateY(-12px); filter: blur(4px); opacity: 0; transition-duration: 150ms; }
         .toast__icon { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; }
         .toast--success .toast__icon { background: var(--bg-elev); color: var(--text-primary); }
         .toast--error .toast__icon { background: rgba(var(--danger-rgb), 0.15); color: var(--danger); }
@@ -167,11 +167,11 @@
             display: none; align-items: center; justify-content: center;
             background: var(--overlay);
         }
-        #confirmOverlay.active { display: flex; animation: fadeIn 0.25s; }
+        #confirmOverlay.active { display: flex; animation: fadeIn 200ms ease-out both; }
         .confirm-box {
             width: 90%; max-width: 420px; background: var(--bg-card);
             border: 1px solid var(--border-color); border-radius: 12px; padding: 28px;
-            box-shadow: var(--elev-4); animation: slideUp 0.25s ease; text-align: center;
+            box-shadow: var(--elev-4); animation: slideUp 300ms ease-out both; text-align: center;
         }
         .confirm-box__icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; background: rgba(var(--danger-rgb), 0.12); color: var(--danger); }
         .confirm-box__icon svg, .confirm-box__icon i { width: 20px; height: 20px; }
@@ -228,10 +228,6 @@
         th.sortable .sort-caret { opacity: 0.5; margin-left: 5px; font-size: 13px; }
         th.sortable.sorted .sort-caret { opacity: 1; color: var(--primary-green); }
 
-        /* Reduced motion */
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
-        }
 
         /* ===== APP LAYOUT ===== */
         .app-layout {
@@ -515,17 +511,14 @@
 
         .company-dropdown.active {
             display: block;
-            animation: dropdownFadeUp 0.2s ease-out;
+            animation: dropdownFadeUp 300ms ease-out both;
         }
 
         @keyframes dropdownFadeUp {
             from {
                 opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+                transform: translateY(12px);
+                filter: blur(4px);
             }
         }
 
@@ -585,7 +578,7 @@
         /* ===== MODALS ===== */
         .modal {
             display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
-            background: var(--overlay); animation: fadeIn 0.2s;
+            background: var(--overlay); animation: fadeIn 200ms ease-out both;
         }
 
         .modal.active {
@@ -598,10 +591,10 @@
             position: relative; width: 90%; max-width: 600px; max-height: 90vh; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain;
             padding: 28px; background: var(--bg-card);
             border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--elev-4);
-            animation: slideUp 0.25s ease;
+            animation: slideUp 300ms ease-out both;
         }
 
-        @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(12px); filter: blur(4px); opacity: 0; } }
 
         .modal-content h2 { margin-bottom: 24px; font-family: var(--font-display); font-size: 19px; font-weight: 500; text-transform: none; }
 
@@ -1087,14 +1080,14 @@
         }
 
         /* ===== SCHEDA DI RIGA (row-sheet.js) ===== */
-        .row-sheet__backdrop { position: fixed; inset: 0; z-index: 900; background: var(--overlay); animation: rowSheetFade 0.16s ease; }
+        .row-sheet__backdrop { position: fixed; inset: 0; z-index: 900; background: var(--overlay); animation: rowSheetFade 160ms ease-out both; }
         .row-sheet__backdrop[hidden] { display: none; }
         .row-sheet {
             position: absolute; left: 0; right: 0; bottom: 0; max-height: 86vh; max-height: 86dvh;
             overflow-y: auto; overscroll-behavior: contain; outline: none;
             background: var(--bg-card); border-top: 1px solid var(--border-color); border-radius: 20px 20px 0 0;
             padding: 10px 20px calc(22px + env(safe-area-inset-bottom));
-            animation: rowSheetUp 0.22s ease;
+            animation: rowSheetUp 220ms ease-out both;
         }
         @keyframes rowSheetFade { from { opacity: 0; } }
         @keyframes rowSheetUp { from { transform: translateY(24px); opacity: 0; } }
@@ -1363,9 +1356,6 @@
         input:focus, select:focus, textarea:focus {
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(141, 155, 255, 0.16) !important;
         }
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-        }
 
         /* ===== better-ui: una sola grammatica =====
            Raggi concentrici (esterno = interno + padding + bordo), variazioni come pillola,
@@ -1385,6 +1375,7 @@
         .stat-card { padding: 16px 18px; box-shadow: -1px -1px 0 0 var(--border-color); }
 
         @media (max-width: 768px) {
+            .toolbar-actions { flex-wrap: wrap; }
             .stat-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
             .stat-trend.up, .stat-trend.down { white-space: normal; }
         }
@@ -1393,7 +1384,8 @@
                 flex: 0 1 auto; gap: 0; overflow: hidden; background: var(--bg-card);
                 border: 1px solid var(--border-color); border-radius: 12px;
             }
-            .mini-stat { padding: 12px 18px; box-shadow: -1px 0 0 0 var(--border-color); }
+            .mini-stat { flex: 0 0 auto; padding: 12px 16px; box-shadow: -1px 0 0 0 var(--border-color); }
+            .section-toolbar { flex-wrap: wrap; row-gap: 16px; }
         }
 
         td { font-variant-numeric: tabular-nums; }
@@ -1409,6 +1401,33 @@
             .sidebar-footer-btn:active, .inbox-bell:active, .row-sheet__close:active { scale: 0.96; }
             .btn-primary:not(:disabled):active { transform: none; }
         }
+
+        /* ===== better-ui, giro profondo ===== */
+        /* Icone: il tratto segue il testo accanto (1.5px accanto al testo normale, 2px accanto al medio/attivo e nei bottoni),
+           resta in pixel veri qualunque sia la dimensione disegnata. */
+        svg[stroke="currentColor"] { stroke-width: 1.5; }
+        svg[stroke="currentColor"] :is(path, line, polyline, polygon, rect, circle, ellipse) { vector-effect: non-scaling-stroke; }
+        .btn svg[stroke="currentColor"], .sidebar-nav-item.active svg[stroke="currentColor"] { stroke-width: 2; }
+
+        /* Ottica: l'icona a sinistra del testo prende 2px in meno di padding da quel lato */
+        .quick-action-btn { padding-inline-start: 10px; }
+
+        /* Movimento ridotto: le entrate diventano solo dissolvenza, niente spostamento né sfocatura */
+        @media (prefers-reduced-motion: reduce) {
+            .modal-content, .confirm-box, .company-dropdown.active { animation-name: fadeIn; }
+            .row-sheet { animation-name: rowSheetFade; }
+            .toast, .toast.show, .toast.hide { transform: none; filter: none; transition-property: opacity; transition-duration: 150ms; }
+        }
+
+        /* Aree cliccabili da almeno 44px dietro i controlli piccoli: la dimensione disegnata non cambia */
+        .sidebar-footer-btn, .inbox-bell, .period-arrow, .period-mode, .btn, .quick-action-btn, .chip, .source-link, .inbox-folder { position: relative; }
+        .sidebar-nav-item::after, .sidebar-footer-btn::after, .inbox-bell::after, .period-arrow::after, .period-mode::after,
+        .btn::after, .quick-action-btn::after, .chip::after, .source-link::after, .inbox-folder::after {
+            content: ''; position: absolute; inset: -4px 0;
+        }
+        .inbox-bell::after { inset: -4px; }
+        .period-arrow::after, .period-mode::after { inset: -6px -2px; }
+        .source-link::after { inset: -12px -12px; }
     </style>
 </head>
 <body>
