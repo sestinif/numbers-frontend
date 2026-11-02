@@ -410,7 +410,7 @@
 
         /* ===== BUTTONS ===== */
         .btn {
-            padding: 8px 14px; border: 1px solid transparent; border-radius: 8px;
+            padding: 8px 16px; border: 1px solid transparent; border-radius: 999px;
             font-size: 14px; font-weight: 500; font-family: var(--font-body); white-space: nowrap;
             cursor: pointer; margin-right: 8px; margin-bottom: 8px;
             transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
@@ -486,7 +486,7 @@
 
         .action-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 
-        .action-btns button { margin: 0; padding: 6px 12px; font-size: 14px; }
+        .action-btns button { margin: 0; padding: 6px 14px; font-size: 14px; }
 
         /* ===== COMPANY SELECTOR & DROPDOWN ===== */
         .company-selector {
@@ -553,7 +553,7 @@
         .logo-row-text strong { font-size: 14px; font-weight: 500; color: var(--text-primary); }
         .logo-row-text span { font-size: 13px; color: var(--text-secondary); }
         .logo-row-actions { display: flex; gap: 8px; }
-        .logo-row-actions .btn { margin: 0; padding: 6px 12px; font-size: 13px; white-space: nowrap; }
+        .logo-row-actions .btn { margin: 0; padding: 6px 14px; font-size: 13px; white-space: nowrap; }
         .logo-preview {
             width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
             background: rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 14px; font-weight: 500;
@@ -769,7 +769,7 @@
 
         .alert strong { font-weight: 500; }
 
-        .alert .btn { margin: 0; flex-shrink: 0; padding: 6px 12px; font-size: 13px; }
+        .alert .btn { margin: 0; flex-shrink: 0; padding: 6px 14px; font-size: 13px; }
 
         .stat-trend.up, .stat-trend.down { background: none; color: var(--text-secondary); }
 
@@ -989,9 +989,9 @@
 
             /* Buttons mobile */
             .btn {
-                padding: 10px 14px;
+                padding: 10px 16px;
                 font-size: 14px;
-                border-radius: 8px;
+                border-radius: 999px;
             }
 
             /* Sotto i 16px iOS ingrandisce la pagina quando tocchi un campo. */
@@ -1008,7 +1008,7 @@
             .mini-stat { flex-direction: row; justify-content: space-between; align-items: baseline; gap: 16px; padding: 13px 0; border-right: none; border-bottom: 1px solid var(--border-color); }
             .mini-stat-value { font-size: 17px; }
             .toolbar-actions { border: 0; padding: 20px 0 0; }
-            .toolbar-actions .btn { padding: 11px 18px; text-align: center; }
+            .toolbar-actions .btn { padding: 11px 20px; text-align: center; }
             .toolbar-actions .btn-primary { flex: 1; }
 
             /* Fatture: filtri sopra, ricerca sotto */
@@ -2378,7 +2378,7 @@
                 <div id="pendingNotesContainer" style="display:none; margin: 16px 0; padding: 14px; background: var(--bg-elev); border: 0; border-radius: 8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
                         <div style="font-size: 13px; color: var(--text-secondary);">Rimborsi da fatturare</div>
-                        <button type="button" class="btn btn-primary" style="padding:6px 12px; font-size:13px; margin:0;" onclick="addAllNotesToInvoice()">+ Aggiungi tutte</button>
+                        <button type="button" class="btn btn-primary" style="padding:6px 14px; font-size:13px; margin:0;" onclick="addAllNotesToInvoice()">+ Aggiungi tutte</button>
                     </div>
                     <div id="pendingNotesList"></div>
                 </div>
@@ -4431,7 +4431,7 @@ att.hidden = !(m.attachments && m.attachments.length);
                         <span style="color:var(--text-secondary); font-size:13px; margin-left:8px;">${formatCurrency(note.amount)}</span>
                         ${note.notes ? '<br><small style="color:var(--text-secondary);">' + escapeHtml(note.notes) + '</small>' : ''}
                     </div>
-                    <button type="button" class="btn btn-primary" style="padding:6px 12px; font-size:13px; margin:0;" onclick="addNoteToInvoice(${note.id}, this.parentElement)">+ Aggiungi</button>
+                    <button type="button" class="btn btn-primary" style="padding:6px 14px; font-size:13px; margin:0;" onclick="addNoteToInvoice(${note.id}, this.parentElement)">+ Aggiungi</button>
                 `;
                 list.appendChild(div);
             });
